@@ -6,22 +6,33 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class UserSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     */
     public function run(): void
     {
-        // Create Super Admin
-        $superAdmin = User::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@gmail.com',
-            'password' => Hash::make('password123'),
-            'tenant_id' => null, // global user
-        ]);
+        
+        $superAdminRole = Role::where('slug', 'super-admin')->first();
 
-        // Attach Super Admin role
-        $superAdmin->roles()->attach(
-            Role::where('slug', 'super-admin')->first()
+       
+        $superAdmin = User::updateOrCreate(
+            ['email' => 'superadmin@gmail.com'], 
+            [
+                'name' => 'Super Admin',
+                'password' => Hash::make('password123'),
+                'tenant_id' => null, // global user
+                'role' => 'super_admin',
+            ]
         );
+
+        // 3. Attach the role (pivot table)
+        // Check if not already attached to avoid duplication
+        if (!$superAdmin->roles()->where('role_id', $superAdminRole->id)->exists()) {
+            $superAdmin->roles()->attach($superAdminRole);
+        }
     }
 }

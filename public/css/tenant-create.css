@@ -1,0 +1,60 @@
+/* Tenant Create Form Styles */
+
+.tenant-form {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid #DBEAFE;
+    max-width: 600px;
+    margin: 20px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.tenant-form h3 {
+    color: #2563EB;
+    margin-bottom: 15px;
+    font-size: 18px;
+    border-bottom: 1px solid #DBEAFE;
+    padding-bottom: 5px;
+}
+
+.tenant-form input[type="text"],
+.tenant-form input[type="email"],
+.tenant-form input[type="password"] {
+    width: 100%;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border: 1px solid #DBEAFE;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.tenant-form input:focus {
+    border-color: #2563EB;
+    outline: none;
+}
+
+.tenant-form button {
+    background-color: #2563EB;
+    color: #fff;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.2s;
+}
+
+.tenant-form button:hover {
+    background-color: #1E40AF;
+}
+
+.password-requirements {
+    font-size: 13px;
+    color: #1E3A8A;
+    margin-bottom: 20px;
+    background-color: #EFF6FF;
+    padding: 10px 15px;
+    border-radius: 6px;
+    border: 1px solid #DBEAFE;
+}

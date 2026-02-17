@@ -36,19 +36,19 @@ class AuthController extends Controller
             }
 
             if ($user->hasRole('account-owner')) {
-                return redirect()->intended('/leads');
+                return redirect()->intended(route('dashboard.owner'));
             }
 
             if ($user->hasRole('marketing-manager')) {
-                return redirect()->intended('/leads');
+                return redirect()->intended(route('dashboard.marketing'));
             }
 
             if ($user->hasRole('sales-agent')) {
-                return redirect()->intended('/leads');
+                return redirect()->intended(route('dashboard.sales'));
             }
 
             if ($user->hasRole('finance')) {
-                return redirect()->intended('/leads'); // or any other dashboard
+                return redirect()->intended(route('dashboard.finance')); 
             }
 
             // Fallback for any unassigned role

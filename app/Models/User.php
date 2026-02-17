@@ -45,7 +45,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'tenant_id', // <-- IMPORTANT: must allow assignment
+        'tenant_id',
+        'role',
     ];
 
     /**

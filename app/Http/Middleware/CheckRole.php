@@ -15,7 +15,7 @@ class CheckRole
      * @param  string  $roleSlug
      * @return mixed
      */
-    public function handle(Request $request, Closure $next, $roleSlug)
+    public function handle(Request $request, Closure $next, ...$roles)
     {
         $user = auth()->user();
 
@@ -23,11 +23,18 @@ class CheckRole
             return redirect('/login');
         }
 
-        // Using hasRole() from User model
-        if (!$user->hasRole($roleSlug)) {
-            abort(403, 'Unauthorized action.');
+        // Handle comma-separated string if passed as a single argument (e.g. from route string)
+        if (count($roles) === 1 && str_contains($roles[0], ',')) {
+            $roles = explode(',', $roles[0]);
         }
 
-        return $next($request);
+        // Check if user has ANY of the allowed roles
+        foreach ($roles as $role) {
+            if ($user->hasRole(trim($role))) {
+                return $next($request);
+            }
+        }
+
+        abort(403, 'Unauthorized action.');
     }
 }

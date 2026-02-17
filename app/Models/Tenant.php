@@ -6,6 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Tenant extends Model
 {
+    protected $fillable = [
+        'company_name',
+        'subscription_plan',
+        'status',
+    ];
+
     public function users()
     {
         return $this->hasMany(User::class);
