@@ -124,7 +124,7 @@
                         </select>
                     </div>
                     <button type="submit"
-                        style="padding: 8px 16px; background-color: #0EA5E9; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        style="padding: 8px 16px; background-color: #0EA5E9; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
                         Save Assignment
                     </button>
                 </form>

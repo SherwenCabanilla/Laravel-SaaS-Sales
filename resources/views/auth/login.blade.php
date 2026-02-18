@@ -15,19 +15,33 @@
 </head>
 <body>
     @if(session('success') || session('error'))
-        <div id="statusModal" style="position:fixed;inset:0;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;z-index:9999;">
-            <div style="background:#fff;border-radius:10px;width:min(92vw,460px);padding:20px;border:1px solid #DBEAFE;box-shadow:0 16px 30px rgba(15,23,42,.22);">
-                <h4 style="margin-bottom:8px;color:{{ session('success') ? '#047857' : '#B91C1C' }};">
-                    {{ session('success') ? 'Success' : 'Error' }}
-                </h4>
-                <p style="font-size:14px;font-weight:600;line-height:1.45;margin-bottom:14px;">
-                    {{ session('success') ?? session('error') }}
-                </p>
-                <button type="button" onclick="document.getElementById('statusModal').style.display='none';" style="padding:8px 14px;border:none;border-radius:6px;background:#1E40AF;color:#fff;font-weight:600;cursor:pointer;">
-                    Close
+        <div id="statusToastContainer" style="position:fixed;top:18px;right:18px;z-index:9999;">
+            <div style="display:flex;gap:12px;align-items:center;background:#fff;border-radius:14px;width:min(90vw,380px);padding:12px 38px 12px 12px;border:1px solid #E2E8F0;box-shadow:0 18px 38px rgba(15,23,42,.2);position:relative;">
+                <i class="fas {{ session('success') ? 'fa-check' : 'fa-times' }}" style="font-size:24px;color:{{ session('success') ? '#65A30D' : '#B91C1C' }};"></i>
+                <div>
+                    <h4 style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:{{ session('success') ? '#65A30D' : '#B91C1C' }};">
+                        {{ session('success') ? 'Success!' : 'Error!' }}
+                    </h4>
+                    <p style="margin:0;color:#334155;font-size:14px;font-weight:500;line-height:1.2;">
+                        {{ session('success') ?? session('error') }}
+                    </p>
+                </div>
+                <button type="button" onclick="closeStatusToast()" aria-label="Close notification"
+                    style="position:absolute;top:8px;right:8px;border:none;background:transparent;color:#334155;font-size:16px;cursor:pointer;line-height:1;">
+                    <i class="fas fa-times-circle"></i>
                 </button>
             </div>
         </div>
+        <script>
+            function closeStatusToast() {
+                const toastContainer = document.getElementById('statusToastContainer');
+                if (toastContainer) {
+                    toastContainer.style.display = 'none';
+                }
+            }
+
+            setTimeout(closeStatusToast, 4000);
+        </script>
     @endif
 
     <div class="login-container">

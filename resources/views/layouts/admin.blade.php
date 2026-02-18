@@ -117,7 +117,7 @@
                     </button>
 
                     <div id="accountDropdown" class="account-dropdown">
-                        <a href="#" class="dropdown-link">Manage Profile</a>
+                        <a href="{{ route('profile.show') }}" class="dropdown-link">Manage Profile</a>
 
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -170,13 +170,28 @@
     </script>
 
     @if(session('success') || session('error'))
-        <div id="statusModal" class="status-modal-overlay">
-            <div class="status-modal {{ session('success') ? 'success' : 'error' }}">
-                <h4>{{ session('success') ? 'Success' : 'Error' }}</h4>
-                <p>{{ session('success') ?? session('error') }}</p>
-                <button type="button" onclick="document.getElementById('statusModal').style.display='none';">Close</button>
+        <div id="statusToastContainer" class="status-toast-container">
+            <div class="status-toast {{ session('success') ? 'success' : 'error' }}">
+                <i class="status-icon fas {{ session('success') ? 'fa-check' : 'fa-times' }}"></i>
+                <div>
+                    <h4>{{ session('success') ? 'Success!' : 'Error!' }}</h4>
+                    <p>{{ session('success') ?? session('error') }}</p>
+                </div>
+                <button type="button" class="status-toast-close" onclick="closeStatusToast()" aria-label="Close notification">
+                    <i class="fas fa-times-circle"></i>
+                </button>
             </div>
         </div>
+        <script>
+            function closeStatusToast() {
+                const toastContainer = document.getElementById('statusToastContainer');
+                if (toastContainer) {
+                    toastContainer.style.display = 'none';
+                }
+            }
+
+            setTimeout(closeStatusToast, 4000);
+        </script>
     @endif
     @yield('scripts')
 </body>

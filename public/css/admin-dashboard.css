@@ -387,53 +387,144 @@ table tr:hover {
     background-color: #1E40AF;
 }
 
-.status-modal-overlay {
+.status-toast-container {
     position: fixed;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.35);
+    top: 18px;
+    right: 18px;
+    z-index: 2000;
+}
+
+.status-toast {
     display: flex;
+    gap: 12px;
     align-items: center;
-    justify-content: center;
-    z-index: 1200;
-}
-
-.status-modal {
     background: #fff;
-    border-radius: 10px;
-    width: min(92vw, 460px);
-    padding: 20px;
-    border: 1px solid #DBEAFE;
-    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.22);
+    border-radius: 14px;
+    width: min(90vw, 380px);
+    padding: 12px 38px 12px 12px;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.2);
+    position: relative;
+    animation: statusSlideIn .2s ease-out;
 }
 
-.status-modal h4 {
-    margin-bottom: 8px;
+.status-toast .status-icon {
+    font-size: 24px;
 }
 
-.status-modal p {
+.status-toast h4 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.status-toast p {
+    margin: 0;
+    color: #334155;
     font-size: 14px;
-    line-height: 1.45;
-    margin-bottom: 14px;
-    color: #1F2937;
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1.2;
 }
 
-.status-modal.success h4 {
-    color: #047857;
+.status-toast.success .status-icon,
+.status-toast.success h4 {
+    color: #65A30D;
 }
 
-.status-modal.error h4 {
+.status-toast.error .status-icon,
+.status-toast.error h4 {
     color: #B91C1C;
 }
 
-.status-modal button {
-    padding: 8px 14px;
-    border-radius: 6px;
+.status-toast-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
     border: none;
-    background: #1E40AF;
-    color: #fff;
-    font-weight: 600;
+    background: transparent;
+    color: #334155;
+    font-size: 16px;
     cursor: pointer;
+    line-height: 1;
+}
+
+@keyframes statusSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================= */
+/* RESPONSIVE */
+/* ============================= */
+
+/* ============================= */
+/* PAGINATION (Bootstrap-4 markup) */
+/* ============================= */
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.pagination .page-item {
+    list-style: none;
+    margin: 0;
+}
+
+.pagination .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1E40AF;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid #DBEAFE;
+    border-radius: 6px;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.pagination .page-link:hover {
+    background: #DBEAFE;
+    border-color: #93C5FD;
+    color: #1E40AF;
+}
+
+.pagination .page-item.active .page-link {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: #fff;
+    cursor: default;
+}
+
+.pagination .page-item.active .page-link:hover {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: #fff;
+}
+
+.pagination .page-item.disabled .page-link {
+    background: #F1F5F9;
+    border-color: #E2E8F0;
+    color: #94A3B8;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* ============================= */
