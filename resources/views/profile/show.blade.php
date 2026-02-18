@@ -44,7 +44,7 @@
 
                 <form action="{{ route('profile.avatar.update') }}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 8px; align-items: center;">
                     @csrf
-                    <label for="profile_photo" style="width: 34px; height: 34px; border-radius: 50%; background: #0EA5E9; color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
+                    <label for="profile_photo" style="width: 34px; height: 34px; border-radius: 50%; background: var(--theme-accent, #0EA5E9); color: white; display: inline-flex; align-items: center; justify-content: center; cursor: pointer;">
                         <i class="fas fa-camera"></i>
                     </label>
                     <input type="file" id="profile_photo" name="profile_photo" accept="image/*" style="display: none;" onchange="this.form.submit()">
@@ -101,7 +101,7 @@
                     </label>
                 </div>
 
-                <button type="submit" style="padding:10px 16px;border:none;border-radius:6px;background:#2563EB;color:#fff;cursor:pointer;font-weight:600;">
+                <button type="submit" style="padding:10px 16px;border:none;border-radius:6px;background:var(--theme-primary, #2563EB);color:#fff;cursor:pointer;font-weight:600;">
                     Save Profile
                 </button>
             </form>
@@ -118,13 +118,13 @@
                     <span style="font-weight: 700;">Notification Toggle (Static)</span>
                     <label style="display:inline-block;position:relative;width:44px;height:24px;">
                         <input type="checkbox" checked disabled style="opacity:0;width:0;height:0;">
-                        <span style="position:absolute;inset:0;background:#2563EB;border-radius:999px;"></span>
+                        <span style="position:absolute;inset:0;background:var(--theme-primary, #2563EB);border-radius:999px;"></span>
                         <span style="position:absolute;top:3px;left:22px;width:18px;height:18px;background:#fff;border-radius:50%;"></span>
                     </label>
                 </div>
             </div>
 
-            <button type="button" id="openPasswordModal" style="padding:10px 16px;border:none;border-radius:6px;background:#0EA5E9;color:#fff;cursor:pointer;margin-bottom:12px;font-weight:600;">
+            <button type="button" id="openPasswordModal" style="padding:10px 16px;border:none;border-radius:6px;background:var(--theme-accent, #0EA5E9);color:#fff;cursor:pointer;margin-bottom:12px;font-weight:600;">
                 Change Password
             </button>
         </div>
@@ -148,7 +148,7 @@
                 <div style="display:flex; gap:8px; align-items:center;">
                     <form action="{{ route('profile.company-logo.update') }}" method="POST" enctype="multipart/form-data">
                         @csrf
-                        <label for="company_logo" style="display:inline-block;padding:8px 12px;border:none;border-radius:6px;background:#0EA5E9;color:#fff;cursor:pointer;font-weight:600;font-size:14px;height:38px;box-sizing:border-box;line-height:22px;vertical-align:middle;">
+                        <label for="company_logo" style="display:inline-block;padding:8px 12px;border:none;border-radius:6px;background:var(--theme-accent, #0EA5E9);color:#fff;cursor:pointer;font-weight:600;font-size:14px;height:38px;box-sizing:border-box;line-height:22px;vertical-align:middle;">
                             <i class="fas fa-camera"></i> Upload Company Logo
                         </label>
                         <input id="company_logo" type="file" name="company_logo" accept="image/*" style="display:none;" onchange="this.form.submit()">
@@ -162,6 +162,166 @@
                     </form>
                 </div>
             @endif
+        </div>
+    @endif
+
+    @if($user->tenant && $user->hasRole('account-owner'))
+        <div class="card" style="margin-top: 18px;">
+            <h3>Company Theme</h3>
+            <form action="{{ route('profile.theme.update') }}" method="POST">
+                @csrf
+                @method('PUT')
+                @php
+                    $currentTheme = [
+                        'primary' => old('theme_primary_color', $user->tenant->theme_primary_color ?? '#2563EB'),
+                        'accent' => old('theme_accent_color', $user->tenant->theme_accent_color ?? '#0EA5E9'),
+                        'sidebar_bg' => old('theme_sidebar_bg', $user->tenant->theme_sidebar_bg ?? '#FFFFFF'),
+                        'sidebar_text' => old('theme_sidebar_text', $user->tenant->theme_sidebar_text ?? '#1E40AF'),
+                    ];
+
+                    $recommendedThemes = [
+                        [
+                            'name' => 'Classic Blue (Default)',
+                            'primary' => '#2563EB',
+                            'accent' => '#0EA5E9',
+                            'sidebar_bg' => '#FFFFFF',
+                            'sidebar_text' => '#1E40AF',
+                        ],
+                        [
+                            'name' => 'Emerald',
+                            'primary' => '#047857',
+                            'accent' => '#10B981',
+                            'sidebar_bg' => '#FFFFFF',
+                            'sidebar_text' => '#064E3B',
+                        ],
+                        [
+                            'name' => 'Violet',
+                            'primary' => '#6D28D9',
+                            'accent' => '#A78BFA',
+                            'sidebar_bg' => '#FFFFFF',
+                            'sidebar_text' => '#4C1D95',
+                        ],
+                        [
+                            'name' => 'Slate',
+                            'primary' => '#334155',
+                            'accent' => '#0EA5E9',
+                            'sidebar_bg' => '#F8FAFC',
+                            'sidebar_text' => '#0F172A',
+                        ],
+                        [
+                            'name' => 'Sunset',
+                            'primary' => '#C2410C',
+                            'accent' => '#F97316',
+                            'sidebar_bg' => '#FFF7ED',
+                            'sidebar_text' => '#7C2D12',
+                        ],
+                        [
+                            'name' => 'Rose',
+                            'primary' => '#BE123C',
+                            'accent' => '#FB7185',
+                            'sidebar_bg' => '#FFF1F2',
+                            'sidebar_text' => '#881337',
+                        ],
+                    ];
+                @endphp
+
+                <p style="margin-top: 10px; color:#475569; font-size: 13px; font-weight: 600; line-height: 1.35;">
+                    Customize your company’s colors. These settings apply to <strong>all users in your company</strong> automatically.
+                    Team members cannot change the theme.
+                </p>
+
+                <div style="margin-top: 14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <h4 style="margin:0;color:#1F2937;">Recommended themes</h4>
+                        <button type="button" id="themeResetDefault"
+                            style="padding:8px 12px;border:1px solid #E2E8F0;border-radius:6px;background:#F8FAFC;color:#334155;cursor:pointer;font-weight:600;">
+                            Reset to default
+                        </button>
+                    </div>
+
+                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px;">
+                        @foreach($recommendedThemes as $preset)
+                            <button type="button" class="theme-preset-card"
+                                data-primary="{{ $preset['primary'] }}"
+                                data-accent="{{ $preset['accent'] }}"
+                                data-sidebar-bg="{{ $preset['sidebar_bg'] }}"
+                                data-sidebar-text="{{ $preset['sidebar_text'] }}"
+                                style="text-align:left;padding:12px;border:1px solid #E2E8F0;border-radius:10px;background:#fff;cursor:pointer;">
+                                <div style="font-weight:800;color:#0F172A;margin-bottom:8px;font-size:13px;">
+                                    {{ $preset['name'] }}
+                                </div>
+                                <div style="display:flex;gap:6px;align-items:center;">
+                                    <span title="Primary" style="width:18px;height:18px;border-radius:6px;background:{{ $preset['primary'] }};border:1px solid #E2E8F0;"></span>
+                                    <span title="Accent" style="width:18px;height:18px;border-radius:6px;background:{{ $preset['accent'] }};border:1px solid #E2E8F0;"></span>
+                                    <span title="Sidebar BG" style="width:18px;height:18px;border-radius:6px;background:{{ $preset['sidebar_bg'] }};border:1px solid #E2E8F0;"></span>
+                                    <span title="Sidebar Text" style="width:18px;height:18px;border-radius:6px;background:{{ $preset['sidebar_text'] }};border:1px solid #E2E8F0;"></span>
+                                </div>
+                                <div style="margin-top:8px;color:#64748B;font-size:12px;font-weight:600;">
+                                    Click to apply
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+
+                <hr style="border:0;border-top:1px solid #DBEAFE;margin:16px 0;">
+
+                <h4 style="margin:0 0 8px;color:#1F2937;">Custom colors</h4>
+                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+                    <div class="theme-field">
+                        <label style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Primary color</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="color" id="themePrimaryPicker" name="theme_primary_color" value="{{ $currentTheme['primary'] }}"
+                                   style="width:52px;height:38px;padding:0;border:1px solid #E2E8F0;border-radius:10px;cursor:pointer;">
+                            <input type="text" id="themePrimaryHex" value="{{ $currentTheme['primary'] }}" inputmode="text" maxlength="7"
+                                   style="flex:1;padding:10px;border:1px solid #DBEAFE;border-radius:8px;font-weight:700;color:#0F172A;"
+                                   placeholder="#RRGGBB">
+                        </div>
+                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Used for buttons and highlights.</div>
+                    </div>
+
+                    <div class="theme-field">
+                        <label style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Accent color</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="color" id="themeAccentPicker" name="theme_accent_color" value="{{ $currentTheme['accent'] }}"
+                                   style="width:52px;height:38px;padding:0;border:1px solid #E2E8F0;border-radius:10px;cursor:pointer;">
+                            <input type="text" id="themeAccentHex" value="{{ $currentTheme['accent'] }}" inputmode="text" maxlength="7"
+                                   style="flex:1;padding:10px;border:1px solid #DBEAFE;border-radius:8px;font-weight:700;color:#0F172A;"
+                                   placeholder="#RRGGBB">
+                        </div>
+                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Used for secondary actions and accents.</div>
+                    </div>
+
+                    <div class="theme-field">
+                        <label style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Sidebar background</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="color" id="themeSidebarBgPicker" name="theme_sidebar_bg" value="{{ $currentTheme['sidebar_bg'] }}"
+                                   style="width:52px;height:38px;padding:0;border:1px solid #E2E8F0;border-radius:10px;cursor:pointer;">
+                            <input type="text" id="themeSidebarBgHex" value="{{ $currentTheme['sidebar_bg'] }}" inputmode="text" maxlength="7"
+                                   style="flex:1;padding:10px;border:1px solid #DBEAFE;border-radius:8px;font-weight:700;color:#0F172A;"
+                                   placeholder="#RRGGBB">
+                        </div>
+                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Sidebar panel background.</div>
+                    </div>
+
+                    <div class="theme-field">
+                        <label style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Sidebar text</label>
+                        <div style="display:flex;gap:10px;align-items:center;">
+                            <input type="color" id="themeSidebarTextPicker" name="theme_sidebar_text" value="{{ $currentTheme['sidebar_text'] }}"
+                                   style="width:52px;height:38px;padding:0;border:1px solid #E2E8F0;border-radius:10px;cursor:pointer;">
+                            <input type="text" id="themeSidebarTextHex" value="{{ $currentTheme['sidebar_text'] }}" inputmode="text" maxlength="7"
+                                   style="flex:1;padding:10px;border:1px solid #DBEAFE;border-radius:8px;font-weight:700;color:#0F172A;"
+                                   placeholder="#RRGGBB">
+                        </div>
+                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Sidebar menu text.</div>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    style="margin-top:14px;padding:10px 16px;border:none;border-radius:6px;background:var(--theme-primary, #2563EB);color:#fff;cursor:pointer;font-weight:600;">
+                    Save Theme
+                </button>
+            </form>
         </div>
     @endif
 
@@ -194,7 +354,7 @@
                     12-14 chars, uppercase, lowercase, number, and special character.
                 </p>
                 <div style="display: flex; gap: 8px;">
-                    <button type="submit" style="padding: 8px 16px; background-color: #2563EB; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <button type="submit" style="padding: 8px 16px; background-color: var(--theme-primary, #2563EB); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
                         Confirm Password Change
                     </button>
                     <button type="button" id="cancelPasswordModal" style="padding: 8px 16px; background-color: #E2E8F0; color: #475569; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
@@ -263,5 +423,84 @@
 
         restrictToNumbers(phone);
         restrictToNumbers(secondaryPhone);
+
+        // Theme presets + hex syncing (Account Owner only)
+        function isValidHex(hex) {
+            return /^#[0-9A-Fa-f]{6}$/.test(hex);
+        }
+
+        function bindColorAndHex(pickerId, hexId) {
+            var picker = document.getElementById(pickerId);
+            var hex = document.getElementById(hexId);
+            if (!picker || !hex) return;
+
+            picker.addEventListener('input', function () {
+                hex.value = picker.value.toUpperCase();
+            });
+
+            hex.addEventListener('input', function () {
+                var v = hex.value.trim();
+                if (v.length === 7 && isValidHex(v)) {
+                    picker.value = v;
+                }
+            });
+
+            hex.addEventListener('blur', function () {
+                var v = hex.value.trim();
+                if (v === '') {
+                    hex.value = picker.value.toUpperCase();
+                    return;
+                }
+                if (!isValidHex(v)) {
+                    hex.value = picker.value.toUpperCase();
+                } else {
+                    hex.value = v.toUpperCase();
+                    picker.value = v.toUpperCase();
+                }
+            });
+        }
+
+        function applyThemeValues(values) {
+            var map = [
+                { picker: 'themePrimaryPicker', hex: 'themePrimaryHex', value: values.primary },
+                { picker: 'themeAccentPicker', hex: 'themeAccentHex', value: values.accent },
+                { picker: 'themeSidebarBgPicker', hex: 'themeSidebarBgHex', value: values.sidebarBg },
+                { picker: 'themeSidebarTextPicker', hex: 'themeSidebarTextHex', value: values.sidebarText },
+            ];
+            map.forEach(function (item) {
+                var p = document.getElementById(item.picker);
+                var h = document.getElementById(item.hex);
+                if (p) p.value = item.value;
+                if (h) h.value = item.value.toUpperCase();
+            });
+        }
+
+        bindColorAndHex('themePrimaryPicker', 'themePrimaryHex');
+        bindColorAndHex('themeAccentPicker', 'themeAccentHex');
+        bindColorAndHex('themeSidebarBgPicker', 'themeSidebarBgHex');
+        bindColorAndHex('themeSidebarTextPicker', 'themeSidebarTextHex');
+
+        document.querySelectorAll('.theme-preset-card').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                applyThemeValues({
+                    primary: btn.getAttribute('data-primary'),
+                    accent: btn.getAttribute('data-accent'),
+                    sidebarBg: btn.getAttribute('data-sidebar-bg'),
+                    sidebarText: btn.getAttribute('data-sidebar-text'),
+                });
+            });
+        });
+
+        var resetBtn = document.getElementById('themeResetDefault');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function () {
+                applyThemeValues({
+                    primary: '#2563EB',
+                    accent: '#0EA5E9',
+                    sidebarBg: '#FFFFFF',
+                    sidebarText: '#1E40AF',
+                });
+            });
+        }
     </script>
 @endsection

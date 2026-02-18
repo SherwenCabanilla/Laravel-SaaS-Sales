@@ -26,7 +26,7 @@
                         {{ $companyInitials }}
                     @endif
                 </div>
-                <span style="font-weight: 700; color: #1E40AF;">{{ $companyName }}</span>
+                <span style="font-weight: 800; color: var(--theme-primary, #2563EB);">{{ $companyName }}</span>
             </div>
         </div>
     </div>
