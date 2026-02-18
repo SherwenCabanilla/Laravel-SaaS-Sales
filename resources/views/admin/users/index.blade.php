@@ -13,12 +13,6 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div style="background-color: #d1fae5; color: #065f46; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <div class="card">
         <h3>Users List</h3>
         <table>
@@ -28,6 +22,7 @@
                     <th>Email</th>
                     <th>Tenant</th>
                     <th>Role</th>
+                    <th>Status</th>
                     <th>Date Added</th>
                     <th>Actions</th>
                 </tr>

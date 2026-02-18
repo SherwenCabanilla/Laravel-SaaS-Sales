@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -49,7 +48,11 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhereHas('roles', function ($roleQuery) use ($search) {
+                      $roleQuery->where('name', 'like', "%{$search}%")
+                          ->orWhere('slug', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -81,26 +84,43 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+            'password' => [
+                'required',
+                'string',
+                'min:12',
+                'max:14',
+                'regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[^A-Za-z0-9]/',
+                'confirmed',
+            ],
             'role' => 'required|exists:roles,slug',
+        ], [
+            'password.regex' => 'Password must contain uppercase, lowercase, number, and a special character.',
         ]);
 
-        $tenantId = auth()->user()->tenant_id;
+        try {
+            $tenantId = auth()->user()->tenant_id;
 
-        // Create User
-        $user = User::create([
-            'tenant_id' => $tenantId,
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role, // Store slug directly (e.g. 'marketing-manager')
-        ]);
+            // Create User
+            $user = User::create([
+                'tenant_id' => $tenantId,
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $request->role, // Store slug directly (e.g. 'marketing-manager')
+                'status' => 'active',
+            ]);
 
-        // Attach Role
-        $role = Role::where('slug', $request->role)->first();
-        $user->roles()->attach($role);
+            // Attach Role
+            $role = Role::where('slug', $request->role)->first();
+            $user->roles()->attach($role);
 
-        return redirect()->route('users.index')->with('success', 'User added successfully.');
+            return redirect()->route('users.index')->with('success', 'Added Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Added Failed');
+        }
     }
 
     /**
@@ -114,11 +134,39 @@ class UserController extends Controller
         }
 
         if ($user->id === auth()->id()) {
-            return redirect()->back()->with('error', 'You cannot delete yourself.');
+            return redirect()->back()->with('error', 'Deleted Failed. You cannot delete yourself.');
         }
 
-        $user->delete();
+        try {
+            $user->delete();
+            return redirect()->back()->with('success', 'Deleted Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Deleted Failed');
+        }
+    }
 
-        return redirect()->back()->with('success', 'User deleted successfully.');
+    public function toggleOwnerStatus(Request $request, User $user)
+    {
+        if (!$user->hasRole('account-owner')) {
+            return redirect()->back()->with('error', 'Edited Failed. Only Account Owner accounts can be updated.');
+        }
+
+        if ($user->status === 'active') {
+            $validated = $request->validate([
+                'suspension_reason' => 'required|string|max:255',
+            ]);
+
+            $user->update([
+                'status' => 'inactive',
+                'suspension_reason' => $validated['suspension_reason'],
+            ]);
+        } else {
+            $user->update([
+                'status' => 'active',
+                'suspension_reason' => null,
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Edited Successfully');
     }
 }

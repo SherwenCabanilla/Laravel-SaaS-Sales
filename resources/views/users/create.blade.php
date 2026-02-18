@@ -55,19 +55,26 @@
                 @error('password')
                     <span style="color: red; font-size: 12px;">{{ $message }}</span>
                 @enderror
+                <p style="margin-top: 6px; color: #475569; font-size: 12px; font-weight: 600;">
+                    12-14 characters with uppercase, lowercase, number, and special character.
+                </p>
 
                 <script>
                     const togglePassword = document.querySelector('#togglePassword');
                     const password = document.querySelector('#password');
                 
-                    togglePassword.addEventListener('click', function (e) {
-                        // toggle the type attribute
+                    togglePassword.addEventListener('click', function () {
                         const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
                         password.setAttribute('type', type);
-                        // toggle the eye slash icon
                         this.classList.toggle('fa-eye-slash');
                     });
                 </script>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="password_confirmation" style="display: block; margin-bottom: 8px; font-weight: bold;">Confirm Password</label>
+                <input type="password" name="password_confirmation" id="password_confirmation" required 
+                    style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;">
             </div>
 
             <div style="display: flex; gap: 10px;">

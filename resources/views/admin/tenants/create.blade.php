@@ -69,6 +69,15 @@
                 @error('admin_password')
                     <span style="color: red; font-size: 12px;">{{ $message }}</span>
                 @enderror
+                <p style="margin-top: 6px; color: #475569; font-size: 12px; font-weight: 600;">
+                    12-14 characters with uppercase, lowercase, number, and special character.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label for="admin_password_confirmation" style="display: block; margin-bottom: 8px; font-weight: bold;">Confirm Admin Password</label>
+                <input type="password" name="admin_password_confirmation" id="admin_password_confirmation" required
+                    style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;">
             </div>
 
             <script>

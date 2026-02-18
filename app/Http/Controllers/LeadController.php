@@ -40,6 +40,7 @@ class LeadController extends Controller
         $user = auth()->user();
 
         $query = Lead::where('tenant_id', $user->tenant_id)->with('assignedAgent');
+        $pipelineSearch = trim((string) $request->get('pipeline_search', ''));
 
         if ($user->hasRole('sales-agent')) {
             $query->where('assigned_to', $user->id);
@@ -56,7 +57,7 @@ class LeadController extends Controller
         }
 
         $leads = $query->latest()->paginate(10);
-        $pipelineLeads = $this->buildPipelineLeads(clone $query);
+        $pipelineLeads = $this->buildPipelineLeads(clone $query, $pipelineSearch);
         $assignableAgents = $this->getAssignableAgents($user->tenant_id);
 
         if ($request->ajax()) {
@@ -68,6 +69,7 @@ class LeadController extends Controller
             'pipelineStatuses' => Lead::PIPELINE_STATUSES,
             'pipelineLeads' => $pipelineLeads,
             'assignableAgents' => $assignableAgents,
+            'pipelineSearch' => $pipelineSearch,
         ]);
     }
 
@@ -90,24 +92,30 @@ class LeadController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'email' => 'required|email|max:150',
-            'phone' => 'nullable|string|max:50',
+            'phone' => ['required', 'regex:/^09\d{9}$/'],
             'status' => ['required', Rule::in(array_keys(Lead::PIPELINE_STATUSES))],
-            'assigned_to' => 'nullable|integer',
+            'assigned_to' => 'required|integer',
+        ], [
+            'phone.regex' => 'Phone number must be a valid Philippine mobile number (09XXXXXXXXX).',
         ]);
 
-        $assignedTo = $this->normalizeAssignee($validated['assigned_to'] ?? null, $user);
+        try {
+            $assignedTo = $this->normalizeAssignee($validated['assigned_to'] ?? null, $user);
 
-        Lead::create([
-            'tenant_id' => $user->tenant_id,
-            'assigned_to' => $assignedTo,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $validated['phone'] ?? null,
-            'status' => $validated['status'],
-            'score' => 0,
-        ]);
+            Lead::create([
+                'tenant_id' => $user->tenant_id,
+                'assigned_to' => $assignedTo,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'],
+                'status' => $validated['status'],
+                'score' => 0,
+            ]);
 
-        return redirect()->route('leads.index')->with('success', 'Lead created successfully.');
+            return redirect()->route('leads.index')->with('success', 'Added Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Added Failed');
+        }
     }
 
     public function edit(Lead $lead)
@@ -129,25 +137,34 @@ class LeadController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:150',
             'email' => 'required|email|max:150',
-            'phone' => 'nullable|string|max:50',
+            'phone' => ['required', 'regex:/^09\d{9}$/'],
             'status' => ['required', Rule::in(array_keys(Lead::PIPELINE_STATUSES))],
             'score' => 'nullable|integer|min:0',
-            'assigned_to' => 'nullable|integer',
+            'assigned_to' => 'required|integer',
+        ], [
+            'phone.regex' => 'Phone number must be a valid Philippine mobile number (09XXXXXXXXX).',
         ]);
 
-        $validated['assigned_to'] = $this->normalizeAssignee($validated['assigned_to'] ?? null, $user, $lead->assigned_to);
-        $lead->update($validated);
+        try {
+            $validated['assigned_to'] = $this->normalizeAssignee($validated['assigned_to'] ?? null, $user, $lead->assigned_to);
+            $lead->update($validated);
 
-        return redirect()->route('leads.index')->with('success', 'Lead updated successfully.');
+            return redirect()->route('leads.index')->with('success', 'Edited Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Edited Failed');
+        }
     }
 
     public function destroy(Lead $lead)
     {
         $this->ensureTenantLeadAccess($lead);
 
-        $lead->delete();
-
-        return redirect()->back()->with('success', 'Lead deleted successfully.');
+        try {
+            $lead->delete();
+            return redirect()->back()->with('success', 'Deleted Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Deleted Failed');
+        }
     }
 
     public function assign(Request $request, Lead $lead)
@@ -159,11 +176,15 @@ class LeadController extends Controller
             'assigned_to' => 'nullable|integer',
         ]);
 
-        $lead->update([
-            'assigned_to' => $this->normalizeAssignee($validated['assigned_to'] ?? null, auth()->user(), null, true),
-        ]);
+        try {
+            $lead->update([
+                'assigned_to' => $this->normalizeAssignee($validated['assigned_to'] ?? null, auth()->user(), null, true),
+            ]);
 
-        return redirect()->back()->with('success', 'Lead assignment updated.');
+            return redirect()->back()->with('success', 'Edited Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Edited Failed');
+        }
     }
 
     public function storeActivity(Request $request, Lead $lead)
@@ -180,7 +201,7 @@ class LeadController extends Controller
             'notes' => $request->notes,
         ]);
 
-        return redirect()->back()->with('success', 'Activity added.');
+        return redirect()->back()->with('success', 'Added Successfully');
     }
 
     public function logEmail(Request $request, Lead $lead)
@@ -197,7 +218,7 @@ class LeadController extends Controller
             'notes' => 'Subject: ' . $request->subject,
         ]);
 
-        return redirect()->back()->with('success', 'Email activity logged.');
+        return redirect()->back()->with('success', 'Added Successfully');
     }
 
     public function applyScoreEvent(Request $request, Lead $lead)
@@ -227,7 +248,7 @@ class LeadController extends Controller
             'notes' => $eventLabels[$validated['event']] . " (+{$points} points)",
         ]);
 
-        return redirect()->back()->with('success', 'Lead score updated.');
+        return redirect()->back()->with('success', 'Edited Successfully');
     }
 
     private function ensureTenantLeadAccess(Lead $lead): void
@@ -304,13 +325,17 @@ class LeadController extends Controller
         return $requestedAssignee;
     }
 
-    private function buildPipelineLeads($baseQuery): array
+    private function buildPipelineLeads($baseQuery, string $pipelineSearch = ''): array
     {
+        if ($pipelineSearch !== '') {
+            $baseQuery->where('name', 'like', "%{$pipelineSearch}%");
+        }
+
         $leads = $baseQuery->orderByDesc('updated_at')->get();
         $grouped = [];
 
         foreach (array_keys(Lead::PIPELINE_STATUSES) as $status) {
-            $grouped[$status] = $leads->where('status', $status)->take(8)->values();
+            $grouped[$status] = $leads->where('status', $status)->take(12)->values();
         }
 
         return $grouped;

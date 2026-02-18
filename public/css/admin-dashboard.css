@@ -152,6 +152,11 @@ body {
     line-height: 1.2;
 }
 
+.account-details .account-role {
+    font-weight: 700;
+    color: #1E40AF;
+}
+
 .sidebar.collapsed .account-details {
     display: none;
 }
@@ -324,6 +329,10 @@ table th {
     font-weight: 600;
 }
 
+table tbody td {
+    font-weight: 700;
+}
+
 table tr:last-child td {
     border-bottom: none;
 }
@@ -358,6 +367,73 @@ table tr:hover {
 
 .actions button:hover {
     background-color: #1E40AF;
+}
+
+.btn-create {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    background-color: #2563EB;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-create:hover {
+    background-color: #1E40AF;
+}
+
+.status-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1200;
+}
+
+.status-modal {
+    background: #fff;
+    border-radius: 10px;
+    width: min(92vw, 460px);
+    padding: 20px;
+    border: 1px solid #DBEAFE;
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.22);
+}
+
+.status-modal h4 {
+    margin-bottom: 8px;
+}
+
+.status-modal p {
+    font-size: 14px;
+    line-height: 1.45;
+    margin-bottom: 14px;
+    color: #1F2937;
+    font-weight: 600;
+}
+
+.status-modal.success h4 {
+    color: #047857;
+}
+
+.status-modal.error h4 {
+    color: #B91C1C;
+}
+
+.status-modal button {
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    background: #1E40AF;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
 }
 
 /* ============================= */

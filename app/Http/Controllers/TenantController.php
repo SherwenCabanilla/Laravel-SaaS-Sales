@@ -46,36 +46,53 @@ class TenantController extends Controller
             'status' => 'required|in:active,inactive,trial',
             'admin_name' => 'required|string|max:255',
             'admin_email' => 'required|email|max:255|unique:users,email',
-            'admin_password' => 'required|string|min:8',
+            'admin_password' => [
+                'required',
+                'string',
+                'min:12',
+                'max:14',
+                'regex:/[a-z]/',
+                'regex:/[A-Z]/',
+                'regex:/[0-9]/',
+                'regex:/[^A-Za-z0-9]/',
+                'confirmed',
+            ],
+        ], [
+            'admin_password.regex' => 'Password must contain uppercase, lowercase, number, and a special character.',
         ]);
 
-        DB::transaction(function () use ($validated) {
-            // 1. Create Tenant
-            $tenant = Tenant::create([
-                'company_name' => $validated['company_name'],
-                'subscription_plan' => $validated['subscription_plan'],
-                'status' => $validated['status'],
-            ]);
+        try {
+            DB::transaction(function () use ($validated) {
+                // 1. Create Tenant
+                $tenant = Tenant::create([
+                    'company_name' => $validated['company_name'],
+                    'subscription_plan' => $validated['subscription_plan'],
+                    'status' => $validated['status'],
+                ]);
 
-            // 2. Create Admin User
-            $user = User::create([
-                'tenant_id' => $tenant->id,
-                'name' => $validated['admin_name'],
-                'email' => $validated['admin_email'],
-                'password' => Hash::make($validated['admin_password']),
-                'role' => 'account-owner', // consistent with role slug
-            ]);
+                // 2. Create Admin User
+                $user = User::create([
+                    'tenant_id' => $tenant->id,
+                    'name' => $validated['admin_name'],
+                    'email' => $validated['admin_email'],
+                    'password' => Hash::make($validated['admin_password']),
+                    'role' => 'account-owner', // consistent with role slug
+                    'status' => 'active',
+                ]);
 
-            // 3. Attach Role (if using pivot table)
-            // Ensure Role model has 'account-owner' slug from seeder
-            $role = Role::where('slug', 'account-owner')->first();
-            if ($role) {
-                $user->roles()->attach($role);
-            }
-        });
+                // 3. Attach Role (if using pivot table)
+                // Ensure Role model has 'account-owner' slug from seeder
+                $role = Role::where('slug', 'account-owner')->first();
+                if ($role) {
+                    $user->roles()->attach($role);
+                }
+            });
 
-        return redirect()->route('admin.tenants.index')
-            ->with('success', 'Tenant and Admin User created successfully.');
+            return redirect()->route('admin.tenants.index')
+                ->with('success', 'Added Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Added Failed');
+        }
     }
 
     public function edit(Tenant $tenant)
@@ -91,17 +108,25 @@ class TenantController extends Controller
             'status' => 'required|in:active,inactive,trial',
         ]);
 
-        $tenant->update($validated);
+        try {
+            $tenant->update($validated);
 
-        return redirect()->route('admin.tenants.index')
-            ->with('success', 'Tenant updated successfully.');
+            return redirect()->route('admin.tenants.index')
+                ->with('success', 'Edited Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Edited Failed');
+        }
     }
 
     public function destroy(Tenant $tenant)
     {
-        $tenant->delete();
+        try {
+            $tenant->delete();
 
-        return redirect()->route('admin.tenants.index')
-            ->with('success', 'Tenant deleted successfully.');
+            return redirect()->route('admin.tenants.index')
+                ->with('success', 'Deleted Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Deleted Failed');
+        }
     }
 }

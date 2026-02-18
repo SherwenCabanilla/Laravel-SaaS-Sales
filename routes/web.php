@@ -24,6 +24,7 @@ Route::middleware(['auth', 'role:super-admin'])->group(function () {
     Route::delete('/admin/tenants/{tenant}', [TenantController::class, 'destroy'])->name('admin.tenants.destroy');
 
     Route::get('/admin/users', [UserController::class, 'adminIndex'])->name('admin.users.index');
+    Route::patch('/admin/users/{user}/status', [UserController::class, 'toggleOwnerStatus'])->name('admin.users.status');
     Route::get('/admin/leads', [LeadController::class, 'adminIndex'])->name('admin.leads.index');
 });
 

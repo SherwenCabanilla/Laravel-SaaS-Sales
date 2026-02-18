@@ -14,6 +14,22 @@
     <link rel="stylesheet" href="{{ asset('css/new_login.css') }}">
 </head>
 <body>
+    @if(session('success') || session('error'))
+        <div id="statusModal" style="position:fixed;inset:0;background:rgba(15,23,42,.35);display:flex;align-items:center;justify-content:center;z-index:9999;">
+            <div style="background:#fff;border-radius:10px;width:min(92vw,460px);padding:20px;border:1px solid #DBEAFE;box-shadow:0 16px 30px rgba(15,23,42,.22);">
+                <h4 style="margin-bottom:8px;color:{{ session('success') ? '#047857' : '#B91C1C' }};">
+                    {{ session('success') ? 'Success' : 'Error' }}
+                </h4>
+                <p style="font-size:14px;font-weight:600;line-height:1.45;margin-bottom:14px;">
+                    {{ session('success') ?? session('error') }}
+                </p>
+                <button type="button" onclick="document.getElementById('statusModal').style.display='none';" style="padding:8px 14px;border:none;border-radius:6px;background:#1E40AF;color:#fff;font-weight:600;cursor:pointer;">
+                    Close
+                </button>
+            </div>
+        </div>
+    @endif
+
     <div class="login-container">
         <!-- Left Info Panel -->
         <div class="info-panel">
@@ -34,10 +50,6 @@
 
             <h1>Login to Funnel System</h1>
             <p class="subtitle">Access your sales and marketing dashboard</p>
-
-            @if(session('error'))
-                <div class="error-message">{{ session('error') }}</div>
-            @endif
 
             <form method="POST" action="{{ route('login.post') }}">
                 @csrf

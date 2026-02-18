@@ -33,12 +33,15 @@
 
             <div style="margin-bottom: 20px;">
                 <label for="phone" style="display: block; margin-bottom: 8px; font-weight: bold;">Phone</label>
-                <input type="text" name="phone" id="phone"
+                <input type="text" name="phone" id="phone" required pattern="^09\d{9}$" maxlength="11" minlength="11" inputmode="numeric"
                     style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;"
                     value="{{ old('phone') }}">
                 @error('phone')
                     <span style="color: red; font-size: 12px;">{{ $message }}</span>
                 @enderror
+                <p style="margin-top: 6px; color: #475569; font-size: 12px; font-weight: 600;">
+                    Enter an 11-digit Philippine number starting with 09.
+                </p>
             </div>
 
             <div style="margin-bottom: 20px;">
@@ -54,9 +57,8 @@
             @if(auth()->user()->hasRole('account-owner') || auth()->user()->hasRole('marketing-manager'))
                 <div style="margin-bottom: 20px;">
                     <label for="assigned_to" style="display: block; margin-bottom: 8px; font-weight: bold;">Assign to Sales Agent</label>
-                    <select name="assigned_to" id="assigned_to"
+                    <select name="assigned_to" id="assigned_to" required
                         style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;">
-                        <option value="">Unassigned</option>
                         @foreach($assignableAgents as $agent)
                             <option value="{{ $agent->id }}" {{ (string) old('assigned_to') === (string) $agent->id ? 'selected' : '' }}>
                                 {{ $agent->name }}

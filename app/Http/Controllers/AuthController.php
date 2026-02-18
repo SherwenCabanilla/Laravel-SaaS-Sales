@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -29,34 +28,44 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             $user = auth()->user();
+            if ($user->status !== 'active') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                $reason = $user->suspension_reason ?: 'No reason provided.';
+                $message = "Login Failed. Your account has been temporarily suspended. Please contact support or your system administrator for assistance. Reason: {$reason} Support: nehemiah.solutions.corp@gmail.com";
+
+                return redirect()->route('login')->with('error', $message);
+            }
 
             // Redirect based on role
             if ($user->hasRole('super-admin')) {
-                return redirect()->intended('/admin/dashboard');
+                return redirect()->intended('/admin/dashboard')->with('success', 'Login Successfully');
             }
 
             if ($user->hasRole('account-owner')) {
-                return redirect()->intended(route('dashboard.owner'));
+                return redirect()->intended(route('dashboard.owner'))->with('success', 'Login Successfully');
             }
 
             if ($user->hasRole('marketing-manager')) {
-                return redirect()->intended(route('dashboard.marketing'));
+                return redirect()->intended(route('dashboard.marketing'))->with('success', 'Login Successfully');
             }
 
             if ($user->hasRole('sales-agent')) {
-                return redirect()->intended(route('dashboard.sales'));
+                return redirect()->intended(route('dashboard.sales'))->with('success', 'Login Successfully');
             }
 
             if ($user->hasRole('finance')) {
-                return redirect()->intended(route('dashboard.finance')); 
+                return redirect()->intended(route('dashboard.finance'))->with('success', 'Login Successfully');
             }
 
             // Fallback for any unassigned role
             Auth::logout();
-            return redirect()->route('login')->with('error', 'Your role does not have access.');
+            return redirect()->route('login')->with('error', 'Login Failed. Your role does not have access.');
         }
 
-        return back()->with('error', 'Invalid email or password.');
+        return back()->with('error', 'Login Failed. Invalid email or password.');
     }
 
     // Logout
@@ -65,6 +74,6 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect('/login');
+        return redirect('/login')->with('success', 'Logout Successfully');
     }
 }

@@ -14,7 +14,7 @@
         <td>{{ $lead->email }}</td>
         <td>
             @if($lead->tenant)
-                <span style="background-color: #F3F4F6; color: #374151; padding: 2px 6px; border-radius: 4px; font-size: 12px;">
+                <span style="background-color: #F3F4F6; color: #374151; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 700;">
                     {{ $lead->tenant->company_name }}
                 </span>
             @else

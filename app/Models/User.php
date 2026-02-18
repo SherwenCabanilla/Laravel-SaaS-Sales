@@ -51,6 +51,8 @@ class User extends Authenticatable
         'password',
         'tenant_id',
         'role',
+        'status',
+        'suspension_reason',
     ];
 
     /**

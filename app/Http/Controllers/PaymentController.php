@@ -47,14 +47,18 @@ class PaymentController extends Controller
             }
         }
 
-        Payment::create([
-            'tenant_id' => $user->tenant_id,
-            'lead_id' => $validated['lead_id'] ?? null,
-            'amount' => $validated['amount'],
-            'status' => $validated['status'],
-            'payment_date' => $validated['payment_date'],
-        ]);
+        try {
+            Payment::create([
+                'tenant_id' => $user->tenant_id,
+                'lead_id' => $validated['lead_id'] ?? null,
+                'amount' => $validated['amount'],
+                'status' => $validated['status'],
+                'payment_date' => $validated['payment_date'],
+            ]);
 
-        return redirect()->route('payments.index')->with('success', 'Payment recorded successfully.');
+            return redirect()->route('payments.index')->with('success', 'Added Successfully');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Added Failed');
+        }
     }
 }

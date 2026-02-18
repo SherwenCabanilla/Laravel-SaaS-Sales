@@ -18,9 +18,11 @@ class DashboardController extends Controller
             ->whereMonth('created_at', now()->month)
             ->count();
 
-        $wonCount = Lead::where('tenant_id', $tenantId)->where('status', 'closed_won')->count();
+        $wonCount = Lead::where('tenant_id', $tenantId)
+            ->whereIn('status', ['closed_won', 'Closed Won', 'closed won'])
+            ->count();
         $closedCount = Lead::where('tenant_id', $tenantId)
-            ->whereIn('status', ['closed_won', 'closed_lost'])
+            ->whereIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
             ->count();
         $conversionRate = $closedCount > 0 ? round(($wonCount / $closedCount) * 100, 1) : 0;
 

@@ -7,12 +7,6 @@
         <h1>Payment Tracking</h1>
     </div>
 
-    @if(session('success'))
-        <div style="background-color: #d1fae5; color: #065f46; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
         <div class="card">
             <h3>Record Payment</h3>

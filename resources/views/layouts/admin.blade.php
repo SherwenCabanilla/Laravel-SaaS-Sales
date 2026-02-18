@@ -12,6 +12,10 @@
     @yield('styles')
 </head>
 <body>
+    @php
+        $primaryRole = auth()->user()->roles->first();
+        $roleLabel = $primaryRole ? $primaryRole->name : ucwords(str_replace('-', ' ', auth()->user()->role ?? 'User'));
+    @endphp
 
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
@@ -104,6 +108,7 @@
                 <div class="account-details">
                     <strong>{{ auth()->user()->name }}</strong>
                     <small>{{ auth()->user()->email }}</small>
+                    <small class="account-role">{{ $roleLabel }}</small>
                 </div>
 
                 <div class="account-menu">
@@ -163,6 +168,16 @@
             });
         }
     </script>
+
+    @if(session('success') || session('error'))
+        <div id="statusModal" class="status-modal-overlay">
+            <div class="status-modal {{ session('success') ? 'success' : 'error' }}">
+                <h4>{{ session('success') ? 'Success' : 'Error' }}</h4>
+                <p>{{ session('success') ?? session('error') }}</p>
+                <button type="button" onclick="document.getElementById('statusModal').style.display='none';">Close</button>
+            </div>
+        </div>
+    @endif
     @yield('scripts')
 </body>
 </html>

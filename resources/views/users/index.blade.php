@@ -8,9 +8,7 @@
     </div>
 
     <div class="actions" style="display: flex; justify-content: space-between; align-items: center;">
-        <a href="{{ route('users.create') }}" class="btn-create">
-            <button><i class="fas fa-plus"></i> Add Team Member</button>
-        </a>
+        <a href="{{ route('users.create') }}" class="btn-create"><i class="fas fa-plus"></i> Add Team Member</a>
 
         <!-- Live Search Input -->
         <div class="search-box">
@@ -18,17 +16,6 @@
                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
         </div>
     </div>
-
-    @if(session('success'))
-        <div style="background-color: #d1fae5; color: #065f46; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
-            {{ session('success') }}
-        </div>
-    @endif
-    @if(session('error'))
-        <div style="background-color: #fee2e2; color: #991b1b; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
-            {{ session('error') }}
-        </div>
-    @endif
 
     <div class="card">
         <h3>Team Members</h3>
