@@ -21,6 +21,11 @@ class UserController extends Controller
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('status', 'like', "%{$search}%")
+                  ->orWhereHas('roles', function ($roleQuery) use ($search) {
+                      $roleQuery->where('name', 'like', "%{$search}%")
+                          ->orWhere('slug', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('tenant', function($tq) use ($search) {
                       $tq->where('company_name', 'like', "%{$search}%");
                   });

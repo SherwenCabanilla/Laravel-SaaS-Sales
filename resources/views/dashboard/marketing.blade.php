@@ -35,7 +35,7 @@
     <div class="kpi-cards">
         <div class="card">
             <h3>Leads Generated (All)</h3>
-            <p>{{ (int) $sourceBreakdown->sum('total') }}</p>
+            <p>{{ (int) $sourceBreakdownChart->sum('total') }}</p>
         </div>
         <div class="card">
             <h3>MQL Volume</h3>
@@ -84,6 +84,9 @@
                 @endforelse
             </tbody>
         </table>
+        <div style="margin-top: 16px;">
+            {{ $sourceBreakdown->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 @endsection
 
@@ -110,10 +113,10 @@
         new Chart(sourceCtx, {
             type: 'bar',
             data: {
-                labels: @json($sourceBreakdown->pluck('source_label')->values()),
+                labels: @json($sourceBreakdownChart->pluck('source_label')->values()),
                 datasets: [{
                     label: 'Leads',
-                    data: @json($sourceBreakdown->pluck('total')->values()),
+                    data: @json($sourceBreakdownChart->pluck('total')->values()),
                     backgroundColor: '#2563EB'
                 }]
             },

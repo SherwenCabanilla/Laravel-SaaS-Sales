@@ -112,6 +112,9 @@
                 @endforelse
             </tbody>
         </table>
+        <div style="margin-top: 16px;">
+            {{ $teamActivity->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 @endsection
 

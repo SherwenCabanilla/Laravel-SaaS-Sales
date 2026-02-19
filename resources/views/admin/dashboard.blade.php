@@ -96,6 +96,9 @@
                 @endforelse
             </tbody>
         </table>
+        <div style="margin-top: 16px;">
+            {{ $actionableTenants->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 @endsection
 

@@ -86,6 +86,9 @@
                 @endforelse
             </tbody>
         </table>
+        <div style="margin-top: 16px;">
+            {{ $pendingInvoices->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 @endsection
 

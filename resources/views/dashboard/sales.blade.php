@@ -76,6 +76,9 @@
                     @endforelse
                 </tbody>
             </table>
+            <div style="margin-top: 12px;">
+                {{ $overdueLeads->links('pagination::bootstrap-4') }}
+            </div>
         </div>
     </div>
 
@@ -103,6 +106,9 @@
                 @endforelse
             </tbody>
         </table>
+        <div style="margin-top: 16px;">
+            {{ $myRecentLeads->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 @endsection
 

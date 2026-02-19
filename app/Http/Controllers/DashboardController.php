@@ -55,8 +55,7 @@ class DashboardController extends Controller
                 $query->where('tenant_id', $tenantId);
             })
             ->latest()
-            ->take(8)
-            ->get();
+            ->paginate(8, ['*'], 'activity_page');
 
         return view('dashboard.account-owner', compact(
             'leadsThisMonth',
@@ -75,11 +74,17 @@ class DashboardController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $sourceBreakdown = Lead::selectRaw("COALESCE(NULLIF(source_campaign, ''), 'Unspecified') as source_label, COUNT(*) as total")
+        $sourceBreakdownChart = Lead::selectRaw("COALESCE(NULLIF(source_campaign, ''), 'Unspecified') as source_label, COUNT(*) as total")
             ->where('tenant_id', $tenantId)
             ->groupBy('source_label')
             ->orderByDesc('total')
             ->get();
+
+        $sourceBreakdown = Lead::selectRaw("COALESCE(NULLIF(source_campaign, ''), 'Unspecified') as source_label, COUNT(*) as total")
+            ->where('tenant_id', $tenantId)
+            ->groupBy('source_label')
+            ->orderByDesc('total')
+            ->paginate(8, ['*'], 'source_page');
 
         $mqlThreshold = 20;
         $mqlCount = Lead::where('tenant_id', $tenantId)->where('score', '>=', $mqlThreshold)->count();
@@ -103,6 +108,7 @@ class DashboardController extends Controller
 
         return view('dashboard.marketing', compact(
             'sourceBreakdown',
+            'sourceBreakdownChart',
             'mqlCount',
             'avgLeadScore',
             'trendLabels',
@@ -127,16 +133,20 @@ class DashboardController extends Controller
             ->whereNotIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
             ->where('updated_at', '<', now()->copy()->subDays(3))
             ->latest('updated_at')
-            ->take(8)
-            ->get(['id', 'name', 'status', 'updated_at']);
+            ->paginate(8, ['id', 'name', 'status', 'updated_at'], 'overdue_page');
 
-        $overdueFollowUpsCount = $overdueLeads->count();
+        $overdueFollowUpsCount = (clone $assignedLeadsQuery)
+            ->whereNotIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
+            ->where('updated_at', '<', now()->copy()->subDays(3))
+            ->count();
 
         $todayTaskCount = LeadActivity::whereHas('lead', function ($query) use ($user) {
             $query->where('tenant_id', $user->tenant_id)->where('assigned_to', $user->id);
         })->whereDate('created_at', now()->toDateString())->count();
 
-        $myRecentLeads = (clone $assignedLeadsQuery)->latest()->take(8)->get(['id', 'name', 'status', 'updated_at']);
+        $myRecentLeads = (clone $assignedLeadsQuery)
+            ->latest()
+            ->paginate(8, ['id', 'name', 'status', 'updated_at'], 'recent_page');
 
         return view('dashboard.sales', compact(
             'myAssignedLeadsCount',
@@ -185,8 +195,7 @@ class DashboardController extends Controller
             ->where('tenant_id', $tenantId)
             ->where('status', 'pending')
             ->orderBy('payment_date')
-            ->take(10)
-            ->get(['id', 'lead_id', 'amount', 'payment_date']);
+            ->paginate(10, ['id', 'lead_id', 'amount', 'payment_date'], 'pending_page');
 
         return view('dashboard.finance', compact(
             'statusAmounts',
@@ -209,8 +218,7 @@ class DashboardController extends Controller
 
         $recentPayments = Payment::where('tenant_id', $user->tenant_id)
             ->latest('payment_date')
-            ->take(8)
-            ->get(['id', 'amount', 'status', 'payment_date']);
+            ->paginate(8, ['id', 'amount', 'status', 'payment_date'], 'payments_page');
 
         return view('dashboard.customer', compact(
             'subscriptionStatus',
