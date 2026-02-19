@@ -74,3 +74,9 @@ Route::middleware(['auth', 'role:sales-agent,marketing-manager,account-owner,fin
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
 });
+
+Route::middleware(['auth', 'role:customer'])->group(function () {
+    Route::get('/dashboard/customer', function () {
+        return view('dashboard.customer');
+    })->name('dashboard.customer');
+});

@@ -16,17 +16,18 @@
 
 @section('content')
     <div class="top-header">
-        <div>
-            <h1>Welcome, {{ auth()->user()->name }}</h1>
-            <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
-                <div style="width: 32px; height: 32px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; background: {{ $companyBg }};">
-                    @if(optional(auth()->user()->tenant)->logo_path)
-                        <img src="{{ asset('storage/' . auth()->user()->tenant->logo_path) }}" alt="Company Logo" style="width: 100%; height: 100%; object-fit: cover;">
-                    @else
-                        {{ $companyInitials }}
-                    @endif
-                </div>
-                <span style="font-weight: 700; color: #1E40AF;">{{ $companyName }}</span>
+        <h1>Welcome, {{ auth()->user()->name }}</h1>
+        <div class="company-chip">
+            <div class="company-chip-avatar" style="background: {{ $companyBg }};">
+                @if(optional(auth()->user()->tenant)->logo_path)
+                    <img src="{{ asset('storage/' . auth()->user()->tenant->logo_path) }}" alt="Company Logo">
+                @else
+                    {{ $companyInitials }}
+                @endif
+            </div>
+            <div class="company-chip-content">
+                <span class="company-chip-label">Company</span>
+                <span class="company-chip-name">{{ $companyName }}</span>
             </div>
         </div>
     </div>

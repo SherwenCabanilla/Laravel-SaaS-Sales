@@ -64,6 +64,70 @@ Deliver a platform that:
 - [ ] Trial management
 - [ ] Subscription billing controls
 
+## Completed Today (2026-02-18)
+- [x] Updated role dashboards (`account-owner`, `marketing-manager`, `sales-agent`, `finance`) to show company badge/name right-aligned beside the welcome header.
+- [x] Standardized reusable header company chip styles in `public/css/admin-dashboard.css` for consistent desktop/mobile alignment.
+- [x] Verified Super Admin `Active Tenants` KPI logic: it counts `tenants.status = active` (not active account-owner users).
+
+## Detailed Updates (2026-02-18)
+
+### Profile and Account UX
+- [x] Replaced Account Owner text with company badge in `resources/views/dashboard/account-owner.blade.php`:
+  company logo if uploaded, otherwise auto-colored initials fallback.
+- [x] Added full Manage Profile page for all roles in `resources/views/profile/show.blade.php`:
+  editable name/phone/secondary phone, read-only email/role, password change section, profile picture upload/delete, static notification toggle, last login, account created date, and company block (with Account Owner company-logo upload/delete).
+- [x] Updated sidebar Manage Profile link in `resources/views/layouts/admin.blade.php` to `route('profile.show')`.
+- [x] Added sidebar avatar behavior in `resources/views/layouts/admin.blade.php` + `public/css/admin-dashboard.css`:
+  uploaded photo or initials with auto-generated color fallback.
+- [x] Improved sidebar account spacing in `public/css/admin-dashboard.css`:
+  changed `.account-info` to `justify-content: flex-start`, made `.account-details` flexible, and pushed three-dot menu right via `margin-left: auto`.
+
+### Backend and Routing
+- [x] Added `ProfileController.php` and profile routes in `routes/web.php`.
+- [x] Updated login flow in `app/Http/Controllers/AuthController.php` to store `last_login_at`.
+- [x] Updated model fields in `app/Models/User.php` and `app/Models/Tenant.php`.
+- [x] Added migrations:
+  `2026_02_18_000002_add_profile_fields_to_users_table.php`
+  `2026_02_18_000003_add_logo_path_to_tenants_table.php`
+  `2026_02_18_000001_add_suspension_reason_to_users_table.php`
+
+### Notifications and Feedback UI
+- [x] Switched notifications to toast-style cards with heading/icon/close button and 4-second auto-close.
+- [x] Updated:
+  `resources/views/layouts/admin.blade.php`
+  `resources/views/auth/login.blade.php`
+  `public/css/admin-dashboard.css`
+
+### Forms, Validation, and Data Rules
+- [x] Removed underline in Add actions by replacing nested `<a><button>` patterns with styled `.btn-create` links/buttons in index pages and `public/css/admin-dashboard.css`.
+- [x] Fixed Account Owner team role search by adding role name/slug filtering in `app/Http/Controllers/UserController.php`.
+- [x] Standardized bold data emphasis in table/body rows and role/status badges across `_rows.blade.php` partials and `public/css/admin-dashboard.css`.
+- [x] Standardized password policy for account creation (Super Admin + Account Owner) in:
+  `app/Http/Controllers/TenantController.php`
+  `app/Http/Controllers/UserController.php`
+  with confirm-password fields in create forms.
+- [x] Enforced required lead/account form fields and stricter lead creation/edit validation in:
+  `app/Http/Controllers/LeadController.php`
+  `resources/views/leads/create.blade.php`
+  `resources/views/leads/edit.blade.php`
+- [x] Enforced Philippine phone format (`^09\d{9}$`, exactly 11 digits) in lead and profile flows.
+
+### Pipeline, Role Controls, and Dashboard Logic
+- [x] Enhanced lead pipeline UX:
+  scrollable columns, lead-name search/filter, latest-12 card limit per status, plus View Lead Pipeline and Assign Lead toggles.
+- [x] Added Super Admin Account Owner activate/deactivate controls with suspension reason and blocked-login messaging:
+  route `admin.users.status`, controller action `UserController@toggleOwnerStatus`, admin users UI updates, and login blocking in `AuthController.php`.
+- [x] Hardened Account Owner conversion-rate logic in `app/Http/Controllers/DashboardController.php` to handle status variants (`closed_won`, `Closed Won`, etc.).
+- [x] Standardized success/failure messages across key controllers:
+  `AuthController.php`, `UserController.php`, `TenantController.php`, `LeadController.php`, `PaymentController.php`.
+
+### Validation and Run Commands
+- [x] PHP syntax validation completed (`php -l`) for modified PHP files.
+- [ ] Required command: `php artisan migrate`
+- [ ] Required command (if not linked): `php artisan storage:link`
+
+------
+
 ## Modules and Scope
 
 ### 1. Multi-Tenant Permission System
@@ -72,7 +136,7 @@ Deliver a platform that:
 - [x] Marketing Manager
 - [x] Sales Agent
 - [x] Finance
-- [ ] Customer role and portal
+- [x] Customer role and portal
 
 ### 2. Funnel Builder System
 - [ ] Drag-and-drop builder

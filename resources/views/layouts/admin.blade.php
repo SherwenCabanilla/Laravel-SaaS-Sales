@@ -52,7 +52,7 @@
                 </a>
             @endif
 
-            {{-- TENANT LINKS (Account Owner, Marketing, Sales, Finance) --}}
+            {{-- TENANT LINKS (Account Owner, Marketing, Sales, Finance, Customer) --}}
 
             {{-- Tenant Dashboards --}}
             @if(auth()->user()->hasRole('account-owner'))
@@ -75,6 +75,12 @@
 
             @if(auth()->user()->hasRole('finance'))
                 <a href="{{ route('dashboard.finance') }}" class="{{ request()->routeIs('dashboard.finance') ? 'active' : '' }}">
+                    <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+                </a>
+            @endif
+
+            @if(auth()->user()->hasRole('customer'))
+                <a href="{{ route('dashboard.customer') }}" class="{{ request()->routeIs('dashboard.customer') ? 'active' : '' }}">
                     <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
                 </a>
             @endif

@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Marketing Dashboard')
+@section('title', 'Customer Portal')
 
 @php
     $companyName = optional(auth()->user()->tenant)->company_name ?? 'No Company';
@@ -16,10 +16,7 @@
 
 @section('content')
     <div class="top-header">
-        <div>
-            <h1>Welcome, {{ auth()->user()->name }}</h1>
-            <p>This is your Marketing Dashboard.</p>
-        </div>
+        <h1>Welcome, {{ auth()->user()->name }}</h1>
         <div class="company-chip">
             <div class="company-chip-avatar" style="background: {{ $companyBg }};">
                 @if(optional(auth()->user()->tenant)->logo_path)
@@ -35,15 +32,28 @@
         </div>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h3>Campaign Overview</h3>
-        <p>Track your marketing funnels and lead generation.</p>
-        
-        <div style="margin-top: 20px;">
-             <!-- Static Placeholder Chart -->
-             <div style="background: #f9fafb; height: 200px; display: flex; align-items: center; justify-content: center; border: 2px dashed #d1d5db; border-radius: 6px;">
-                <span style="color: #6b7280;">Marketing Performance Chart Placeholder</span>
-             </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px;">
+        <div class="card">
+            <h3>Portal Role</h3>
+            <p style="font-size: 20px; font-weight: 700;">Customer</p>
         </div>
+        <div class="card">
+            <h3>Account Status</h3>
+            <p style="font-size: 20px; font-weight: 700;">{{ ucfirst(auth()->user()->status ?? 'active') }}</p>
+        </div>
+        <div class="card">
+            <h3>Last Login</h3>
+            <p style="font-size: 20px; font-weight: 700;">{{ optional(auth()->user()->last_login_at)->format('Y-m-d H:i') ?? 'N/A' }}</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Customer Portal</h3>
+        <p style="margin-bottom: 10px; color: #334155; font-weight: 600;">
+            Your portal access is active. Use Manage Profile from the account menu to update your personal details and password.
+        </p>
+        <p style="color: #334155; font-weight: 600;">
+            For billing and service inquiries, please contact your account manager or support.
+        </p>
     </div>
 @endsection

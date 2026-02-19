@@ -70,8 +70,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Get roles assignable by account owner: 'marketing-manager', 'sales-agent', 'finance'
-        $roles = Role::whereIn('slug', ['marketing-manager', 'sales-agent', 'finance'])->get();
+        // Get roles assignable by account owner
+        $roles = Role::whereIn('slug', ['marketing-manager', 'sales-agent', 'finance', 'customer'])->get();
 
         return view('users.create', compact('roles'));
     }

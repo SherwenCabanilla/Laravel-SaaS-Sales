@@ -63,6 +63,10 @@ class AuthController extends Controller
                 return redirect()->intended(route('dashboard.finance'))->with('success', 'Login Successfully');
             }
 
+            if ($user->hasRole('customer')) {
+                return redirect()->intended(route('dashboard.customer'))->with('success', 'Login Successfully');
+            }
+
             // Fallback for any unassigned role
             Auth::logout();
             return redirect()->route('login')->with('error', 'Login Failed. Your role does not have access.');
