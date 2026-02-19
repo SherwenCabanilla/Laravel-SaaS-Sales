@@ -16,10 +16,7 @@
 
 @section('content')
     <div class="top-header">
-        <div>
-            <h1>Welcome, {{ auth()->user()->name }}</h1>
-            <p>This is your Sales Dashboard.</p>
-        </div>
+        <h1>Welcome, {{ auth()->user()->name }}</h1>
         <div class="company-chip">
             <div class="company-chip-avatar" style="background: {{ $companyBg }};">
                 @if(optional(auth()->user()->tenant)->logo_path)
@@ -35,13 +32,103 @@
         </div>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h3>Your Leads</h3>
-        <p>View and manage your assigned leads.</p>
-        
-        <div style="margin-top: 20px; display: flex; gap: 20px; flex-wrap: wrap;">
-            <a href="{{ route('leads.index') }}" style="background: var(--theme-primary, #2563EB); color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 600;">View All Leads</a>
-            <a href="{{ route('leads.create') }}" style="background: var(--theme-accent, #0EA5E9); color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: 600;">Add New Lead</a>
+    <div class="kpi-cards">
+        <div class="card">
+            <h3>My Assigned Leads</h3>
+            <p>{{ $myAssignedLeadsCount }}</p>
+        </div>
+        <div class="card">
+            <h3>Overdue Follow-ups</h3>
+            <p>{{ $overdueFollowUpsCount }}</p>
+        </div>
+        <div class="card">
+            <h3>Today Tasks</h3>
+            <p>{{ $todayTaskCount }}</p>
         </div>
     </div>
+
+    <div class="charts">
+        <div class="chart">
+            <h3>My Pipeline Stage Counts</h3>
+            <canvas id="salesPipelineChart"></canvas>
+        </div>
+        <div class="chart">
+            <h3>Needs Action Now (Overdue Follow-ups)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Lead</th>
+                        <th>Status</th>
+                        <th>Last Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($overdueLeads as $lead)
+                        <tr>
+                            <td>{{ $lead->name }}</td>
+                            <td>{{ ucwords(str_replace('_', ' ', $lead->status)) }}</td>
+                            <td>{{ $lead->updated_at->format('Y-m-d H:i') }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3">No overdue follow-ups.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>My Recent Assigned Leads</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($myRecentLeads as $lead)
+                    <tr>
+                        <td>{{ $lead->name }}</td>
+                        <td>{{ ucwords(str_replace('_', ' ', $lead->status)) }}</td>
+                        <td>{{ $lead->updated_at->format('Y-m-d H:i') }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3">No assigned leads found.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+@endsection
+
+@section('scripts')
+    @php
+        $salesPipelineLabels = array_map(function ($status) {
+            return ucwords(str_replace('_', ' ', $status));
+        }, array_keys($pipelineStageCounts));
+    @endphp
+    <script>
+        const salesPipelineCtx = document.getElementById('salesPipelineChart').getContext('2d');
+        new Chart(salesPipelineCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($salesPipelineLabels),
+                datasets: [{
+                    label: 'Leads',
+                    data: @json(array_values($pipelineStageCounts)),
+                    backgroundColor: '#2563EB'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    </script>
 @endsection

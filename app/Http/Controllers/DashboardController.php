@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Lead;
+use App\Models\LeadActivity;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
 
@@ -12,36 +13,209 @@ class DashboardController extends Controller
     {
         $tenantId = auth()->user()->tenant_id;
 
-        $totalLeads = Lead::where('tenant_id', $tenantId)->count();
         $leadsThisMonth = Lead::where('tenant_id', $tenantId)
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
             ->count();
 
-        $wonCount = Lead::where('tenant_id', $tenantId)
-            ->whereIn('status', ['closed_won', 'Closed Won', 'closed won'])
-            ->count();
-        $closedCount = Lead::where('tenant_id', $tenantId)
-            ->whereIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
-            ->count();
+        $wonStatuses = ['closed_won', 'Closed Won', 'closed won'];
+        $lostStatuses = ['closed_lost', 'Closed Lost', 'closed lost'];
+
+        $wonCount = Lead::where('tenant_id', $tenantId)->whereIn('status', $wonStatuses)->count();
+        $lostCount = Lead::where('tenant_id', $tenantId)->whereIn('status', $lostStatuses)->count();
+        $closedCount = $wonCount + $lostCount;
         $conversionRate = $closedCount > 0 ? round(($wonCount / $closedCount) * 100, 1) : 0;
 
-        $leadsByStatus = Lead::select('status', DB::raw('COUNT(*) as total'))
+        $pipelineDistribution = Lead::select('status', DB::raw('COUNT(*) as total'))
             ->where('tenant_id', $tenantId)
             ->groupBy('status')
             ->pluck('total', 'status')
             ->all();
 
-        $revenueTotal = Payment::where('tenant_id', $tenantId)
-            ->where('status', 'paid')
-            ->sum('amount');
+        $openLeadQuery = Lead::where('tenant_id', $tenantId)
+            ->whereNotIn('status', array_merge($wonStatuses, $lostStatuses));
+
+        $pipelineAging = [
+            '0-7 days' => (clone $openLeadQuery)->where('created_at', '>=', now()->copy()->subDays(7))->count(),
+            '8-14 days' => (clone $openLeadQuery)
+                ->whereBetween('created_at', [now()->copy()->subDays(14), now()->copy()->subDays(8)])
+                ->count(),
+            '15+ days' => (clone $openLeadQuery)->where('created_at', '<', now()->copy()->subDays(14))->count(),
+        ];
+
+        $paymentStatusTotals = Payment::select('status', DB::raw('SUM(amount) as total'))
+            ->where('tenant_id', $tenantId)
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $revenueTotal = (float) ($paymentStatusTotals['paid'] ?? 0);
+
+        $teamActivity = LeadActivity::with(['lead:id,name'])
+            ->whereHas('lead', function ($query) use ($tenantId) {
+                $query->where('tenant_id', $tenantId);
+            })
+            ->latest()
+            ->take(8)
+            ->get();
 
         return view('dashboard.account-owner', compact(
-            'totalLeads',
             'leadsThisMonth',
+            'wonCount',
+            'lostCount',
             'conversionRate',
-            'leadsByStatus',
-            'revenueTotal'
+            'pipelineDistribution',
+            'pipelineAging',
+            'revenueTotal',
+            'paymentStatusTotals',
+            'teamActivity'
+        ));
+    }
+
+    public function marketing()
+    {
+        $tenantId = auth()->user()->tenant_id;
+
+        $sourceBreakdown = Lead::selectRaw("COALESCE(NULLIF(source_campaign, ''), 'Unspecified') as source_label, COUNT(*) as total")
+            ->where('tenant_id', $tenantId)
+            ->groupBy('source_label')
+            ->orderByDesc('total')
+            ->get();
+
+        $mqlThreshold = 20;
+        $mqlCount = Lead::where('tenant_id', $tenantId)->where('score', '>=', $mqlThreshold)->count();
+        $avgLeadScore = round((float) Lead::where('tenant_id', $tenantId)->avg('score'), 1);
+
+        $mqlTrendRaw = Lead::selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month_key, COUNT(*) as total")
+            ->where('tenant_id', $tenantId)
+            ->where('score', '>=', $mqlThreshold)
+            ->where('created_at', '>=', now()->copy()->subMonths(5)->startOfMonth())
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        $trendLabels = [];
+        $trendValues = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->copy()->subMonths($i);
+            $key = $month->format('Y-m');
+            $trendLabels[] = $month->format('M Y');
+            $trendValues[] = (int) ($mqlTrendRaw[$key] ?? 0);
+        }
+
+        return view('dashboard.marketing', compact(
+            'sourceBreakdown',
+            'mqlCount',
+            'avgLeadScore',
+            'trendLabels',
+            'trendValues',
+            'mqlThreshold'
+        ));
+    }
+
+    public function sales()
+    {
+        $user = auth()->user();
+        $assignedLeadsQuery = Lead::where('tenant_id', $user->tenant_id)->where('assigned_to', $user->id);
+
+        $myAssignedLeadsCount = (clone $assignedLeadsQuery)->count();
+        $pipelineStageCounts = (clone $assignedLeadsQuery)
+            ->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')
+            ->pluck('total', 'status')
+            ->all();
+
+        $overdueLeads = (clone $assignedLeadsQuery)
+            ->whereNotIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
+            ->where('updated_at', '<', now()->copy()->subDays(3))
+            ->latest('updated_at')
+            ->take(8)
+            ->get(['id', 'name', 'status', 'updated_at']);
+
+        $overdueFollowUpsCount = $overdueLeads->count();
+
+        $todayTaskCount = LeadActivity::whereHas('lead', function ($query) use ($user) {
+            $query->where('tenant_id', $user->tenant_id)->where('assigned_to', $user->id);
+        })->whereDate('created_at', now()->toDateString())->count();
+
+        $myRecentLeads = (clone $assignedLeadsQuery)->latest()->take(8)->get(['id', 'name', 'status', 'updated_at']);
+
+        return view('dashboard.sales', compact(
+            'myAssignedLeadsCount',
+            'pipelineStageCounts',
+            'overdueFollowUpsCount',
+            'todayTaskCount',
+            'overdueLeads',
+            'myRecentLeads'
+        ));
+    }
+
+    public function finance()
+    {
+        $tenantId = auth()->user()->tenant_id;
+
+        $statusAmounts = Payment::select('status', DB::raw('SUM(amount) as total'))
+            ->where('tenant_id', $tenantId)
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $statusCounts = Payment::select('status', DB::raw('COUNT(*) as total'))
+            ->where('tenant_id', $tenantId)
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $outstandingAmount = (float) ($statusAmounts['pending'] ?? 0);
+        $outstandingCount = (int) ($statusCounts['pending'] ?? 0);
+
+        $collectionTrendRaw = Payment::selectRaw("DATE_FORMAT(payment_date, '%Y-%m') as month_key, SUM(amount) as total")
+            ->where('tenant_id', $tenantId)
+            ->where('status', 'paid')
+            ->where('payment_date', '>=', now()->copy()->subMonths(5)->startOfMonth())
+            ->groupBy('month_key')
+            ->pluck('total', 'month_key');
+
+        $trendLabels = [];
+        $trendValues = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $month = now()->copy()->subMonths($i);
+            $key = $month->format('Y-m');
+            $trendLabels[] = $month->format('M Y');
+            $trendValues[] = (float) ($collectionTrendRaw[$key] ?? 0);
+        }
+
+        $pendingInvoices = Payment::with('lead:id,name')
+            ->where('tenant_id', $tenantId)
+            ->where('status', 'pending')
+            ->orderBy('payment_date')
+            ->take(10)
+            ->get(['id', 'lead_id', 'amount', 'payment_date']);
+
+        return view('dashboard.finance', compact(
+            'statusAmounts',
+            'statusCounts',
+            'outstandingAmount',
+            'outstandingCount',
+            'trendLabels',
+            'trendValues',
+            'pendingInvoices'
+        ));
+    }
+
+    public function customer()
+    {
+        $user = auth()->user();
+        $tenant = $user->tenant;
+
+        $subscriptionStatus = $tenant ? ucfirst($tenant->status) : 'N/A';
+        $subscriptionPlan = $tenant->subscription_plan ?? 'N/A';
+
+        $recentPayments = Payment::where('tenant_id', $user->tenant_id)
+            ->latest('payment_date')
+            ->take(8)
+            ->get(['id', 'amount', 'status', 'payment_date']);
+
+        return view('dashboard.customer', compact(
+            'subscriptionStatus',
+            'subscriptionPlan',
+            'recentPayments'
         ));
     }
 }

@@ -25,6 +25,7 @@ class Lead extends Model
         'name',
         'email',
         'phone',
+        'source_campaign',
         'status',
         'score',
     ];

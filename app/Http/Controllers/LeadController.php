@@ -130,6 +130,7 @@ class LeadController extends Controller
             'name' => 'required|string|max:150',
             'email' => 'required|email|max:150',
             'phone' => ['required', 'regex:/^09\d{9}$/'],
+            'source_campaign' => 'required|string|max:100',
             'status' => ['required', Rule::in(array_keys(Lead::PIPELINE_STATUSES))],
             'assigned_to' => 'required|integer',
         ], [
@@ -145,6 +146,7 @@ class LeadController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
+                'source_campaign' => $validated['source_campaign'],
                 'status' => $validated['status'],
                 'score' => 0,
             ]);
@@ -175,6 +177,7 @@ class LeadController extends Controller
             'name' => 'required|string|max:150',
             'email' => 'required|email|max:150',
             'phone' => ['required', 'regex:/^09\d{9}$/'],
+            'source_campaign' => 'required|string|max:100',
             'status' => ['required', Rule::in(array_keys(Lead::PIPELINE_STATUSES))],
             'score' => 'nullable|integer|min:0',
             'assigned_to' => 'required|integer',

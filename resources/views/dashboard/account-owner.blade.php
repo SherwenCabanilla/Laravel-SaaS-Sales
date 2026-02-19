@@ -32,46 +32,128 @@
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 20px;">
-        <div class="card">
-            <h3>Total Leads</h3>
-            <p style="font-size: 26px; font-weight: 700;">{{ $totalLeads }}</p>
-        </div>
+    <div class="kpi-cards">
         <div class="card">
             <h3>Leads This Month</h3>
-            <p style="font-size: 26px; font-weight: 700;">{{ $leadsThisMonth }}</p>
+            <p>{{ $leadsThisMonth }}</p>
+        </div>
+        <div class="card">
+            <h3>Closed Won</h3>
+            <p>{{ $wonCount }}</p>
+        </div>
+        <div class="card">
+            <h3>Closed Lost</h3>
+            <p>{{ $lostCount }}</p>
         </div>
         <div class="card">
             <h3>Conversion Rate</h3>
-            <p style="font-size: 26px; font-weight: 700;">{{ $conversionRate }}%</p>
+            <p>{{ $conversionRate }}%</p>
         </div>
         <div class="card">
             <h3>Paid Revenue</h3>
-            <p style="font-size: 26px; font-weight: 700;">${{ number_format($revenueTotal, 2) }}</p>
+            <p>₱{{ number_format($revenueTotal, 2) }}</p>
         </div>
     </div>
 
-    <div class="card">
-        <h3>Leads by Status</h3>
+    <div class="charts">
+        <div class="chart">
+            <h3>Pipeline Distribution</h3>
+            <canvas id="pipelineDistributionChart"></canvas>
+        </div>
+        <div class="chart">
+            <h3>Pipeline Aging</h3>
+            <canvas id="pipelineAgingChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h3>Revenue and Payment Status</h3>
         <table>
             <thead>
                 <tr>
                     <th>Status</th>
-                    <th>Count</th>
+                    <th>Total Amount</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($leadsByStatus as $status => $count)
+                @foreach(['paid', 'pending', 'failed'] as $status)
                     <tr>
-                        <td>{{ ucwords(str_replace('_', ' ', $status)) }}</td>
-                        <td>{{ $count }}</td>
+                        <td>{{ ucfirst($status) }}</td>
+                        <td>₱{{ number_format((float) ($paymentStatusTotals[$status] ?? 0), 2) }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Team Activity Snapshot</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Lead</th>
+                    <th>Activity</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($teamActivity as $activity)
+                    <tr>
+                        <td>{{ $activity->created_at->format('Y-m-d H:i') }}</td>
+                        <td>{{ $activity->lead->name ?? 'N/A' }}</td>
+                        <td>{{ $activity->activity_type }}</td>
+                        <td>{{ $activity->notes ?: 'N/A' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="2">No lead data found.</td>
+                        <td colspan="4">No recent team activity found.</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
+@endsection
+
+@section('scripts')
+    @php
+        $pipelineStatusLabels = array_map(function ($status) {
+            return ucwords(str_replace('_', ' ', $status));
+        }, array_keys($pipelineDistribution));
+    @endphp
+    <script>
+        const pipelineDistributionCtx = document.getElementById('pipelineDistributionChart').getContext('2d');
+        new Chart(pipelineDistributionCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($pipelineStatusLabels),
+                datasets: [{
+                    label: 'Leads',
+                    data: @json(array_values($pipelineDistribution)),
+                    backgroundColor: '#2563EB'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+
+        const pipelineAgingCtx = document.getElementById('pipelineAgingChart').getContext('2d');
+        new Chart(pipelineAgingCtx, {
+            type: 'doughnut',
+            data: {
+                labels: @json(array_keys($pipelineAging)),
+                datasets: [{
+                    data: @json(array_values($pipelineAging)),
+                    backgroundColor: ['#3B82F6', '#0EA5E9', '#F59E0B']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
 @endsection

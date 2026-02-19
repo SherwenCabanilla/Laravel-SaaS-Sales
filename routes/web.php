@@ -44,15 +44,9 @@ Route::middleware(['auth', 'role:super-admin'])->group(function () {
 
 Route::middleware(['auth', 'role:sales-agent,marketing-manager,account-owner,finance'])->group(function () {
     Route::get('/dashboard/owner', [DashboardController::class, 'owner'])->middleware('role:account-owner')->name('dashboard.owner');
-    Route::get('/dashboard/marketing', function () {
-        return view('dashboard.marketing');
-    })->middleware('role:marketing-manager')->name('dashboard.marketing');
-    Route::get('/dashboard/sales', function () {
-        return view('dashboard.sales');
-    })->middleware('role:sales-agent')->name('dashboard.sales');
-    Route::get('/dashboard/finance', function () {
-        return view('dashboard.finance');
-    })->middleware('role:finance')->name('dashboard.finance');
+    Route::get('/dashboard/marketing', [DashboardController::class, 'marketing'])->middleware('role:marketing-manager')->name('dashboard.marketing');
+    Route::get('/dashboard/sales', [DashboardController::class, 'sales'])->middleware('role:sales-agent')->name('dashboard.sales');
+    Route::get('/dashboard/finance', [DashboardController::class, 'finance'])->middleware('role:finance')->name('dashboard.finance');
 
     Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
     Route::get('/leads/create', [LeadController::class, 'create'])->name('leads.create');
@@ -92,9 +86,7 @@ Route::middleware(['auth', 'role:sales-agent,marketing-manager,account-owner,fin
 });
 
 Route::middleware(['auth', 'role:customer'])->group(function () {
-    Route::get('/dashboard/customer', function () {
-        return view('dashboard.customer');
-    })->name('dashboard.customer');
+    Route::get('/dashboard/customer', [DashboardController::class, 'customer'])->name('dashboard.customer');
 });
 
 Route::get('/f/{funnelSlug}/{stepSlug?}', [FunnelPortalController::class, 'show'])->name('funnels.portal.step');

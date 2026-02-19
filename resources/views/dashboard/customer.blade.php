@@ -32,28 +32,48 @@
         </div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 20px;">
+    <div class="kpi-cards">
         <div class="card">
-            <h3>Portal Role</h3>
-            <p style="font-size: 20px; font-weight: 700;">Customer</p>
+            <h3>Subscription Status</h3>
+            <p>{{ $subscriptionStatus }}</p>
         </div>
         <div class="card">
-            <h3>Account Status</h3>
-            <p style="font-size: 20px; font-weight: 700;">{{ ucfirst(auth()->user()->status ?? 'active') }}</p>
+            <h3>Subscription Plan</h3>
+            <p>{{ $subscriptionPlan }}</p>
         </div>
         <div class="card">
-            <h3>Last Login</h3>
-            <p style="font-size: 20px; font-weight: 700;">{{ optional(auth()->user()->last_login_at)->format('Y-m-d H:i') ?? 'N/A' }}</p>
+            <h3>Profile</h3>
+            <p style="font-size: 18px;">{{ auth()->user()->name }}</p>
+        </div>
+        <div class="card">
+            <h3>Company</h3>
+            <p style="font-size: 18px;">{{ $companyName }}</p>
         </div>
     </div>
 
     <div class="card">
-        <h3>Customer Portal</h3>
-        <p style="margin-bottom: 10px; color: #334155; font-weight: 600;">
-            Your portal access is active. Use Manage Profile from the account menu to update your personal details and password.
-        </p>
-        <p style="color: #334155; font-weight: 600;">
-            For billing and service inquiries, please contact your account manager or support.
-        </p>
+        <h3>Recent Payments / Invoices</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recentPayments as $payment)
+                    <tr>
+                        <td>{{ $payment->payment_date->format('Y-m-d') }}</td>
+                        <td>{{ ucfirst($payment->status) }}</td>
+                        <td>₱{{ number_format((float) $payment->amount, 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3">No payment or invoice records found.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 @endsection
