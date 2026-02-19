@@ -73,7 +73,7 @@
                 </div>
 
                 <div style="margin-bottom: 14px;">
-                    <label for="email" style="display:block;margin-bottom:6px;font-weight:700;">Email (Read Only)</label>
+                    <label for="email" style="display:block;margin-bottom:6px;font-weight:700;">Email</label>
                     <input type="email" id="email" value="{{ $user->email }}" readonly
                         style="width:100%;padding:10px;border:1px solid #E2E8F0;border-radius:6px;background:#F8FAFC;">
                 </div>
@@ -103,7 +103,7 @@
 
         <div class="card">
             <h3>Account Details</h3>
-            <div style="margin-bottom: 12px; font-weight: 700; color: #334155;">Role (Read Only): {{ $roleName }}</div>
+            <div style="margin-bottom: 12px; font-weight: 700; color: #334155;">Role: {{ $roleName }}</div>
             <div style="margin-bottom: 12px; font-weight: 700; color: #334155;">Last Login: {{ optional($user->last_login_at)->format('Y-m-d H:i') ?? 'N/A' }}</div>
             <div style="margin-bottom: 16px; font-weight: 700; color: #334155;">Account Created Date: {{ $user->created_at->format('Y-m-d H:i') }}</div>
 

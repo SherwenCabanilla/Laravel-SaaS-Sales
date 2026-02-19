@@ -15,6 +15,15 @@
     @php
         $primaryRole = auth()->user()->roles->first();
         $roleLabel = $primaryRole ? $primaryRole->name : ucwords(str_replace('-', ' ', auth()->user()->role ?? 'User'));
+        $userNameSource = trim((string) auth()->user()->name);
+        $userInitials = collect(preg_split('/\s+/', $userNameSource))
+            ->filter()
+            ->take(2)
+            ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+            ->implode('');
+        $userInitials = $userInitials !== '' ? $userInitials : 'U';
+        $userHue = abs(crc32($userNameSource ?: 'user')) % 360;
+        $userAvatarBg = "hsl({$userHue}, 65%, 45%)";
     @endphp
 
     <!-- Sidebar -->
@@ -105,6 +114,14 @@
 
         <div class="account-info-wrapper">
             <div class="account-info">
+                <div class="account-avatar" style="background: {{ $userAvatarBg }};">
+                    @if(auth()->user()->profile_photo_path)
+                        <img src="{{ asset('storage/' . auth()->user()->profile_photo_path) }}" alt="Profile Avatar" class="account-avatar-img">
+                    @else
+                        <span>{{ $userInitials }}</span>
+                    @endif
+                </div>
+
                 <div class="account-details">
                     <strong>{{ auth()->user()->name }}</strong>
                     <small>{{ auth()->user()->email }}</small>
