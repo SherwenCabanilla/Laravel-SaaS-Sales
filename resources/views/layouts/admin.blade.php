@@ -233,7 +233,7 @@
                 }
             }
 
-            setTimeout(closeStatusToast, 4000);
+            setTimeout(closeStatusToast, 3000);
         </script>
     @endif
     @yield('scripts')

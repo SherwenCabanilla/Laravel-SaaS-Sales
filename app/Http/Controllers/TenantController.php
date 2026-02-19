@@ -24,7 +24,7 @@ class TenantController extends Controller
             });
         }
 
-        $tenants = $query->paginate(15); 
+        $tenants = $query->paginate(10); 
 
         if ($request->ajax()) {
             return view('admin.tenants._rows', compact('tenants'))->render();

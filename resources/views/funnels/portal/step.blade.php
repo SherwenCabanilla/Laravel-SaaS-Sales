@@ -93,9 +93,20 @@
 </head>
 <body>
     <div class="wrap">
-        <div style="margin-bottom: 10px;">
-            <span class="muted">{{ $funnel->tenant->company_name ?? 'Company' }} • {{ strtoupper(str_replace('_', '-', $step->type)) }}</span>
-            <h1>{{ $funnel->name }}</h1>
+        <div style="margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div>
+                @if(!$isFirstStep)
+                    <button type="button" onclick="history.back()"
+                        style="border:none; background:none; color:#1e40af; font-size:13px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; padding:4px 0;">
+                        <i class="fas fa-arrow-left"></i>
+                        <span style="font-weight:600;">Back</span>
+                    </button>
+                @endif
+            </div>
+            <div style="margin-left:auto; text-align:right;">
+                <span class="muted" style="display:block;">{{ $funnel->tenant->company_name ?? 'Company' }} • {{ strtoupper(str_replace('_', '-', $step->type)) }}</span>
+                <h1 style="margin-top:4px;">{{ $funnel->name }}</h1>
+            </div>
         </div>
 
         <div class="card">

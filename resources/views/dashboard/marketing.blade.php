@@ -16,10 +16,7 @@
 
 @section('content')
     <div class="top-header">
-        <div>
-            <h1>Welcome, {{ auth()->user()->name }}</h1>
-            <p>This is your Marketing Dashboard.</p>
-        </div>
+        <h1>Welcome, {{ auth()->user()->name }}</h1>
         <div class="company-chip">
             <div class="company-chip-avatar" style="background: {{ $companyBg }};">
                 @if(optional(auth()->user()->tenant)->logo_path)
@@ -35,15 +32,99 @@
         </div>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h3>Campaign Overview</h3>
-        <p>Track your marketing funnels and lead generation.</p>
-        
-        <div style="margin-top: 20px;">
-             <!-- Static Placeholder Chart -->
-             <div style="background: #f9fafb; height: 200px; display: flex; align-items: center; justify-content: center; border: 2px dashed #d1d5db; border-radius: 6px;">
-                <span style="color: #6b7280;">Marketing Performance Chart Placeholder</span>
-             </div>
+    <div class="kpi-cards">
+        <div class="card">
+            <h3>Leads Generated (All)</h3>
+            <p>{{ (int) $sourceBreakdownChart->sum('total') }}</p>
+        </div>
+        <div class="card">
+            <h3>MQL Volume</h3>
+            <p>{{ $mqlCount }}</p>
+        </div>
+        <div class="card">
+            <h3>Quality Proxy (Avg Score)</h3>
+            <p>{{ number_format($avgLeadScore, 1) }}</p>
+        </div>
+        <div class="card">
+            <h3>Cost Proxy</h3>
+            <p style="font-size: 18px;">Ad Spend Data N/A</p>
         </div>
     </div>
+
+    <div class="charts">
+        <div class="chart">
+            <h3>MQL Trend (Score >= {{ $mqlThreshold }})</h3>
+            <canvas id="mqlTrendChart"></canvas>
+        </div>
+        <div class="chart">
+            <h3>Leads by Source/Campaign</h3>
+            <canvas id="sourceChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Needs Action Now (Source Breakdown)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Source/Campaign</th>
+                    <th>Leads</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($sourceBreakdown as $row)
+                    <tr>
+                        <td>{{ $row->source_label }}</td>
+                        <td>{{ $row->total }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="2">No lead source data found.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+        <div style="margin-top: 16px;">
+            {{ $sourceBreakdown->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+    <script>
+        const mqlTrendCtx = document.getElementById('mqlTrendChart').getContext('2d');
+        new Chart(mqlTrendCtx, {
+            type: 'line',
+            data: {
+                labels: @json($trendLabels),
+                datasets: [{
+                    label: 'MQL Leads',
+                    data: @json($trendValues),
+                    borderColor: '#0EA5E9',
+                    backgroundColor: 'rgba(14, 165, 233, 0.15)',
+                    fill: true,
+                    tension: 0.35
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const sourceCtx = document.getElementById('sourceChart').getContext('2d');
+        new Chart(sourceCtx, {
+            type: 'bar',
+            data: {
+                labels: @json($sourceBreakdownChart->pluck('source_label')->values()),
+                datasets: [{
+                    label: 'Leads',
+                    data: @json($sourceBreakdownChart->pluck('total')->values()),
+                    backgroundColor: '#2563EB'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    </script>
 @endsection

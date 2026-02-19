@@ -45,6 +45,19 @@
             </div>
 
             <div style="margin-bottom: 20px;">
+                <label for="source_campaign" style="display: block; margin-bottom: 8px; font-weight: bold;">Source / Campaign</label>
+                <select name="source_campaign" id="source_campaign" required
+                    style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;">
+                    @foreach(['Direct', 'Facebook Ads', 'Google Ads', 'Referral', 'Email Campaign', 'Webinar', 'Organic Search'] as $source)
+                        <option value="{{ $source }}" {{ old('source_campaign', 'Direct') === $source ? 'selected' : '' }}>{{ $source }}</option>
+                    @endforeach
+                </select>
+                @error('source_campaign')
+                    <span style="color: red; font-size: 12px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div style="margin-bottom: 20px;">
                 <label for="status" style="display: block; margin-bottom: 8px; font-weight: bold;">Pipeline Stage</label>
                 <select name="status" id="status" required
                     style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;">

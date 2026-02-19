@@ -68,7 +68,7 @@
                         <tr>
                             <td>{{ $payment->payment_date->format('Y-m-d') }}</td>
                             <td>{{ $payment->lead->name ?? 'N/A' }}</td>
-                            <td>${{ number_format($payment->amount, 2) }}</td>
+                            <td>₱{{ number_format($payment->amount, 2) }}</td>
                             <td>{{ ucfirst($payment->status) }}</td>
                         </tr>
                     @empty

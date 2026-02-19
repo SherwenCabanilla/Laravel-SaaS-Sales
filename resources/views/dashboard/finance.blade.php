@@ -16,10 +16,7 @@
 
 @section('content')
     <div class="top-header">
-        <div>
-            <h1>Welcome, {{ auth()->user()->name }}</h1>
-            <p>This is your Finance Dashboard.</p>
-        </div>
+        <h1>Welcome, {{ auth()->user()->name }}</h1>
         <div class="company-chip">
             <div class="company-chip-avatar" style="background: {{ $companyBg }};">
                 @if(optional(auth()->user()->tenant)->logo_path)
@@ -35,19 +32,100 @@
         </div>
     </div>
 
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <h3>Financial Overview</h3>
-        <p>Manage billing, invoices, and subscription details.</p>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
-            <div style="background: #fff beb; padding: 15px; border-radius: 6px;">
-                <h4 style="margin: 0; color: #b45309;">Outstanding Invoices</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">$1,250.00</p>
-            </div>
-             <div style="background: #ecfdf5; padding: 15px; border-radius: 6px;">
-                <h4 style="margin: 0; color: #047857;">MCR (Monthly Reoccurring)</h4>
-                <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">$4,500.00</p>
-            </div>
+    <div class="kpi-cards">
+        <div class="card">
+            <h3>Paid Total</h3>
+            <p>₱{{ number_format((float) ($statusAmounts['paid'] ?? 0), 2) }}</p>
+        </div>
+        <div class="card">
+            <h3>Pending Total</h3>
+            <p>₱{{ number_format((float) ($statusAmounts['pending'] ?? 0), 2) }}</p>
+        </div>
+        <div class="card">
+            <h3>Failed Total</h3>
+            <p>₱{{ number_format((float) ($statusAmounts['failed'] ?? 0), 2) }}</p>
+        </div>
+        <div class="card">
+            <h3>Outstanding Invoices</h3>
+            <p>{{ $outstandingCount }} ({{ '₱' . number_format($outstandingAmount, 2) }})</p>
         </div>
     </div>
+
+    <div class="charts">
+        <div class="chart">
+            <h3>Payment Collection Trend (Paid)</h3>
+            <canvas id="collectionTrendChart"></canvas>
+        </div>
+        <div class="chart">
+            <h3>Payment Status Distribution</h3>
+            <canvas id="paymentStatusChart"></canvas>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Needs Action Now (Pending Invoices)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Payment Date</th>
+                    <th>Lead</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($pendingInvoices as $invoice)
+                    <tr>
+                        <td>{{ $invoice->payment_date->format('Y-m-d') }}</td>
+                        <td>{{ $invoice->lead->name ?? 'N/A' }}</td>
+                        <td>₱{{ number_format((float) $invoice->amount, 2) }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="3">No pending invoices.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+        <div style="margin-top: 16px;">
+            {{ $pendingInvoices->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+@endsection
+
+@section('scripts')
+    <script>
+        const collectionTrendCtx = document.getElementById('collectionTrendChart').getContext('2d');
+        new Chart(collectionTrendCtx, {
+            type: 'line',
+            data: {
+                labels: @json($trendLabels),
+                datasets: [{
+                    label: 'Collected Amount',
+                    data: @json($trendValues),
+                    borderColor: '#16A34A',
+                    backgroundColor: 'rgba(22, 163, 74, 0.15)',
+                    fill: true,
+                    tension: 0.35
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const paymentStatusCtx = document.getElementById('paymentStatusChart').getContext('2d');
+        new Chart(paymentStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Paid', 'Pending', 'Failed'],
+                datasets: [{
+                    data: [
+                        {{ (int) ($statusCounts['paid'] ?? 0) }},
+                        {{ (int) ($statusCounts['pending'] ?? 0) }},
+                        {{ (int) ($statusCounts['failed'] ?? 0) }}
+                    ],
+                    backgroundColor: ['#16A34A', '#F59E0B', '#DC2626']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    </script>
 @endsection
