@@ -50,7 +50,7 @@ class AdminController extends Controller
 
         $actionableTenants = Tenant::whereIn('status', ['trial', 'inactive'])
             ->latest()
-            ->paginate(8, ['id', 'company_name', 'status', 'subscription_plan', 'created_at'], 'tenants_page');
+            ->paginate(10, ['id', 'company_name', 'status', 'subscription_plan', 'created_at'], 'tenants_page');
 
         return view('admin.dashboard', compact(
             'tenantCount',

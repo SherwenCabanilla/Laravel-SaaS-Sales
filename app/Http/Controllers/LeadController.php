@@ -26,7 +26,7 @@ class LeadController extends Controller
             });
         }
 
-        $leads = $query->latest()->paginate(15);
+        $leads = $query->latest()->paginate(10);
 
         if ($request->ajax()) {
             return view('admin.leads._rows', compact('leads'))->render();

@@ -55,7 +55,7 @@ class DashboardController extends Controller
                 $query->where('tenant_id', $tenantId);
             })
             ->latest()
-            ->paginate(8, ['*'], 'activity_page');
+            ->paginate(10, ['*'], 'activity_page');
 
         return view('dashboard.account-owner', compact(
             'leadsThisMonth',
@@ -84,7 +84,7 @@ class DashboardController extends Controller
             ->where('tenant_id', $tenantId)
             ->groupBy('source_label')
             ->orderByDesc('total')
-            ->paginate(8, ['*'], 'source_page');
+            ->paginate(10, ['*'], 'source_page');
 
         $mqlThreshold = 20;
         $mqlCount = Lead::where('tenant_id', $tenantId)->where('score', '>=', $mqlThreshold)->count();
@@ -133,7 +133,7 @@ class DashboardController extends Controller
             ->whereNotIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
             ->where('updated_at', '<', now()->copy()->subDays(3))
             ->latest('updated_at')
-            ->paginate(8, ['id', 'name', 'status', 'updated_at'], 'overdue_page');
+            ->paginate(10, ['id', 'name', 'status', 'updated_at'], 'overdue_page');
 
         $overdueFollowUpsCount = (clone $assignedLeadsQuery)
             ->whereNotIn('status', ['closed_won', 'closed_lost', 'Closed Won', 'Closed Lost', 'closed won', 'closed lost'])
@@ -146,7 +146,7 @@ class DashboardController extends Controller
 
         $myRecentLeads = (clone $assignedLeadsQuery)
             ->latest()
-            ->paginate(8, ['id', 'name', 'status', 'updated_at'], 'recent_page');
+            ->paginate(10, ['id', 'name', 'status', 'updated_at'], 'recent_page');
 
         return view('dashboard.sales', compact(
             'myAssignedLeadsCount',
@@ -218,7 +218,7 @@ class DashboardController extends Controller
 
         $recentPayments = Payment::where('tenant_id', $user->tenant_id)
             ->latest('payment_date')
-            ->paginate(8, ['id', 'amount', 'status', 'payment_date'], 'payments_page');
+            ->paginate(10, ['id', 'amount', 'status', 'payment_date'], 'payments_page');
 
         return view('dashboard.customer', compact(
             'subscriptionStatus',

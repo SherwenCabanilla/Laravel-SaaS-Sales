@@ -32,7 +32,7 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->latest()->paginate(15);
+        $users = $query->latest()->paginate(10);
 
         if ($request->ajax()) {
             return view('admin.users._rows', compact('users'))->render();

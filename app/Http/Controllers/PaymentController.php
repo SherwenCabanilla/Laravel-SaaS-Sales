@@ -20,7 +20,7 @@ class PaymentController extends Controller
             $query->where('status', $request->status);
         }
 
-        $payments = $query->paginate(12);
+        $payments = $query->paginate(10);
         $leadOptions = Lead::where('tenant_id', $user->tenant_id)->orderBy('name')->get(['id', 'name']);
 
         return view('payments.index', compact('payments', 'leadOptions'));

@@ -13,7 +13,7 @@ class FunnelController extends Controller
     public function index()
     {
         $tenantId = auth()->user()->tenant_id;
-        $funnels = Funnel::where('tenant_id', $tenantId)->withCount('steps')->latest()->paginate(12);
+        $funnels = Funnel::where('tenant_id', $tenantId)->withCount('steps')->latest()->paginate(10);
 
         return view('funnels.index', compact('funnels'));
     }
