@@ -10,16 +10,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Manrope:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Open+Sans:wght@400;600;700;800&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@400;600;700;800&family=Raleway:wght@400;600;700;800&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { margin: 0; background: #f8fafc; color: #0f172a; }
-        .wrap { width: min(1100px, 94vw); margin: 32px auto; }
-        .card {
+        body { margin: 0; background: {{ $step->background_color ?: '#ffffff' }}; color: #0f172a; min-height: 100vh; }
+        .wrap { width: 100%; max-width: none; margin: 0; padding: 0; }
+        .step-content--full {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 32px 2rem 48px;
             background: {{ $step->background_color ?: '#ffffff' }};
-            border: 1px solid #dbeafe;
-            border-radius: 18px;
-            padding: 24px;
-            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
             overflow: hidden;
         }
+        .step-content--full .builder-section,
+        .step-content--full .builder-row,
+        .step-content--full .builder-col { max-width: none !important; }
         .muted { color: #64748b; font-weight: 600; font-size: 12px; }
         h1 { margin: 0 0 8px; font-size: 32px; }
         h2 { margin: 0 0 10px; font-size: 28px; color: #0f172a; }
@@ -41,6 +47,7 @@
         }
         .btn.secondary { background: #1e40af; }
         .btn.gray { background: #64748b; }
+        .btn { overflow-wrap: break-word; word-break: break-word; }
         input, textarea { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 10px; }
         label { font-weight: 700; font-size: 13px; margin-bottom: 6px; display: block; }
         .price { font-size: 34px; font-weight: 800; color: #047857; margin: 0 0 12px; }
@@ -49,12 +56,13 @@
         .builder-row { display: flex; gap: 12px; flex-wrap: wrap; padding: 6px; }
         .builder-col { min-width: 240px; min-height: 24px; flex: 1 1 0; }
         .builder-el + .builder-el { margin-top: 10px; }
-        .builder-heading { margin: 0; font-size: 32px; line-height: 1.2; }
-        .builder-text { margin: 0; color: #334155; line-height: 1.6; white-space: pre-wrap; }
+        .builder-heading { margin: 0; font-size: 32px; line-height: 1.2; overflow-wrap: break-word; word-break: break-word; }
+        .builder-text { margin: 0; color: #334155; line-height: 1.6; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word; }
         .builder-img { display: block; max-width: 100%; height: auto; border-radius: 10px; }
-        .builder-video-wrap { position: relative; padding-top: 56.25%; border-radius: 10px; overflow: hidden; background: #0f172a; }
-        .builder-video-wrap iframe, .builder-video-wrap video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-        .builder-countdown { display: inline-flex; padding: 10px 14px; border-radius: 999px; border: 1px solid #cbd5e1; font-weight: 800; font-size: 14px; }
+        .builder-video-wrap { position: relative; width: 100%; padding-top: 56.25%; min-height: 200px; border-radius: 10px; overflow: hidden; background: #0f172a; box-sizing: border-box; }
+        .builder-video-wrap iframe, .builder-video-wrap video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; object-fit: contain; }
+        .builder-video-wrap .video-fallback-link { position: absolute; top: 8px; right: 8px; z-index: 2; font-size: 11px; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.5); padding: 4px 8px; border-radius: 6px; text-decoration: none; }
+        .builder-video-wrap video { z-index: 1; }
         .preview-badge {
             display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
             border-radius: 999px; font-size: 12px; font-weight: 800; color: #1d4ed8; background: #dbeafe;
@@ -82,6 +90,10 @@
                 'boxShadow' => 'box-shadow',
                 'width' => 'width',
                 'height' => 'height',
+                'maxWidth' => 'max-width',
+                'minWidth' => 'min-width',
+                'maxHeight' => 'max-height',
+                'minHeight' => 'min-height',
                 'justifyContent' => 'justify-content',
                 'alignItems' => 'align-items',
                 'gap' => 'gap',
@@ -93,7 +105,7 @@
                 if ($value === '') {
                     continue;
                 }
-                if (!preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/', $value)) {
+                if (!preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', $value)) {
                     continue;
                 }
                 $out[] = $cssProp . ':' . $value;
@@ -104,30 +116,16 @@
     @endphp
 
     <div class="wrap">
-        <div style="margin-bottom: 10px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
-            <div>
-                @if($isPreview)
-                    <a class="btn secondary" href="{{ route('funnels.edit', $funnel) }}" style="padding:8px 14px; box-shadow:none;">
-                        <i class="fas fa-arrow-left"></i> Back to Builder
-                    </a>
-                @elseif(!$isFirstStep)
-                    <button type="button" onclick="history.back()"
-                        style="border:none; background:none; color:#1e40af; font-size:13px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; padding:4px 0;">
-                        <i class="fas fa-arrow-left"></i>
-                        <span style="font-weight:600;">Back</span>
-                    </button>
-                @endif
-            </div>
-            <div style="margin-left:auto; text-align:right;">
-                @if($isPreview)
-                    <span class="preview-badge"><i class="fas fa-eye"></i> Preview Mode</span>
-                @endif
-                <span class="muted" style="display:block; margin-top:4px;">{{ $funnel->tenant->company_name ?? 'Company' }} • {{ strtoupper(str_replace('_', '-', $step->type)) }}</span>
-                <h1 style="margin-top:4px;">{{ $funnel->name }}</h1>
-            </div>
+        @if($isPreview)
+        <div style="margin-bottom: 10px; padding: 0 2rem; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+            <a class="btn secondary" href="{{ route('funnels.edit', $funnel) }}" style="padding:8px 14px; box-shadow:none;">
+                <i class="fas fa-arrow-left"></i> Back to Builder
+            </a>
+            <span class="preview-badge"><i class="fas fa-eye"></i> Preview Mode</span>
         </div>
+        @endif
 
-        <div class="card">
+        <div class="step-content--full">
             @if($hasBuilderLayout)
                 @foreach($layout['sections'] as $section)
                     @php
@@ -155,11 +153,18 @@
                                                 $settings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
                                                 $link = trim((string) ($settings['link'] ?? '#'));
                                                 $src = trim((string) ($settings['src'] ?? ''));
+                                                if ($src === '' && $type === 'video' && ($content !== '' && (str_starts_with(trim($content), 'http') || str_starts_with(trim($content), '/')))) {
+                                                    $src = trim($content);
+                                                }
                                                 $alt = trim((string) ($settings['alt'] ?? 'Image'));
-                                                $targetDate = trim((string) ($settings['targetDate'] ?? ''));
+                                                $alignment = $settings['alignment'] ?? 'left';
+                                                $alignStyle = 'display:flex;justify-content:' . ($alignment === 'right' ? 'flex-end' : ($alignment === 'center' ? 'center' : 'flex-start')) . ';';
+                                                $widthBehavior = $settings['widthBehavior'] ?? 'fluid';
+                                                $btnWrapStyle = ($type === 'button' ? $alignStyle : '');
+                                                $btnInnerStyle = $style . ($type === 'button' && $widthBehavior === 'fill' ? (($style !== '' ? ';' : '') . ' width:100%;display:block;box-sizing:border-box;text-align:center;') : '');
                                             @endphp
 
-                                            <div class="builder-el">
+                                            <div class="builder-el" @if($type === 'image' || $type === 'video' || $type === 'button') style="{{ $type === 'button' ? $btnWrapStyle : $alignStyle }}" @endif>
                                                 @if($type === 'heading')
                                                     <h2 class="builder-heading" style="{{ $style }}">{!! $content !!}</h2>
                                                 @elseif($type === 'text')
@@ -169,23 +174,52 @@
                                                         <img class="builder-img" src="{{ $src }}" alt="{{ $alt !== '' ? $alt : 'Image' }}" style="{{ $style }}">
                                                     @endif
                                                 @elseif($type === 'button')
-                                                    <a class="btn" href="{{ $link !== '' ? $link : '#' }}" style="{{ $style }}">{!! $content !== '' ? $content : 'Button' !!}</a>
+                                                    <a class="btn" href="{{ $link !== '' ? $link : '#' }}" style="{{ $btnInnerStyle }}">{!! $content !== '' ? $content : 'Button' !!}</a>
                                                 @elseif($type === 'video')
                                                     @if($src !== '')
-                                                        <div class="builder-video-wrap" style="{{ $style }}">
-                                                            @if(\Illuminate\Support\Str::contains($src, ['youtube.com', 'youtu.be', 'vimeo.com']))
-                                                                <iframe src="{{ $src }}" allowfullscreen></iframe>
+                                                        @php
+                                                            $src = trim($src);
+                                                            if (!str_starts_with($src, 'http')) {
+                                                                $src = 'https://' . ltrim($src, '/');
+                                                            }
+                                                            $videoEmbedUrl = $src;
+                                                            $isYoutubeVimeo = str_contains($src, 'youtube.com') || str_contains($src, 'youtu.be') || str_contains($src, 'vimeo.com');
+                                                            if (str_contains($src, 'youtube.com/watch')) {
+                                                                parse_str(parse_url($src, PHP_URL_QUERY) ?: '', $yt);
+                                                                $videoEmbedUrl = isset($yt['v']) ? 'https://www.youtube.com/embed/' . $yt['v'] : $src;
+                                                            } elseif (preg_match('#youtu\.be/([a-zA-Z0-9_-]+)#', $src, $m)) {
+                                                                $videoEmbedUrl = 'https://www.youtube.com/embed/' . $m[1];
+                                                            } elseif (preg_match('#vimeo\.com/(?:video/)?(\d+)#', $src, $m)) {
+                                                                $videoEmbedUrl = 'https://player.vimeo.com/video/' . $m[1];
+                                                            }
+                                                            $videoSrc = $isYoutubeVimeo ? $videoEmbedUrl : (str_starts_with($src, 'http') ? $src : asset(ltrim($src, '/')));
+                                                            $videoWrapStyle = $style;
+                                                            $elStyle = is_array($element['style'] ?? null) ? $element['style'] : [];
+                                                            $elSettings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
+                                                            $widthVal = !empty($elStyle['width']) ? trim((string) $elStyle['width']) : (!empty($elSettings['width']) ? trim((string) $elSettings['width']) : '');
+                                                            if ($widthVal !== '' && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', $widthVal)) {
+                                                                $videoWrapStyle .= ($videoWrapStyle !== '' ? '; ' : '') . 'width: ' . $widthVal . ' !important';
+                                                            }
+                                                            if (!empty($elStyle['height']) && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', trim((string) $elStyle['height']))) {
+                                                                $videoWrapStyle .= ($videoWrapStyle !== '' ? '; ' : '') . 'height: ' . trim((string) $elStyle['height']) . ' !important';
+                                                            }
+                                                            if (!empty($elStyle['maxWidth']) && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', trim((string) $elStyle['maxWidth']))) {
+                                                                $videoWrapStyle .= ($videoWrapStyle !== '' ? '; ' : '') . 'max-width: ' . trim((string) $elStyle['maxWidth']) . ' !important';
+                                                            }
+                                                        @endphp
+                                                        <div class="builder-video-wrap" style="{{ $videoWrapStyle }}">
+                                                            @if($isYoutubeVimeo)
+                                                                <iframe src="{{ $videoEmbedUrl }}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" loading="lazy"></iframe>
                                                             @else
-                                                                <video src="{{ $src }}" controls></video>
+                                                                <video src="{{ $videoSrc }}" controls playsinline preload="metadata"></video>
                                                             @endif
+                                                            <a href="{{ $videoSrc }}" target="_blank" rel="noopener" class="video-fallback-link">Open video</a>
                                                         </div>
                                                     @endif
                                                 @elseif($type === 'spacer')
                                                     <div style="{{ $style ?: 'height:24px' }}"></div>
                                                 @elseif($type === 'countdown')
-                                                    <div class="builder-countdown" style="{{ $style }}">
-                                                        Countdown{{ $targetDate ? ': ' . $targetDate : '' }}
-                                                    </div>
+                                                    {{-- Countdown component removed --}}
                                                 @elseif($type === 'form')
                                                     <form onsubmit="return false;" style="{{ $style }}">
                                                         <label>Name</label>

@@ -121,11 +121,21 @@ class FunnelController extends Controller
                 'integer',
                 Rule::exists('funnel_steps', 'id')->where(fn ($q) => $q->where('funnel_id', $funnel->id)),
             ],
-            'layout_json' => 'required|array',
+            'layout_json' => 'required',
         ]);
 
+        $rawLayout = $validated['layout_json'];
+        if (is_string($rawLayout)) {
+            $decoded = json_decode($rawLayout, true);
+            $rawLayout = is_array($decoded) ? $decoded : [];
+        }
+        if (! is_array($rawLayout) || ! isset($rawLayout['sections'])) {
+            $rawLayout = ['sections' => []];
+        }
+
         $step = $funnel->steps()->where('id', $validated['step_id'])->firstOrFail();
-        $layout = $this->sanitizeLayoutJson($validated['layout_json']);
+        $layout = $this->sanitizeLayoutJson($rawLayout);
+        $this->mergeElementSizeFromRaw($layout, $rawLayout);
 
         $step->update(['layout_json' => $layout]);
 
@@ -136,19 +146,109 @@ class FunnelController extends Controller
         ]);
     }
 
+    /**
+     * Copy width/height from raw request layout into sanitized layout so they never get dropped.
+     */
+    private function mergeElementSizeFromRaw(array &$layout, array $rawLayout): void
+    {
+        $rawSections = $rawLayout['sections'] ?? [];
+        $sections = &$layout['sections'];
+        foreach ($sections as $si => $section) {
+            $rawRows = $rawSections[$si]['rows'] ?? [];
+            foreach (($section['rows'] ?? []) as $ri => $row) {
+                $rawCols = $rawRows[$ri]['columns'] ?? [];
+                foreach (($row['columns'] ?? []) as $ci => $column) {
+                    $rawElements = $rawCols[$ci]['elements'] ?? [];
+                    foreach (($column['elements'] ?? []) as $ei => $element) {
+                        $rawEl = $rawElements[$ei] ?? [];
+                        $rawStyle = is_array($rawEl['style'] ?? null) ? $rawEl['style'] : [];
+                        $type = (string) ($rawEl['type'] ?? $element['type'] ?? '');
+                        if ($type !== 'video' && $type !== 'image') {
+                            continue;
+                        }
+                        foreach (['width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight'] as $key) {
+                            if (! isset($rawStyle[$key])) {
+                                continue;
+                            }
+                            $v = trim((string) $rawStyle[$key]);
+                            if ($v === '') {
+                                continue;
+                            }
+                            $v = mb_substr($v, 0, 60);
+                            $layout['sections'][$si]['rows'][$ri]['columns'][$ci]['elements'][$ei]['style'] =
+                                $layout['sections'][$si]['rows'][$ri]['columns'][$ci]['elements'][$ei]['style'] ?? [];
+                            $layout['sections'][$si]['rows'][$ri]['columns'][$ci]['elements'][$ei]['style'][$key] = $v;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public function uploadBuilderImage(Request $request, Funnel $funnel)
     {
         $this->ensureTenantFunnelAccess($funnel);
 
-        $validated = $request->validate([
-            'image' => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,mp4,mov,avi,wmv,mkv,webm,m4v,3gp,ogv|max:51200',
-        ]);
+        // Check if file was received and if PHP reported an upload error (e.g. size limit)
+        if (! $request->hasFile('image')) {
+            return response()->json([
+                'message' => 'No file received. The server may be rejecting it. Ensure php.ini has upload_max_filesize and post_max_size at least 100M, and that the form uses multipart/form-data.',
+            ], 422);
+        }
 
-        $path = $validated['image']->store('funnel-builder', 'public');
+        $file = $request->file('image');
+        if (! $file->isValid()) {
+            $code = $file->getError();
+            $messages = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds server limit (upload_max_filesize in php.ini). Use the php.ini that your web server actually uses (run "php --ini" to see).',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds form size limit.',
+                UPLOAD_ERR_PARTIAL => 'Upload was interrupted (partial upload).',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+            ];
 
-        return response()->json([
-            'url' => Storage::url($path),
-        ]);
+            return response()->json([
+                'message' => $messages[$code] ?? 'Upload error (code ' . $code . ').',
+            ], 422);
+        }
+
+        try {
+            $validated = $request->validate([
+                'image' => 'required|file|mimes:jpg,jpeg,png,gif,webp,svg,mp4,mov,avi,wmv,mkv,webm,m4v,3gp,ogv|max:102400',
+            ], [
+                'image.required' => 'No file selected.',
+                'image.file' => 'Invalid file.',
+                'image.mimes' => 'File must be an image (jpg, png, gif, webp, svg) or video (mp4, mov, webm, etc.).',
+                'image.max' => 'File is too large (max 100 MB).',
+            ]);
+
+            $path = $validated['image']->store('funnel-builder', 'public');
+            $relativeUrl = Storage::url($path);
+            $fullUrl = str_starts_with($relativeUrl, 'http') ? $relativeUrl : url($relativeUrl);
+
+            return response()->json([
+                'url' => $fullUrl,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $imageErrors = $errors['image'] ?? [];
+            $isUploadFailed = ! empty($imageErrors) && collect($imageErrors)->contains(fn ($m) => str_contains((string) $m, 'failed to upload'));
+            if ($isUploadFailed) {
+                return response()->json([
+                    'message' => 'File was too large or the upload was interrupted. Try a smaller file or use Video URL (e.g. YouTube or Vimeo link). Increase upload_max_filesize and post_max_size in the php.ini that your server uses (run "php --ini" to find it).',
+                ], 422);
+            }
+            // Return all validation errors so the user sees the exact reason
+            $first = collect($imageErrors)->first();
+            return response()->json([
+                'message' => is_string($first) ? $first : 'Validation failed.',
+                'errors' => $errors,
+            ], 422);
+        } catch (\Throwable $e) {
+            $message = trim((string) ($e->getMessage() ?? ''));
+            return response()->json([
+                'message' => $message !== '' ? $message : 'Upload failed. Please check file type and size (max 100 MB).',
+            ], 500);
+        }
     }
 
     public function publish(Funnel $funnel)
@@ -398,12 +498,28 @@ class FunnelController extends Controller
                                             ? $this->sanitizeRichText($rawContent)
                                             : mb_substr(trim($rawContent), 0, 5000);
 
+                                        $rawStyle = is_array($element['style'] ?? null) ? $element['style'] : [];
+                                        $style = $this->sanitizeStyle($rawStyle);
+                                        $rawSettings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
+                                        $settings = $this->sanitizeSettings($rawSettings);
+                                        if ($type === 'video' || $type === 'image') {
+                                            foreach (['width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight'] as $sizeKey) {
+                                                $fromStyle = isset($rawStyle[$sizeKey]) && trim((string) $rawStyle[$sizeKey]) !== '';
+                                                $fromSettings = isset($rawSettings[$sizeKey]) && trim((string) $rawSettings[$sizeKey]) !== '';
+                                                if ($fromStyle) {
+                                                    $style[$sizeKey] = mb_substr(trim((string) $rawStyle[$sizeKey]), 0, 60);
+                                                } elseif ($fromSettings && $sizeKey === 'width') {
+                                                    $style['width'] = mb_substr(trim((string) $rawSettings[$sizeKey]), 0, 60);
+                                                }
+                                            }
+                                        }
+
                                         return [
                                             'id' => $this->sanitizeId($element['id'] ?? null, 'el'),
                                             'type' => $type,
                                             'content' => $content,
-                                            'style' => $this->sanitizeStyle($element['style'] ?? []),
-                                            'settings' => $this->sanitizeSettings($element['settings'] ?? []),
+                                            'style' => $style,
+                                            'settings' => $settings,
                                         ];
                                     })
                                     ->values()
@@ -472,6 +588,10 @@ class FunnelController extends Controller
             'boxShadow',
             'width',
             'height',
+            'maxWidth',
+            'minWidth',
+            'maxHeight',
+            'minHeight',
             'backgroundImage',
             'backgroundSize',
             'backgroundPosition',
@@ -499,6 +619,16 @@ class FunnelController extends Controller
                 continue;
             }
 
+            // Persist CSS size values (50%, 100%, 400px, etc.) so editor width/height survive refresh
+            $sizeKeys = ['width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight'];
+            if (in_array($key, $sizeKeys, true)) {
+                $len = mb_strlen($value);
+                if ($len > 0 && $len <= 60) {
+                    $safe[$key] = $value;
+                }
+                continue;
+            }
+
             if (preg_match('/^[#(),.%:\-\/\sA-Za-z0-9]+$/', $value)) {
                 $safe[$key] = $value;
             }
@@ -521,15 +651,22 @@ class FunnelController extends Controller
             'alignment',
             'targetDate',
             'platform',
+            'width',
+            'widthBehavior',
         ];
 
         return collect($settings)
             ->only($allowedKeys)
-            ->map(function ($value) {
+            ->map(function ($value, $key) {
                 if (!is_scalar($value) && $value !== null) {
                     return '';
                 }
-                return mb_substr(trim((string) $value), 0, 1024);
+                $v = trim((string) $value);
+                if ($key === 'widthBehavior' && !in_array($v, ['fluid', 'fill'], true)) {
+                    return 'fluid';
+                }
+                $max = in_array($key, ['src', 'link'], true) ? 2048 : (in_array($key, ['width'], true) ? 60 : 1024);
+                return mb_substr($v, 0, $max);
             })
             ->filter(fn ($value) => $value !== '')
             ->all();

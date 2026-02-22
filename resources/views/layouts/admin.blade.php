@@ -24,6 +24,7 @@
             --theme-sidebar-text: {{ $themeSidebarText }};
             --theme-body-bg: {{ $themeBodyBg }};
         }
+        body.builder-full-width .main-content { margin-left: 0; }
     </style>
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -31,7 +32,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @yield('styles')
 </head>
-<body>
+<body class="@if(request()->routeIs('funnels.edit')) builder-full-width @endif">
     @php
         $primaryRole = auth()->user()->roles->first();
         $roleLabel = $primaryRole ? $primaryRole->name : ucwords(str_replace('-', ' ', auth()->user()->role ?? 'User'));
@@ -46,7 +47,8 @@
         $userAvatarBg = "hsl({$userHue}, 65%, 45%)";
     @endphp
 
-    <!-- Sidebar -->
+    <!-- Sidebar (hidden in funnel builder; use Exit Builder to leave) -->
+    @unless(request()->routeIs('funnels.edit'))
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo-container">
@@ -172,6 +174,7 @@
         </div>
 
     </div>
+    @endunless
 
     <!-- Main Content -->
     <div class="main-content">
