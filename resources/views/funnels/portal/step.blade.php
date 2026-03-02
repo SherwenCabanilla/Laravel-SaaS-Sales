@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=Manrope:wght@400;600;700;800&family=Montserrat:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&family=Open+Sans:wght@400;600;700;800&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@400;600;700;800&family=Raleway:wght@400;600;700;800&family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        html { scroll-behavior: smooth; }
         body { margin: 0; background: {{ $step->background_color ?: '#ffffff' }}; color: #0f172a; min-height: 100vh; }
         .wrap { width: 100%; max-width: none; margin: 0; padding: 0; }
         .step-content--full {
@@ -279,6 +280,11 @@
                     @php
                         $sectionStyle = $styleToString(is_array($section['style'] ?? null) ? $section['style'] : []);
                         $sectionSettings = is_array($section['settings'] ?? null) ? $section['settings'] : [];
+                        $sectionAnchorId = ltrim(trim((string) ($sectionSettings['anchorId'] ?? '')), '#');
+                        if ($sectionAnchorId !== '') {
+                            $sectionAnchorId = preg_replace('/[^a-zA-Z0-9\-_]/', '', $sectionAnchorId) ?: '';
+                            $sectionAnchorId = mb_substr($sectionAnchorId, 0, 80);
+                        }
                         $isBareCarouselWrap = (bool) ($section['isBareCarouselWrap'] ?? false);
                         $contentWidth = trim((string) ($sectionSettings['contentWidth'] ?? 'full'));
                         $widthMap = ['full' => '', 'wide' => '1200px', 'medium' => '992px', 'small' => '768px', 'xsmall' => '576px'];
@@ -318,7 +324,7 @@
                         }
                         $sectionInnerStyleString = implode('; ', $sectionInnerStyle);
                     @endphp
-                    <section class="builder-section" style="{{ $sectionInlineStyle }}">
+                    <section class="builder-section" @if($sectionAnchorId !== '') id="{{ $sectionAnchorId }}" @endif style="{{ $sectionInlineStyle }}">
                         <div class="builder-section-inner" @if($sectionInnerStyleString !== '') style="{{ $sectionInnerStyleString }}" @endif>
                         @foreach($rows as $row)
                             @php
@@ -597,7 +603,8 @@
                                                         } else {
                                                             $carouselSizeStyle .= 'margin-left:0 !important;margin-right:auto !important;';
                                                         }
-                                                        $carouselSizeStyle .= 'height:' . $fixedHeight . 'px !important;min-height:' . $fixedHeight . 'px !important;';
+                                                        $carouselSizeStyle .= 'aspect-ratio:' . $fixedWidth . ' / ' . $fixedHeight . ' !important;';
+                                                        $carouselSizeStyle .= 'height:auto !important;min-height:0 !important;';
                                                         $carouselId = 'car_' . md5((string) ($element['id'] ?? uniqid('', true)));
                                                     @endphp
                                                     <div class="builder-carousel-wrap" data-carousel id="{{ $carouselId }}" data-active="{{ $activeSlide }}" data-mode="{{ $slideshowMode }}" style="{{ $carouselSizeStyle }} background:#ffffff !important; background-image:none !important; color:#0f172a;">
