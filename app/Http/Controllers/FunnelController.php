@@ -122,6 +122,7 @@ class FunnelController extends Controller
                 Rule::exists('funnel_steps', 'id')->where(fn ($q) => $q->where('funnel_id', $funnel->id)),
             ],
             'layout_json' => 'required',
+            'background_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
         ]);
 
         $rawLayout = $validated['layout_json'];
@@ -140,12 +141,16 @@ class FunnelController extends Controller
         $layout = $this->sanitizeLayoutJson($rawLayout);
         $this->mergeElementSizeFromRaw($layout, $rawLayout);
 
-        $step->update(['layout_json' => $layout]);
+        $step->update([
+            'layout_json' => $layout,
+            'background_color' => $validated['background_color'] ?? null,
+        ]);
 
         return response()->json([
             'message' => 'Layout saved successfully.',
             'step_id' => $step->id,
             'layout_json' => $layout,
+            'background_color' => $step->background_color,
         ]);
     }
 
@@ -839,7 +844,7 @@ class FunnelController extends Controller
             }
         }
 
-        foreach (['textColor', 'controlsColor', 'arrowColor', 'bodyBgColor'] as $k) {
+        foreach (['textColor', 'controlsColor', 'arrowColor', 'bodyBgColor', 'containerBgColor'] as $k) {
             $v = $readColor($k);
             if ($v !== null) {
                 $safe[$k] = $v;

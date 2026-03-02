@@ -373,7 +373,11 @@
                                                 $menuAlign = $settings['menuAlign'] ?? 'left';
                                                 $menuAlignStyle = 'display:flex;justify-content:' . ($menuAlign === 'right' ? 'flex-end' : ($menuAlign === 'center' ? 'center' : 'flex-start')) . ';';
                                                 $widthBehavior = $settings['widthBehavior'] ?? 'fluid';
-                                                $btnWrapStyle = ($type === 'button' ? $alignStyle : '');
+                                                $buttonContainerBg = trim((string) ($settings['containerBgColor'] ?? ''));
+                                                if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $buttonContainerBg)) {
+                                                    $buttonContainerBg = '';
+                                                }
+                                                $btnWrapStyle = ($type === 'button' ? ($alignStyle . ($buttonContainerBg !== '' ? 'background-color:' . $buttonContainerBg . ';' : '')) : '');
                                                 $mediaWrapStyle = ($style !== '' ? ($style . ';') : '') . $alignStyle;
                                                 $btnInnerStyle = $style . ($type === 'button' && $widthBehavior === 'fill' ? (($style !== '' ? ';' : '') . ' width:100%;display:block;box-sizing:border-box;text-align:center;') : '');
                                             @endphp
