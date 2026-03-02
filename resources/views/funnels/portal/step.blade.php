@@ -596,7 +596,7 @@
                                                         $carouselId = 'car_' . md5((string) ($element['id'] ?? uniqid('', true)));
                                                     @endphp
                                                     <div class="builder-carousel-wrap" data-carousel id="{{ $carouselId }}" data-active="{{ $activeSlide }}" data-mode="{{ $slideshowMode }}" style="{{ $carouselSizeStyle }} background:#ffffff !important; background-image:none !important; color:#0f172a;">
-                                                        <div class="builder-carousel-track" data-carousel-track>
+                                                        <div class="builder-carousel-track" data-carousel-track style="transform: translateX(-{{ $activeSlide * 100 }}%);">
                                                             @foreach($slides as $si => $slide)
                                                                 @php
                                                                     $slideTitle = trim((string) ($slide['label'] ?? ('Slide #' . ($si + 1))));
