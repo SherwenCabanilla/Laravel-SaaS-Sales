@@ -79,6 +79,7 @@
 .row-inner{display:flex;flex-wrap:wrap;gap:8px;position:relative}
 .col{flex:1 1 240px;min-height:120px;min-width:0;border:1px dashed #bfdbfe !important;border-radius:0;padding:6px;background:#ffffff;position:relative;overflow:hidden}
 .row-resize-handle-y{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);z-index:4;width:42px;height:10px;border-radius:999px;border:1px solid #93c5fd;background:#dbeafe;cursor:ns-resize;opacity:.9}
+.section-resize-handle-y{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);z-index:4;width:46px;height:10px;border-radius:999px;border:1px solid #93c5fd;background:#dbeafe;cursor:ns-resize;opacity:.95}
 .media-resize-dot{position:absolute;z-index:5;width:18px;height:18px;border-radius:999px;border:2px solid #ffffff;background:#3b82f6;box-shadow:0 1px 2px rgba(15,23,42,.24)}
 .media-resize-dot-left{left:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}
 .media-resize-dot-right{right:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}
@@ -1569,7 +1570,7 @@ function renderCarouselPreviewItem(item,onDelete,onSelect,isSelected){
 
 function createDefaultRow(){return {id:uid("row"),style:{gap:"8px"},columns:[]};}
 function createDefaultColumn(){return {id:uid("col"),style:{flex:"1 1 240px",height:"120px",minHeight:"120px"},elements:[]};}
-function createDefaultSection(){return {id:uid("sec"),style:{padding:"20px",backgroundColor:"#fff"},settings:{contentWidth:"full"},elements:[],rows:[]};}
+function createDefaultSection(){return {id:uid("sec"),style:{padding:"20px",backgroundColor:"#fff",minHeight:"30vh"},settings:{contentWidth:"full"},elements:[],rows:[]};}
 function createRootItem(type){
     if(type==="section")return Object.assign({kind:"section"},createDefaultSection());
     if(type==="row")return Object.assign({kind:"row"},createDefaultRow());
@@ -2258,7 +2259,7 @@ function renderElement(item,ctx){
         if(["left","center","right"].indexOf(carAlign)<0)carAlign="left";
         w.style.display="block";
         w.style.boxSizing="border-box";
-        w.style.overflow="hidden";
+        w.style.overflow="visible";
         w.style.marginLeft=carAlign==="right"?"auto":(carAlign==="center"?"auto":"0");
         w.style.marginRight=carAlign==="left"?"auto":(carAlign==="center"?"auto":"0");
         simpleWrap.style.minHeight=(fixedH+"px");
@@ -2395,6 +2396,7 @@ function renderElement(item,ctx){
         }
         w.innerHTML="";
         w.appendChild(simpleWrap);
+        if(isSelected)attachCarouselResizeHandles(w,item);
         return w;
         function addDropToCarousel(type,rowIndex,colIndex){
             type=normalizeCarouselDropType(type);
@@ -2651,6 +2653,70 @@ function renderElement(item,ctx){
             emptyAdd.onclick=e=>{e.preventDefault();e.stopPropagation();saveToHistory();promptImageFilesForSlides();};
             wrap.appendChild(emptyAdd);
         }
+        (function mountInlineCarouselResizeHandles(){
+            var mk=function(mode){
+                var h=document.createElement("div");
+                h.title="Drag to resize";
+                h.style.position="absolute";
+                h.style.width="24px";
+                h.style.height="24px";
+                h.style.borderRadius="999px";
+                h.style.border="2px solid #ffffff";
+                h.style.background="#2563eb";
+                h.style.boxShadow="0 2px 6px rgba(15,23,42,.28)";
+                h.style.pointerEvents="auto";
+                h.style.zIndex="999";
+                if(mode==="left"){h.style.left="6px";h.style.top="50%";h.style.transform="translateY(-50%)";h.style.cursor="ew-resize";}
+                else if(mode==="right"){h.style.right="6px";h.style.top="50%";h.style.transform="translateY(-50%)";h.style.cursor="ew-resize";}
+                else if(mode==="bottom"){h.style.left="50%";h.style.bottom="6px";h.style.transform="translateX(-50%)";h.style.cursor="ns-resize";}
+                else if(mode==="bottom-left"){h.style.left="6px";h.style.bottom="6px";h.style.cursor="nesw-resize";}
+                else if(mode==="bottom-right"){h.style.right="6px";h.style.bottom="6px";h.style.cursor="nwse-resize";}
+                h.addEventListener("click",function(ev){ev.preventDefault();ev.stopPropagation();});
+                h.addEventListener("mousedown",function(e){
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var rect=w.getBoundingClientRect();
+                    var startX=Number(e.clientX)||0;
+                    var startY=Number(e.clientY)||0;
+                    var startW=Math.max(50,Math.round(rect.width||Number(cs.fixedWidth)||500));
+                    var startH=Math.max(50,Math.round(rect.height||Number(cs.fixedHeight)||500));
+                    var didSave=false;
+                    function onMove(ev){
+                        if(!didSave){saveToHistory();didSave=true;}
+                        var dx=(Number(ev.clientX)||0)-startX;
+                        var dy=(Number(ev.clientY)||0)-startY;
+                        var nw=startW,nh=startH;
+                        if(mode==="left")nw=Math.max(50,Math.min(2400,Math.round(startW-dx)));
+                        else if(mode==="right")nw=Math.max(50,Math.min(2400,Math.round(startW+dx)));
+                        else if(mode==="bottom")nh=Math.max(50,Math.min(1600,Math.round(startH+dy)));
+                        else if(mode==="bottom-left"){nw=Math.max(50,Math.min(2400,Math.round(startW-dx)));nh=Math.max(50,Math.min(1600,Math.round(startH+dy)));}
+                        else if(mode==="bottom-right"){nw=Math.max(50,Math.min(2400,Math.round(startW+dx)));nh=Math.max(50,Math.min(1600,Math.round(startH+dy)));}
+                        cs.fixedWidth=nw;cs.fixedHeight=nh;
+                        w.style.setProperty("width",nw+"px","important");
+                        w.style.setProperty("min-width",nw+"px","important");
+                        w.style.setProperty("max-width",nw+"px","important");
+                        w.style.setProperty("height",nh+"px","important");
+                        w.style.setProperty("min-height",nh+"px","important");
+                        wrap.style.minHeight=nh+"px";
+                    }
+                    function onUp(){
+                        document.removeEventListener("mousemove",onMove);
+                        document.removeEventListener("mouseup",onUp);
+                        renderCanvas();
+                        renderSettings();
+                    }
+                    document.addEventListener("mousemove",onMove);
+                    document.addEventListener("mouseup",onUp);
+                });
+                return h;
+            };
+            wrap.style.position="relative";
+            wrap.appendChild(mk("left"));
+            wrap.appendChild(mk("right"));
+            wrap.appendChild(mk("bottom-left"));
+            wrap.appendChild(mk("bottom"));
+            wrap.appendChild(mk("bottom-right"));
+        })();
         w.innerHTML="";w.appendChild(wrap);
     }
     else if(item.type==="video"){
@@ -2758,21 +2824,19 @@ function renderElement(item,ctx){
         if(isSelected)attachMediaResizeHandles(w,item);
     }
     if(item.type==="carousel"){
-        attachCarouselResizeHandles(w,item);
+        // Attach resize handles when carousel is selected
+        if(isSelected)attachCarouselResizeHandles(w,item);
     }
     return w;
 }
 
 function attachCarouselResizeHandles(node,item){
     if(!node||!item)return;
-    node.style.position="relative";
+    if(getComputedStyle(node).position==="static")node.style.position="relative";
     node.style.overflow="visible";
-    node.style.zIndex="6";
+    node.style.zIndex="9";
     item.settings=item.settings||{};
-    var parseNum=function(v,fallback){
-        var n=Number(v);
-        return isNaN(n)?fallback:n;
-    };
+    var parseNum=function(v,fallback){var n=Number(v);return isNaN(n)?fallback:n;};
     var clamp=function(n,min,max){return Math.max(min,Math.min(max,n));};
     var applySize=function(w,h){
         var nextW=clamp(Math.round(parseNum(w,500)),50,2400);
@@ -2803,15 +2867,9 @@ function attachCarouselResizeHandles(node,item){
             if(mode==="left")nextW=clamp(startW-dx,50,2400);
             else if(mode==="right")nextW=clamp(startW+dx,50,2400);
             else if(mode==="bottom")nextH=clamp(startH+dy,50,1600);
-            else if(mode==="bottom-left"){
-                nextW=clamp(startW-dx,50,2400);
-                nextH=clamp(startH+dy,50,1600);
-            }else if(mode==="bottom-right"){
-                nextW=clamp(startW+dx,50,2400);
-                nextH=clamp(startH+dy,50,1600);
-            }
+            else if(mode==="bottom-left"){nextW=clamp(startW-dx,50,2400);nextH=clamp(startH+dy,50,1600);}
+            else if(mode==="bottom-right"){nextW=clamp(startW+dx,50,2400);nextH=clamp(startH+dy,50,1600);}
             applySize(nextW,nextH);
-            positionOverlays();
         }
         function onUp(){
             document.removeEventListener("mousemove",onMove);
@@ -2822,71 +2880,25 @@ function attachCarouselResizeHandles(node,item){
         document.addEventListener("mousemove",onMove);
         document.addEventListener("mouseup",onUp);
     }
-    var overlays=[];
-    function positionOverlays(){
-        var rect=node.getBoundingClientRect();
-        overlays.forEach(function(h){
-            if(!h||!h._mode)return;
-            h.style.left="";
-            h.style.right="";
-            h.style.top="";
-            h.style.bottom="";
-            h.style.transform="none";
-            if(h._mode==="left"){
-                h.style.left=(Math.round(rect.left)+6)+"px";
-                h.style.top=(Math.round(rect.top+rect.height/2))+"px";
-                h.style.transform="translate(-50%,-50%)";
-            }else if(h._mode==="right"){
-                h.style.left=(Math.round(rect.right)-6)+"px";
-                h.style.top=(Math.round(rect.top+rect.height/2))+"px";
-                h.style.transform="translate(-50%,-50%)";
-            }else if(h._mode==="bottom"){
-                h.style.left=(Math.round(rect.left+rect.width/2))+"px";
-                h.style.top=(Math.round(rect.bottom)-6)+"px";
-                h.style.transform="translate(-50%,-50%)";
-            }else if(h._mode==="bottom-left"){
-                h.style.left=(Math.round(rect.left)+6)+"px";
-                h.style.top=(Math.round(rect.bottom)-6)+"px";
-                h.style.transform="translate(-50%,-50%)";
-            }else if(h._mode==="bottom-right"){
-                h.style.left=(Math.round(rect.right)-6)+"px";
-                h.style.top=(Math.round(rect.bottom)-6)+"px";
-                h.style.transform="translate(-50%,-50%)";
-            }
-        });
-    }
-    function makeHandle(cls,mode){
+    function makeHandle(mode){
         var h=document.createElement("div");
-        h.className=cls;
-        h.classList.add("carousel-resize-overlay-dot");
-        h._mode=mode;
+        h.className="media-resize-dot";
         h.title="Drag to resize";
-        h.style.position="fixed";
-        h.style.width="22px";
-        h.style.height="22px";
-        h.style.borderRadius="999px";
-        h.style.border="2px solid #ffffff";
-        h.style.background="#2563eb";
-        h.style.boxShadow="0 2px 6px rgba(15,23,42,.28)";
-        h.style.pointerEvents="auto";
-        h.style.zIndex="2000";
-        if(mode==="left"||mode==="right")h.style.cursor="ew-resize";
-        else if(mode==="bottom")h.style.cursor="ns-resize";
-        else if(mode==="bottom-left")h.style.cursor="nesw-resize";
-        else if(mode==="bottom-right")h.style.cursor="nwse-resize";
+        if(mode==="left")h.classList.add("media-resize-dot-left");
+        else if(mode==="right")h.classList.add("media-resize-dot-right");
+        else if(mode==="bottom")h.classList.add("media-resize-dot-b");
+        else if(mode==="bottom-left")h.classList.add("media-resize-dot-bl");
+        else if(mode==="bottom-right")h.classList.add("media-resize-dot-br");
+        h.style.zIndex="999";
         h.addEventListener("click",function(ev){ev.preventDefault();ev.stopPropagation();});
         h.addEventListener("mousedown",function(ev){startDrag(mode,ev);});
-        document.body.appendChild(h);
-        overlays.push(h);
+        node.appendChild(h);
     }
-    makeHandle("carousel-resize-dot carousel-resize-dot-left","left");
-    makeHandle("carousel-resize-dot carousel-resize-dot-right","right");
-    makeHandle("carousel-resize-dot carousel-resize-dot-bl","bottom-left");
-    makeHandle("carousel-resize-dot carousel-resize-dot-b","bottom");
-    makeHandle("carousel-resize-dot carousel-resize-dot-br","bottom-right");
-    positionOverlays();
-
-    setTimeout(positionOverlays,0);
+    makeHandle("left");
+    makeHandle("right");
+    makeHandle("bottom-left");
+    makeHandle("bottom");
+    makeHandle("bottom-right");
 }
 
 function attachMediaResizeHandles(node,item){
@@ -3020,6 +3032,48 @@ function attachRowHeightResizeHandle(rowInner,rowObj){
     rowInner.appendChild(hHandle);
 }
 
+function attachSectionHeightResizeHandle(sectionNode,sectionObj){
+    if(!sectionNode||!sectionObj)return;
+    if(getComputedStyle(sectionNode).position==="static")sectionNode.style.position="relative";
+    var hHandle=document.createElement("div");
+    hHandle.className="section-resize-handle-y";
+    hHandle.title="Drag to resize section height";
+    hHandle.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();});
+    hHandle.addEventListener("mousedown",function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var startY=Number(e.clientY)||0;
+        sectionObj.style=sectionObj.style||{};
+        var cssMin=String(sectionObj.style.minHeight||"").trim();
+        var startH=0;
+        if(cssMin.endsWith("px")){
+            var n=Number(cssMin.replace("px","").trim());
+            if(!isNaN(n))startH=n;
+        }else if(cssMin.endsWith("vh")){
+            var vh=Number(cssMin.replace("vh","").trim());
+            if(!isNaN(vh))startH=Math.round((window.innerHeight||900)*(vh/100));
+        }
+        if(startH<=0){
+            startH=Math.max(120,Math.round(sectionNode.getBoundingClientRect().height||0));
+        }
+        var didSave=false;
+        function onMove(ev){
+            if(!didSave){saveToHistory();didSave=true;}
+            var dy=(Number(ev.clientY)||0)-startY;
+            var next=Math.max(80,Math.min(2200,Math.round(startH+dy)));
+            sectionObj.style.minHeight=next+"px";
+            sectionNode.style.minHeight=sectionObj.style.minHeight;
+        }
+        function onUp(){
+            document.removeEventListener("mousemove",onMove);
+            document.removeEventListener("mouseup",onUp);
+        }
+        document.addEventListener("mousemove",onMove);
+        document.addEventListener("mouseup",onUp);
+    });
+    sectionNode.appendChild(hHandle);
+}
+
 function applyColumnImageFit(colNode,colInner,colObj){
     if(!colNode||!colInner||!colObj)return;
     var els=Array.isArray(colObj.elements)?colObj.elements:[];
@@ -3066,6 +3120,12 @@ function renderCanvas(){
         var isBareRootWrap=!!s.__bareRootWrap;
         var isBareSection=!!(isBareCarouselSection||isBareRootWrap);
         const sn=document.createElement("section");sn.className="sec";sn.setAttribute("data-node-kind","section");sn.setAttribute("data-outline-label","Section");sn.setAttribute("data-sec-id",String(s.id||""));styleApply(sn,s.style||{});
+        if(!isBareSection){
+            var secMinH=(s&&s.style&&String(s.style.minHeight||"").trim())||"";
+            if(secMinH===""){
+                sn.style.minHeight="30vh";
+            }
+        }
         if(isBareCarouselSection)sn.classList.add("sec--bare-carousel");
         if(isBareRootWrap)sn.classList.add("sec--bare-wrap");
         const inner=document.createElement("div");inner.className="sec-inner";
@@ -3160,6 +3220,9 @@ function renderCanvas(){
             rn.appendChild(rowInner);
             inner.appendChild(rn);
         });
+        if(!isBareSection){
+            attachSectionHeightResizeHandle(sn,s);
+        }
         sn.appendChild(inner);
         canvas.appendChild(sn);
     });
@@ -3489,10 +3552,18 @@ function renderSettings(){
         var padDef=[20,20,20,20],marDef=[0,0,0,0];
         var pad=parseSpacing(t.style&&t.style.padding,padDef),mar=parseSpacing(t.style&&t.style.margin,marDef);
         var cw=(t.settings&&t.settings.contentWidth)||"full";
-        settings.innerHTML='<div class="menu-section-title">Layout</div><label>Content width</label><select id="secCw"><option value="full">Full page</option><option value="wide">Wide</option><option value="medium">Medium</option><option value="small">Small</option><option value="xsmall">Extra small</option></select><div class="menu-split"></div><div class="menu-section-title">Spacing</div><div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>&harr;</span></button><span>Link</span></div></div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>&harr;</span></button><span>Link</span></div></div></div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Background color</label><input id="bg" type="color"><label>Background image URL</label><input id="bgImg" placeholder="https://..."><label>Upload background image</label><input id="bgUp" type="file" accept="image/*">'+radiusHelpLabelHtml("secRadiusHelp","Border radius")+'<div class="px-wrap"><input id="secRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div>'+remove;
+        settings.innerHTML='<div class="menu-section-title">Layout</div><label>Content width</label><select id="secCw"><option value="full">Full page</option><option value="wide">Wide</option><option value="medium">Medium</option><option value="small">Small</option><option value="xsmall">Extra small</option></select><label>Section ID (anchor)</label><input id="secAnchor" placeholder="contact"><div class="meta">Example: contact, etc</div><div class="menu-split"></div><div class="menu-section-title">Spacing</div><div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>&harr;</span></button><span>Link</span></div></div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>&harr;</span></button><span>Link</span></div></div></div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Background color</label><input id="bg" type="color"><label>Background image URL</label><input id="bgImg" placeholder="https://..."><label>Upload background image</label><input id="bgUp" type="file" accept="image/*">'+radiusHelpLabelHtml("secRadiusHelp","Border radius")+'<div class="px-wrap"><input id="secRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div>'+remove;
         bind("bg",(t.style&&t.style.backgroundColor)||"#ffffff",v=>sty().backgroundColor=v,{undo:true});
         bind("bgImg",readBgImageUrl(),v=>{var s=sty();s.backgroundImage=(v&&String(v).trim()!=="")?('url('+String(v).trim()+')'):"";renderCanvas();},{undo:true});
         bind("secCw",cw,v=>{t.settings=t.settings||{};t.settings.contentWidth=v;renderCanvas();},{undo:true});
+        bind("secAnchor",(t.settings&&t.settings.anchorId)||"",v=>{
+            t.settings=t.settings||{};
+            var next=String(v||"").trim().replace(/^#+/,"").replace(/[^A-Za-z0-9\-_]/g,"").slice(0,80);
+            if(next==="")delete t.settings.anchorId;else t.settings.anchorId=next;
+            var a=document.getElementById("secAnchor");
+            if(a&&a.value!==next)a.value=next;
+            renderCanvas();
+        },{undo:true});
         var bgUp=document.getElementById("bgUp");
         if(bgUp)bgUp.onchange=()=>{if(bgUp.files&&bgUp.files[0]){saveToHistory();var bgImg=document.getElementById("bgImg");uploadImage(bgUp.files[0],url=>{var s=sty();s.backgroundImage='url('+url+')';if(bgImg)bgImg.value=url;renderCanvas();},"Background image upload");}};
         var paddingLinked=false,marginLinked=false;
@@ -3952,16 +4023,61 @@ function renderSettings(){
 
         function renderMenuEditor(){
             var items=t.settings.items||[];
+            function collectSectionAnchors(){
+                var seen={};
+                var out=[];
+                rootItems().forEach(function(it){
+                    if(String((it&&it.kind)||"").toLowerCase()!=="section")return;
+                    var settings=(it&&it.settings&&typeof it.settings==="object")?it.settings:{};
+                    var raw=String(settings.anchorId||"").trim().replace(/^#+/,"").replace(/[^A-Za-z0-9\-_]/g,"").slice(0,80);
+                    if(!raw||seen[raw])return;
+                    seen[raw]=true;
+                    out.push(raw);
+                });
+                return out;
+            }
+            var sectionAnchors=collectSectionAnchors();
             var cards=items.map((it,idx)=>{
                 var collapsed=!!t.settings.menuCollapsed[idx];
-                return '<div class="menu-item-card"><div class="menu-item-head"><strong>Menu item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button><button type="button" class="menu-toggle" data-idx="'+idx+'" title="Toggle"><i class="fas '+(collapsed?'fa-chevron-down':'fa-chevron-up')+'"></i></button></div></div>'+(collapsed?'':'<input id="miLabel_'+idx+'" value="'+String((it&&it.label)||"").replace(/"/g,'&quot;')+'" placeholder="Label"><input id="miUrl_'+idx+'" value="'+String((it&&it.url)||"").replace(/"/g,'&quot;')+'" placeholder="Link"><label><input id="miNew_'+idx+'" type="checkbox"'+((it&&it.newWindow)?' checked':'')+'> Open in a new window</label><label><input id="miSub_'+idx+'" type="checkbox"'+((it&&it.hasSubmenu)?' checked':'')+'> Has submenu</label>')+'</div>';
+                var currentUrl=String((it&&it.url)||"").trim();
+                var currentAnchor=currentUrl.indexOf("#")===0?currentUrl.slice(1):"";
+                currentAnchor=String(currentAnchor||"").trim().replace(/^#+/,"").replace(/[^A-Za-z0-9\-_]/g,"").slice(0,80);
+                var hasCurrentInList=currentAnchor!==""&&sectionAnchors.indexOf(currentAnchor)>=0;
+                var useSectionMode=currentAnchor!=="";
+                var anchorOptions=sectionAnchors.map(function(anchor){
+                    var esc=String(anchor).replace(/"/g,'&quot;');
+                    return '<option value="'+esc+'"'+(anchor===currentAnchor?' selected':'')+'>'+anchor+'</option>';
+                }).join("");
+                if(currentAnchor!==""&&!hasCurrentInList){
+                    var missingEsc=String(currentAnchor).replace(/"/g,'&quot;');
+                    anchorOptions='<option value="'+missingEsc+'" selected>Missing: '+currentAnchor+'</option>'+anchorOptions;
+                }
+                if(anchorOptions===""){
+                    anchorOptions='<option value="">No section IDs found</option>';
+                }
+                var body=collapsed?'':'<input id="miLabel_'+idx+'" value="'+String((it&&it.label)||"").replace(/"/g,'&quot;')+'" placeholder="Label"><label>Target</label><select id="miMode_'+idx+'"><option value="section"'+(useSectionMode?' selected':'')+'>Section anchor</option><option value="custom"'+(!useSectionMode?' selected':'')+'>Custom link</option></select><div id="miSectionWrap_'+idx+'"'+(useSectionMode?'':' style="display:none;"')+'><label>Section</label><select id="miAnchor_'+idx+'"'+(sectionAnchors.length===0?' disabled':'')+'>'+anchorOptions+'</select><div class="meta">Uses #anchor automatically.</div></div><div id="miCustomWrap_'+idx+'"'+(!useSectionMode?'':' style="display:none;"')+'><label>Link</label><input id="miUrl_'+idx+'" value="'+String((it&&it.url)||"").replace(/"/g,'&quot;')+'" placeholder="e.g. /about or https://example.com"></div><label><input id="miNew_'+idx+'" type="checkbox"'+((it&&it.newWindow)?' checked':'')+'> Open in a new window</label><label><input id="miSub_'+idx+'" type="checkbox"'+((it&&it.hasSubmenu)?' checked':'')+'> Has submenu</label>';
+                return '<div class="menu-item-card"><div class="menu-item-head"><strong>Menu item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button><button type="button" class="menu-toggle" data-idx="'+idx+'" title="Toggle"><i class="fas '+(collapsed?'fa-chevron-down':'fa-chevron-up')+'"></i></button></div></div>'+body+'</div>';
             }).join("");
             settings.innerHTML='<div class="menu-panel-title">Menu</div><div class="menu-section-title">Content</div>'+cards+'<button type="button" id="addMenuItem" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add menu item</button><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Font family</label><select id="mFont"><option value="">Same font as the page</option>'+fonts.map(f=>'<option value="'+f.value.replace(/"/g,'&quot;')+'">'+f.label+'</option>').join('')+'</select><div class="menu-typo-grid"><div class="px-wrap"><input id="mFs" type="number" step="1"><span class="px-unit">px</span></div><div class="px-wrap"><input id="mLh" type="number" step="0.1"><span class="px-unit">lh</span></div></div><label>Text style</label><div class="menu-style-row"><button type="button" id="mBold" class="menu-align-btn" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button><button type="button" id="mItalic" class="menu-align-btn" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button></div><div class="menu-split"></div><div class="menu-section-title">Layout</div><div class="menu-align-row"><button type="button" class="menu-align-btn" data-align="left"><i class="fas fa-align-left"></i></button><button type="button" class="menu-align-btn" data-align="center"><i class="fas fa-align-center"></i></button><button type="button" class="menu-align-btn" data-align="right"><i class="fas fa-align-right"></i></button></div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Letter spacing</label><div class="menu-slider-row"><input id="mLsRange" type="range" min="0" max="20" step="0.1"><input id="mLsNum" type="number" min="0" max="20" step="0.1"></div><label>Text color</label><input id="mTextColor" type="color"><label>Menu items underline color</label><input id="mUnderlineColor" type="color"><label>Background color</label><input id="mBgColor" type="color"><label>Background image URL</label><input id="mBgImg" placeholder="https://..."><label>Upload background image</label><input id="mBgUp" type="file" accept="image/*"><div class="menu-split"></div><div class="menu-section-title">Spacing</div><label>Spacing between menu items</label><div class="menu-slider-row"><input id="mGapRange" type="range" min="0" max="64" step="1"><input id="mGapNum" type="number" min="0" max="64" step="1"></div><label>Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>&harr;</span></button><span>Link</span></div></div><label>Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>&harr;</span></button><span>Link</span></div></div>'+moveControls+remove;
 
             items.forEach((it,idx)=>{
-                var lab=document.getElementById("miLabel_"+idx),url=document.getElementById("miUrl_"+idx),nw=document.getElementById("miNew_"+idx),sm=document.getElementById("miSub_"+idx);
+                var lab=document.getElementById("miLabel_"+idx),url=document.getElementById("miUrl_"+idx),mode=document.getElementById("miMode_"+idx),anchor=document.getElementById("miAnchor_"+idx),sectionWrap=document.getElementById("miSectionWrap_"+idx),customWrap=document.getElementById("miCustomWrap_"+idx),nw=document.getElementById("miNew_"+idx),sm=document.getElementById("miSub_"+idx);
                 if(lab)lab.addEventListener("input",()=>{it.label=lab.value||"";renderCanvas();});
                 if(url)url.addEventListener("input",()=>{it.url=url.value||"";renderCanvas();});
+                if(mode)mode.addEventListener("change",()=>{
+                    var isSection=mode.value==="section";
+                    if(sectionWrap)sectionWrap.style.display=isSection?"":"none";
+                    if(customWrap)customWrap.style.display=isSection?"none":"";
+                    if(isSection&&anchor&&anchor.value){
+                        it.url="#"+anchor.value;
+                    }
+                    renderCanvas();
+                });
+                if(anchor)anchor.addEventListener("change",()=>{
+                    var next=String(anchor.value||"").trim();
+                    if(next!=="")it.url="#"+next;
+                    renderCanvas();
+                });
                 if(nw)nw.addEventListener("change",()=>{it.newWindow=!!nw.checked;renderCanvas();});
                 if(sm)sm.addEventListener("change",()=>{it.hasSubmenu=!!sm.checked;renderCanvas();});
             });

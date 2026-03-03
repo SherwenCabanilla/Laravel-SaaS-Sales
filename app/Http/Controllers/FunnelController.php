@@ -1066,6 +1066,16 @@ class FunnelController extends Controller
             $safe['contentWidth'] = $cw;
         }
 
+        $anchorId = trim((string) ($settings['anchorId'] ?? ''));
+        $anchorId = ltrim($anchorId, '#');
+        if ($anchorId !== '') {
+            $anchorId = preg_replace('/[^a-zA-Z0-9\-_]/', '', $anchorId) ?: '';
+            $anchorId = mb_substr($anchorId, 0, 80);
+            if ($anchorId !== '') {
+                $safe['anchorId'] = $anchorId;
+            }
+        }
+
         return $safe;
     }
 
