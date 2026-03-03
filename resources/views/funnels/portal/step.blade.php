@@ -378,11 +378,12 @@
                                                     $buttonContainerBg = '';
                                                 }
                                                 $btnWrapStyle = ($type === 'button' ? ($alignStyle . ($buttonContainerBg !== '' ? 'background-color:' . $buttonContainerBg . ';' : '')) : '');
+                                                $iconWrapStyle = ($type === 'icon' ? $alignStyle : '');
                                                 $mediaWrapStyle = ($style !== '' ? ($style . ';') : '') . $alignStyle;
                                                 $btnInnerStyle = $style . ($type === 'button' && $widthBehavior === 'fill' ? (($style !== '' ? ';' : '') . ' width:100%;display:block;box-sizing:border-box;text-align:center;') : '');
                                             @endphp
 
-                                            <div class="builder-el" @if($type === 'image' || $type === 'video' || $type === 'button') style="{{ $type === 'button' ? $btnWrapStyle : $mediaWrapStyle }}" @endif>
+                                            <div class="builder-el" @if($type === 'image' || $type === 'video' || $type === 'button' || $type === 'icon') style="{{ $type === 'button' ? $btnWrapStyle : ($type === 'icon' ? $iconWrapStyle : $mediaWrapStyle) }}" @endif>
                                                 @if($type === 'heading')
                                                     <h2 class="builder-heading" style="{{ $style }}">{!! $content !!}</h2>
                                                 @elseif($type === 'text')
@@ -393,6 +394,23 @@
                                                     @endif
                                                 @elseif($type === 'button')
                                                     <a class="btn" href="{{ $link !== '' ? $link : '#' }}" style="{{ $btnInnerStyle }}">{!! $content !== '' ? $content : 'Button' !!}</a>
+                                                @elseif($type === 'icon')
+                                                    @php
+                                                        $iconNameRaw = strtolower(trim((string) ($settings['iconName'] ?? 'star')));
+                                                        $iconName = preg_match('/^[a-z0-9-]{1,40}$/', $iconNameRaw) ? $iconNameRaw : 'star';
+                                                        $iconStyle = strtolower(trim((string) ($settings['iconStyle'] ?? 'solid')));
+                                                        if (!in_array($iconStyle, ['solid', 'regular', 'brands'], true)) {
+                                                            $iconStyle = 'solid';
+                                                        }
+                                                        $iconPrefix = $iconStyle === 'brands' ? 'fa-brands' : ($iconStyle === 'regular' ? 'fa-regular' : 'fa-solid');
+                                                        $iconClass = $iconPrefix . ' fa-' . $iconName;
+                                                        $iconLink = trim((string) ($settings['link'] ?? ''));
+                                                    @endphp
+                                                    @if($iconLink !== '')
+                                                        <a href="{{ $iconLink }}" style="{{ $style !== '' ? $style : 'font-size:36px;color:#1d4ed8;' }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></a>
+                                                    @else
+                                                        <span style="{{ $style !== '' ? $style : 'font-size:36px;color:#1d4ed8;' }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></span>
+                                                    @endif
                                                 @elseif($type === 'video')
                                                     @if($src !== '')
                                                         @php
@@ -481,6 +499,9 @@
                                                             $carouselSettings = is_array($carouselElement['settings'] ?? null) ? $carouselElement['settings'] : [];
                                                             if ($carouselType === 'image' || $carouselType === 'video') {
                                                                 return trim((string) ($carouselSettings['src'] ?? '')) !== '';
+                                                            }
+                                                            if ($carouselType === 'icon') {
+                                                                return trim((string) ($carouselSettings['iconName'] ?? '')) !== '';
                                                             }
                                                             if ($carouselType === 'heading' || $carouselType === 'text' || $carouselType === 'button') {
                                                                 return trim(strip_tags((string) ($carouselElement['content'] ?? ''))) !== '';
@@ -636,6 +657,23 @@
                                                                                                         $href = trim((string) ($ssc['link'] ?? '#'));
                                                                                                     @endphp
                                                                                                     <a href="{{ $href !== '' ? $href : '#' }}" class="btn" style="{{ $ss }}">{{ strip_tags($scontent) !== '' ? strip_tags($scontent) : 'Click' }}</a>
+                                                                                                @elseif($st === 'icon')
+                                                                                                    @php
+                                                                                                        $iconNameRaw = strtolower(trim((string) ($ssc['iconName'] ?? 'star')));
+                                                                                                        $iconName = preg_match('/^[a-z0-9-]{1,40}$/', $iconNameRaw) ? $iconNameRaw : 'star';
+                                                                                                        $iconStyle = strtolower(trim((string) ($ssc['iconStyle'] ?? 'solid')));
+                                                                                                        if (!in_array($iconStyle, ['solid', 'regular', 'brands'], true)) {
+                                                                                                            $iconStyle = 'solid';
+                                                                                                        }
+                                                                                                        $iconPrefix = $iconStyle === 'brands' ? 'fa-brands' : ($iconStyle === 'regular' ? 'fa-regular' : 'fa-solid');
+                                                                                                        $iconClass = $iconPrefix . ' fa-' . $iconName;
+                                                                                                        $iconLink = trim((string) ($ssc['link'] ?? ''));
+                                                                                                    @endphp
+                                                                                                    @if($iconLink !== '')
+                                                                                                        <a href="{{ $iconLink }}" style="{{ $ss !== '' ? $ss : 'font-size:36px;color:#1d4ed8;' }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></a>
+                                                                                                    @else
+                                                                                                        <span style="{{ $ss !== '' ? $ss : 'font-size:36px;color:#1d4ed8;' }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></span>
+                                                                                                    @endif
                                                                                                 @elseif($st === 'spacer')
                                                                                                     <div style="{{ $ss !== '' ? $ss : 'height:24px' }}"></div>
                                                                                                 @elseif($st === 'menu')

@@ -531,7 +531,7 @@ class FunnelController extends Controller
         $sanitizeElement = function (array $element): array {
             $type = (string) ($element['type'] ?? 'text');
             $type = in_array($type, [
-                'heading', 'text', 'image', 'button', 'form', 'video', 'countdown', 'spacer', 'menu', 'carousel',
+                'heading', 'text', 'image', 'button', 'icon', 'form', 'video', 'countdown', 'spacer', 'menu', 'carousel',
             ], true) ? $type : 'text';
 
             $rawContent = (string) ($element['content'] ?? '');
@@ -814,12 +814,17 @@ class FunnelController extends Controller
                 $safe[$k] = $v;
             }
         }
+        $iconName = strtolower((string) ($readString('iconName', 40) ?? ''));
+        if ($iconName !== null && preg_match('/^[a-z0-9-]{1,40}$/', $iconName)) {
+            $safe['iconName'] = $iconName;
+        }
 
         foreach ([
             'alignment' => ['left', 'center', 'right'],
             'widthBehavior' => ['fluid', 'fill'],
             'imageSourceType' => ['direct', 'upload'],
             'videoSourceType' => ['direct', 'upload'],
+            'iconStyle' => ['solid', 'regular', 'brands'],
             'menuAlign' => ['left', 'center', 'right'],
             'vAlign' => ['top', 'center', 'bottom'],
             'slideshowMode' => ['manual', 'auto'],
@@ -940,7 +945,7 @@ class FunnelController extends Controller
                                     ->map(function (array $element) {
                                         $type = (string) ($element['type'] ?? 'text');
                                         $type = in_array($type, [
-                                            'heading', 'text', 'image', 'button', 'form', 'video', 'countdown', 'spacer', 'menu', 'carousel',
+                                            'heading', 'text', 'image', 'button', 'icon', 'form', 'video', 'countdown', 'spacer', 'menu', 'carousel',
                                         ], true) ? $type : 'text';
 
                                         $rawContent = (string) ($element['content'] ?? '');
