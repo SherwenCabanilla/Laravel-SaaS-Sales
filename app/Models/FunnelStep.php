@@ -15,6 +15,7 @@ class FunnelStep extends Model
         'upsell' => 'Upsell Page',
         'downsell' => 'Downsell Page',
         'thank_you' => 'Thank You Page',
+        'custom' => 'Custom Page',
     ];
 
     public const LAYOUTS = [

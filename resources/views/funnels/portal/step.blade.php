@@ -183,6 +183,67 @@
             ];
         }
         $hasBuilderLayout = count($renderSections) > 0;
+        $activeSteps = collect($allSteps ?? [])->values()->filter(fn ($s) => isset($s->id, $s->slug));
+        $activeStepsBySlug = $activeSteps->keyBy(fn ($s) => strtolower(trim((string) $s->slug)));
+        $resolveButtonAction = function (array $settings) use ($funnel, $step, $nextStep, $isPreview, $activeStepsBySlug) {
+            $link = trim((string) ($settings['link'] ?? '#'));
+            $actionType = strtolower(trim((string) ($settings['actionType'] ?? '')));
+            if ($actionType === '') {
+                $actionType = ($link !== '' && $link !== '#') ? 'link' : 'next_step';
+            }
+
+            if ($actionType === 'next_step') {
+                if (!$nextStep) {
+                    return ['kind' => 'link', 'href' => '#'];
+                }
+                if ($isPreview) {
+                    return ['kind' => 'link', 'href' => route('funnels.preview', ['funnel' => $funnel, 'step' => $nextStep->id])];
+                }
+                return ['kind' => 'link', 'href' => route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $nextStep->slug])];
+            }
+
+            if ($actionType === 'step') {
+                $targetSlug = strtolower(trim((string) ($settings['actionStepSlug'] ?? '')));
+                $target = $targetSlug !== '' ? $activeStepsBySlug->get($targetSlug) : null;
+                if (!$target) {
+                    return ['kind' => 'link', 'href' => '#'];
+                }
+                if ($isPreview) {
+                    return ['kind' => 'link', 'href' => route('funnels.preview', ['funnel' => $funnel, 'step' => $target->id])];
+                }
+                return ['kind' => 'link', 'href' => route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $target->slug])];
+            }
+
+            if ($actionType === 'checkout') {
+                if (strtolower(trim((string) ($step->type ?? ''))) !== 'checkout') {
+                    return ['kind' => 'link', 'href' => '#'];
+                }
+                if ($isPreview) {
+                    return ['kind' => 'disabled'];
+                }
+                return [
+                    'kind' => 'post',
+                    'action' => route('funnels.portal.checkout', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]),
+                    'fields' => ['amount' => (float) ($step->price ?? 0)],
+                ];
+            }
+
+            if ($actionType === 'offer_accept' || $actionType === 'offer_decline') {
+                if (!in_array(strtolower(trim((string) ($step->type ?? ''))), ['upsell', 'downsell'], true)) {
+                    return ['kind' => 'link', 'href' => '#'];
+                }
+                if ($isPreview) {
+                    return ['kind' => 'disabled'];
+                }
+                return [
+                    'kind' => 'post',
+                    'action' => route('funnels.portal.offer', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]),
+                    'fields' => ['decision' => $actionType === 'offer_accept' ? 'accept' : 'decline'],
+                ];
+            }
+
+            return ['kind' => 'link', 'href' => ($link !== '' ? $link : '#')];
+        };
 
         $styleToString = function (array $style): string {
             $allowed = [
@@ -422,7 +483,23 @@
                                                         <img class="builder-img" src="{{ $src }}" alt="{{ $alt !== '' ? $alt : 'Image' }}" @if($imgStyle !== '') style="{{ $imgStyle }}" @endif>
                                                     @endif
                                                 @elseif($type === 'button')
-                                                    <a class="btn" href="{{ $link !== '' ? $link : '#' }}" style="{{ $btnInnerStyle }}">{!! $content !== '' ? $content : 'Button' !!}</a>
+                                                    @php
+                                                        $buttonAction = $resolveButtonAction($settings);
+                                                        $buttonLabel = $content !== '' ? $content : 'Button';
+                                                    @endphp
+                                                    @if(($buttonAction['kind'] ?? 'link') === 'post')
+                                                        <form method="POST" action="{{ $buttonAction['action'] }}" style="margin:0;">
+                                                            @csrf
+                                                            @foreach(($buttonAction['fields'] ?? []) as $fieldName => $fieldValue)
+                                                                <input type="hidden" name="{{ $fieldName }}" value="{{ $fieldValue }}">
+                                                            @endforeach
+                                                            <button type="submit" class="btn" style="{{ $btnInnerStyle }}">{!! $buttonLabel !!}</button>
+                                                        </form>
+                                                    @elseif(($buttonAction['kind'] ?? 'link') === 'disabled')
+                                                        <button type="button" class="btn" style="{{ $btnInnerStyle }}{{ $btnInnerStyle !== '' ? ';' : '' }}opacity:0.7;cursor:not-allowed;" disabled>{!! $buttonLabel !!}</button>
+                                                    @else
+                                                        <a class="btn" href="{{ $buttonAction['href'] ?? '#' }}" style="{{ $btnInnerStyle }}">{!! $buttonLabel !!}</a>
+                                                    @endif
                                                 @elseif($type === 'icon')
                                                     @php
                                                         $iconNameRaw = strtolower(trim((string) ($settings['iconName'] ?? 'star')));
@@ -702,9 +779,22 @@
                                                                                                     @endif
                                                                                                 @elseif($st === 'button')
                                                                                                     @php
-                                                                                                        $href = trim((string) ($ssc['link'] ?? '#'));
+                                                                                                        $buttonAction = $resolveButtonAction($ssc);
+                                                                                                        $buttonLabel = strip_tags($scontent) !== '' ? strip_tags($scontent) : 'Click';
                                                                                                     @endphp
-                                                                                                    <a href="{{ $href !== '' ? $href : '#' }}" class="btn" style="{{ $ss }}">{{ strip_tags($scontent) !== '' ? strip_tags($scontent) : 'Click' }}</a>
+                                                                                                    @if(($buttonAction['kind'] ?? 'link') === 'post')
+                                                                                                        <form method="POST" action="{{ $buttonAction['action'] }}" style="margin:0;">
+                                                                                                            @csrf
+                                                                                                            @foreach(($buttonAction['fields'] ?? []) as $fieldName => $fieldValue)
+                                                                                                                <input type="hidden" name="{{ $fieldName }}" value="{{ $fieldValue }}">
+                                                                                                            @endforeach
+                                                                                                            <button type="submit" class="btn" style="{{ $ss }}">{{ $buttonLabel }}</button>
+                                                                                                        </form>
+                                                                                                    @elseif(($buttonAction['kind'] ?? 'link') === 'disabled')
+                                                                                                        <button type="button" class="btn" style="{{ $ss }}{{ $ss !== '' ? ';' : '' }}opacity:0.7;cursor:not-allowed;" disabled>{{ $buttonLabel }}</button>
+                                                                                                    @else
+                                                                                                        <a href="{{ $buttonAction['href'] ?? '#' }}" class="btn" style="{{ $ss }}">{{ $buttonLabel }}</a>
+                                                                                                    @endif
                                                                                                 @elseif($st === 'icon')
                                                                                                     @php
                                                                                                         $iconNameRaw = strtolower(trim((string) ($ssc['iconName'] ?? 'star')));
@@ -905,9 +995,6 @@
                     </section>
                 @endforeach
 
-                <div style="margin-top: 14px;">
-                    @include('funnels.portal._step-actions', ['funnel' => $funnel, 'step' => $step, 'nextStep' => $nextStep, 'isPreview' => $isPreview])
-                </div>
             @else
                 <h2>{{ $step->title }}</h2>
                 @if($step->subtitle)

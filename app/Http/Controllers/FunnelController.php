@@ -106,6 +106,7 @@ class FunnelController extends Controller
             'funnel' => $funnel->load('tenant'),
             'step' => $resolvedStep,
             'nextStep' => $this->nextStep($steps, $resolvedStep->id),
+            'allSteps' => $steps,
             'isFirstStep' => (int) $steps->first()->id === (int) $resolvedStep->id,
             'isPreview' => true,
         ]);
@@ -311,9 +312,13 @@ class FunnelController extends Controller
     {
         $this->ensureTenantFunnelAccess($funnel);
 
-        $hasActiveStep = $funnel->steps()->where('is_active', true)->exists();
-        if (!$hasActiveStep) {
+        $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
+        if ($steps->isEmpty()) {
             return redirect()->back()->with('error', 'Publishing failed: add at least one active step.');
+        }
+        $issues = $this->validatePublishReadiness($steps);
+        if (count($issues) > 0) {
+            return redirect()->back()->with('error', 'Publishing failed: ' . implode(' ', $issues));
         }
 
         $funnel->update(['status' => 'published']);
@@ -408,6 +413,7 @@ class FunnelController extends Controller
                 'button_color' => $validated['button_color'] ?? null,
                 'cta_label' => $validated['cta_label'] ?? null,
                 'price' => $validated['price'] ?? null,
+                'layout_json' => ['root' => [], 'sections' => []],
                 'position' => $position,
                 'is_active' => true,
             ]);
@@ -893,7 +899,16 @@ class FunnelController extends Controller
             return null;
         };
 
-        foreach (['link' => 2048, 'src' => 2048, 'alt' => 1024, 'placeholder' => 1024, 'targetDate' => 120, 'platform' => 120, 'width' => 60] as $k => $maxLen) {
+        foreach ([
+            'link' => 2048,
+            'src' => 2048,
+            'alt' => 1024,
+            'placeholder' => 1024,
+            'targetDate' => 120,
+            'platform' => 120,
+            'width' => 60,
+            'actionStepSlug' => 120,
+        ] as $k => $maxLen) {
             $v = $readString($k, $maxLen);
             if ($v !== null && $v !== '') {
                 $safe[$k] = $v;
@@ -913,6 +928,7 @@ class FunnelController extends Controller
             'menuAlign' => ['left', 'center', 'right'],
             'vAlign' => ['top', 'center', 'bottom'],
             'slideshowMode' => ['manual', 'auto'],
+            'actionType' => ['next_step', 'step', 'link', 'checkout', 'offer_accept', 'offer_decline'],
         ] as $k => $allowed) {
             $v = $readEnum($k, $allowed);
             if ($v !== null) {
@@ -1182,6 +1198,114 @@ class FunnelController extends Controller
         }
 
         return $ordered->get($index + 1);
+    }
+
+    private function validatePublishReadiness($steps): array
+    {
+        $ordered = collect($steps)->values();
+        $issues = [];
+
+        foreach ($ordered as $idx => $step) {
+            $type = strtolower(trim((string) ($step->type ?? '')));
+            $title = trim((string) ($step->title ?? '')) !== '' ? trim((string) $step->title) : ('Step #' . ($idx + 1));
+            $hasNext = $ordered->get($idx + 1) !== null;
+            if (!$hasNext) {
+                continue;
+            }
+
+            $stats = $this->collectStepActionStats(is_array($step->layout_json ?? null) ? $step->layout_json : []);
+            if ($type === 'opt_in') {
+                if (($stats['formCount'] ?? 0) <= 0) {
+                    $issues[] = 'Step "' . $title . '" (Opt-in) must include at least one Form component.';
+                }
+                continue;
+            }
+            if ($type === 'checkout') {
+                if (($stats['checkoutActionCount'] ?? 0) <= 0) {
+                    $issues[] = 'Step "' . $title . '" (Checkout) must include at least one Button with action "Checkout submit".';
+                }
+                continue;
+            }
+            if ($type === 'upsell' || $type === 'downsell') {
+                if (($stats['offerAcceptActionCount'] ?? 0) <= 0 || ($stats['offerDeclineActionCount'] ?? 0) <= 0) {
+                    $issues[] = 'Step "' . $title . '" (' . ucfirst($type) . ') must include Buttons for both "Accept offer" and "Decline offer".';
+                }
+                continue;
+            }
+            if ($type === 'thank_you') {
+                continue;
+            }
+            if (($stats['navigateActionCount'] ?? 0) <= 0) {
+                $issues[] = 'Step "' . $title . '" must include at least one Button with action "Next step", "Specific step", or "Custom URL".';
+            }
+        }
+
+        return $issues;
+    }
+
+    private function collectStepActionStats(array $layout): array
+    {
+        $stats = [
+            'formCount' => 0,
+            'navigateActionCount' => 0,
+            'checkoutActionCount' => 0,
+            'offerAcceptActionCount' => 0,
+            'offerDeclineActionCount' => 0,
+        ];
+
+        $visit = function ($node) use (&$visit, &$stats): void {
+            if (!is_array($node)) {
+                return;
+            }
+
+            if (isset($node['type']) && is_string($node['type'])) {
+                $type = strtolower(trim((string) $node['type']));
+                $settings = is_array($node['settings'] ?? null) ? $node['settings'] : [];
+                if ($type === 'form') {
+                    $stats['formCount']++;
+                }
+                if ($type === 'button') {
+                    $actionType = strtolower(trim((string) ($settings['actionType'] ?? '')));
+                    $link = trim((string) ($settings['link'] ?? ''));
+                    $stepSlug = trim((string) ($settings['actionStepSlug'] ?? ''));
+                    if ($actionType === '') {
+                        $actionType = ($link !== '' && $link !== '#') ? 'link' : 'next_step';
+                    }
+                    if ($actionType === 'next_step') {
+                        $stats['navigateActionCount']++;
+                    } elseif ($actionType === 'step' && $stepSlug !== '') {
+                        $stats['navigateActionCount']++;
+                    } elseif ($actionType === 'link' && $link !== '' && $link !== '#') {
+                        $stats['navigateActionCount']++;
+                    } elseif ($actionType === 'checkout') {
+                        $stats['checkoutActionCount']++;
+                    } elseif ($actionType === 'offer_accept') {
+                        $stats['offerAcceptActionCount']++;
+                    } elseif ($actionType === 'offer_decline') {
+                        $stats['offerDeclineActionCount']++;
+                    }
+                }
+                if ($type === 'carousel') {
+                    $slides = is_array($settings['slides'] ?? null) ? $settings['slides'] : [];
+                    foreach ($slides as $slide) {
+                        $visit($slide);
+                    }
+                }
+            }
+
+            foreach (['root', 'sections', 'rows', 'columns', 'elements'] as $childrenKey) {
+                $children = $node[$childrenKey] ?? null;
+                if (!is_array($children)) {
+                    continue;
+                }
+                foreach ($children as $child) {
+                    $visit($child);
+                }
+            }
+        };
+
+        $visit($layout);
+        return $stats;
     }
 
     private function generateUniqueFunnelSlug(string $name, int $tenantId): string

@@ -28,6 +28,7 @@ class FunnelPortalController extends Controller
             'funnel' => $funnel,
             'step' => $step,
             'nextStep' => $this->nextStep($steps, $step->id),
+            'allSteps' => $steps,
             'isFirstStep' => $steps->first()->id === $step->id,
         ]);
     }

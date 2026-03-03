@@ -205,24 +205,38 @@
 .icon-picker-item span{font-size:11px;color:#334155;text-align:center;line-height:1.2}
 .icon-picker-item:hover{background:#eff6ff;border-color:#93c5fd}
 .icon-picker-empty{padding:16px;color:#64748b;font-size:12px}
-.page-mgr-modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:1450;padding:14px}
+.page-mgr-modal{position:fixed;inset:0;background:rgba(15,23,42,.56);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:1450;padding:18px}
 .page-mgr-modal.open{display:flex}
-.page-mgr-card{width:min(920px,96vw);max-height:88vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #bfdbfe;border-radius:12px;box-shadow:0 16px 42px rgba(30,64,175,.22)}
-.page-mgr-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border-bottom:1px solid #e2e8f0}
-.page-mgr-head h4{margin:0;font-size:14px;color:#0f172a}
-.page-mgr-close{border:1px solid #cbd5e1;background:#f8fafc;border-radius:8px;padding:6px 10px;cursor:pointer}
-.page-mgr-body{padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow:auto}
-.page-mgr-col{border:1px solid #dbeafe;border-radius:10px;background:#f8fafc;padding:10px}
-.page-mgr-col h5{margin:0 0 8px;font-size:13px;color:#1e3a8a}
-.page-mgr-list{width:100%;height:280px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;padding:6px}
-.page-mgr-list option{padding:5px}
-.page-mgr-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.page-mgr-actions .fb-btn{min-height:36px}
-.page-mgr-section{margin-bottom:12px}
+.page-mgr-card{width:min(980px,96vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #dbeafe;border-radius:18px;box-shadow:0 24px 56px rgba(15,23,42,.34)}
+.page-mgr-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 20px;border-bottom:1px solid #e2e8f0;background:linear-gradient(180deg,#ffffff,#f8fbff)}
+.page-mgr-head h4{margin:0;font-size:21px;line-height:1.2;font-weight:900;color:#0f172a;letter-spacing:-.01em}
+.page-mgr-close{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #cbd5e1;background:#f8fafc;border-radius:12px;padding:0;font-weight:800;color:#334155;cursor:pointer}
+.page-mgr-close:hover{background:#eef2ff;border-color:#93c5fd;color:#1e40af}
+.page-mgr-body{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;overflow:auto;background:#f8fafc}
+.page-mgr-col{border:1px solid #dbeafe;border-radius:14px;background:#ffffff;padding:14px}
+.page-mgr-col h5{margin:0 0 10px;font-size:16px;font-weight:900;color:#1e3a8a;line-height:1.2}
+.page-mgr-list{width:100%;height:350px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;padding:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8);overflow:auto}
+.page-mgr-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:10px;font-size:14px;color:#0f172a;cursor:pointer;user-select:none}
+.page-mgr-item + .page-mgr-item{margin-top:4px}
+.page-mgr-item:hover{background:#eff6ff}
+.page-mgr-item.is-selected{background:#2563eb;color:#fff}
+.page-mgr-item.is-dragging{opacity:.55}
+.page-mgr-item.drag-before{box-shadow:inset 0 2px 0 #1d4ed8}
+.page-mgr-item.drag-after{box-shadow:inset 0 -2px 0 #1d4ed8}
+.page-mgr-item-handle{font-size:12px;color:#64748b}
+.page-mgr-item.is-selected .page-mgr-item-handle{color:rgba(255,255,255,.85)}
+.page-mgr-section{margin-bottom:14px;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}
 .page-mgr-section:last-child{margin-bottom:0}
-.page-mgr-note{font-size:12px;color:#475569;font-weight:700}
+.page-mgr-section label{display:block;margin:0 0 6px;font-size:13px;font-weight:800;color:#334155}
+.page-mgr-section input,.page-mgr-section select{width:100%;padding:11px 12px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;font-size:14px;color:#0f172a;margin-bottom:10px}
+.page-mgr-section input:focus,.page-mgr-section select:focus{outline:none;border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+.page-mgr-create-btn{width:100%;margin-top:2px}
+.page-mgr-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.page-mgr-actions .fb-btn{min-height:40px}
+.page-mgr-note{font-size:12px;color:#475569;font-weight:700;margin-top:8px}
 @media (max-width: 860px){
     .page-mgr-body{grid-template-columns:1fr}
+    .page-mgr-head h4{font-size:20px}
 }
 .setting-label-help{display:flex;align-items:center;gap:8px;margin:0 0 6px}
 .setting-help-icon{width:22px;height:22px;border-radius:999px;border:1px solid #93c5fd;background:#eaf2ff;color:#2563eb;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;line-height:1;cursor:pointer;padding:0}
@@ -345,13 +359,13 @@
         <div class="page-mgr-body">
             <div class="page-mgr-col">
                 <h5>Pages</h5>
-                <select id="pageMgrList" class="page-mgr-list" size="12"></select>
-                <div class="page-mgr-note" style="margin-top:8px;">Select a page to manage it.</div>
+                <div id="pageMgrList" class="page-mgr-list" role="listbox" aria-label="Pages"></div>
+                <div class="page-mgr-note">Select a page to manage it.</div>
             </div>
             <div class="page-mgr-col">
                 <div class="page-mgr-section">
                     <h5>Add Page</h5>
-                    <label for="pageMgrAddType" style="font-weight:800;">Type</label>
+                    <label for="pageMgrAddType">Type</label>
                     <select id="pageMgrAddType">
                         <option value="landing">Landing</option>
                         <option value="opt_in">Opt-in</option>
@@ -360,10 +374,18 @@
                         <option value="thank_you">Thank You</option>
                         <option value="custom">Custom</option>
                     </select>
-                    <button id="pageMgrCreateBtn" type="button" class="fb-btn primary" style="width:100%;margin-top:8px;">Create Page</button>
+                    <label for="pageMgrAddTitle">Page title</label>
+                    <input id="pageMgrAddTitle" type="text" placeholder="e.g. About Offer">
+                    <label for="pageMgrAddSlug">Page slug (optional)</label>
+                    <input id="pageMgrAddSlug" type="text" placeholder="e.g. about-offer">
+                    <button id="pageMgrCreateBtn" type="button" class="fb-btn primary page-mgr-create-btn">Create Page</button>
                 </div>
                 <div class="page-mgr-section">
                     <h5>Manage Selected Page</h5>
+                    <label for="pageMgrRenameTitle">Title</label>
+                    <input id="pageMgrRenameTitle" type="text" placeholder="Selected page title">
+                    <label for="pageMgrRenameSlug">Slug</label>
+                    <input id="pageMgrRenameSlug" type="text" placeholder="selected-page-slug">
                     <div class="page-mgr-actions">
                         <button id="pageMgrRenameBtn" type="button" class="fb-btn">Rename</button>
                         <button id="pageMgrDeleteBtn" type="button" class="fb-btn danger">Delete</button>
@@ -483,7 +505,8 @@ const iconCatalog=[
     {name:"linkedin-in",label:"LinkedIn",keywords:"social",styles:["brands"]},
 ];
 
-const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+let pageMgrDragId=null;
 if(canvas)canvas.classList.add("canvas-outline-mode");
 if(!steps.length){canvas.textContent="No steps found.";return;}
 function sortStepsByPosition(){
@@ -580,11 +603,23 @@ function pageTypeLabel(v){
 function stepUrlFromTpl(tpl,id){return String(tpl||"").replace("__STEP__",String(id));}
 function asFormUrlEncoded(obj){
     var body=new URLSearchParams();
-    Object.keys(obj||{}).forEach(function(k){
-        var v=obj[k];
-        if(v===undefined||v===null)v="";
-        body.append(k,String(v));
-    });
+    function appendValue(key,val){
+        if(Array.isArray(val)){
+            val.forEach(function(item){
+                appendValue(key+"[]",item);
+            });
+            return;
+        }
+        if(val&&typeof val==="object"){
+            Object.keys(val).forEach(function(subKey){
+                appendValue(key+"["+subKey+"]",val[subKey]);
+            });
+            return;
+        }
+        if(val===undefined||val===null)val="";
+        body.append(key,String(val));
+    }
+    Object.keys(obj||{}).forEach(function(k){appendValue(k,obj[k]);});
     return body;
 }
 function requestJson(url,method,data){
@@ -769,41 +804,107 @@ function moveSelectedStepBy(delta){
         throw err;
     });
 }
-function getRenameInput(currentStep){
-    var curTitle=String(currentStep&&currentStep.title||"").trim()||defaultStepTitleForType(currentStep&&currentStep.type);
-    var nextTitle=window.prompt("Page title:",curTitle);
-    if(nextTitle===null)return null;
-    nextTitle=String(nextTitle||"").trim();
-    if(nextTitle===""){
-        alert("Page title is required.");
-        return null;
+function syncAddPageDraftFromType(force){
+    var type=String((pageMgrAddType&&pageMgrAddType.value)||"landing").toLowerCase();
+    var defaultTitle=defaultStepTitleForType(type);
+    var currentTitle=String((pageMgrAddTitle&&pageMgrAddTitle.value)||"").trim();
+    if(pageMgrAddTitle && (force||currentTitle==="")){
+        pageMgrAddTitle.value=defaultTitle;
     }
-    var curSlug=String(currentStep&&currentStep.slug||"").trim();
-    var suggested=slugifyPage(curSlug||nextTitle);
-    var nextSlug=window.prompt("Page slug (lowercase, numbers, hyphen):",suggested);
-    if(nextSlug===null)return null;
-    nextSlug=slugifyPage(nextSlug);
-    if(nextSlug===""){
-        alert("Page slug is required.");
-        return null;
+    if(pageMgrAddSlug){
+        var currentSlug=String(pageMgrAddSlug.value||"").trim();
+        if(force||currentSlug===""){
+            pageMgrAddSlug.value=slugifyPage(String((pageMgrAddTitle&&pageMgrAddTitle.value)||defaultTitle));
+        }
     }
-    nextSlug=uniqueStepSlug(nextSlug,currentStep.id);
-    return {title:nextTitle,slug:nextSlug};
+}
+function syncRenameDraftFromSelected(){
+    var s=cur();
+    if(!s){
+        if(pageMgrRenameTitle)pageMgrRenameTitle.value="";
+        if(pageMgrRenameSlug)pageMgrRenameSlug.value="";
+        return;
+    }
+    if(pageMgrRenameTitle)pageMgrRenameTitle.value=String(s.title||"");
+    if(pageMgrRenameSlug)pageMgrRenameSlug.value=String(s.slug||"");
 }
 function syncPageManagerList(){
     if(!pageMgrList)return;
     sortStepsByPosition();
     pageMgrList.innerHTML="";
     steps.forEach(function(s){
-        var o=document.createElement("option");
-        o.value=String(s.id);
-        o.textContent=String(s.title||("Step "+String(s.id)));
-        pageMgrList.appendChild(o);
+        var item=document.createElement("div");
+        item.className="page-mgr-item"+(String(state.sid)===String(s.id)?" is-selected":"");
+        item.setAttribute("role","option");
+        item.setAttribute("aria-selected",String(state.sid)===String(s.id)?"true":"false");
+        item.setAttribute("data-id",String(s.id));
+        item.setAttribute("draggable","true");
+        item.innerHTML='<span>'+String(s.title||("Step "+String(s.id))).replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span><span class="page-mgr-item-handle"><i class="fas fa-grip-vertical"></i></span>';
+        item.addEventListener("click",function(){
+            var id=Number(item.getAttribute("data-id")||0);
+            if(!id)return;
+            state.sid=id;
+            renderStepOptions();
+            loadStep(id);
+            syncRenameDraftFromSelected();
+            syncPageManagerList();
+        });
+        item.addEventListener("dragstart",function(e){
+            pageMgrDragId=String(s.id);
+            item.classList.add("is-dragging");
+            if(e.dataTransfer){
+                e.dataTransfer.effectAllowed="move";
+                e.dataTransfer.setData("text/plain",pageMgrDragId);
+            }
+        });
+        item.addEventListener("dragend",function(){
+            pageMgrDragId=null;
+            pageMgrList.querySelectorAll(".page-mgr-item").forEach(function(el){
+                el.classList.remove("is-dragging","drag-before","drag-after");
+            });
+        });
+        item.addEventListener("dragover",function(e){
+            e.preventDefault();
+            if(!pageMgrDragId||pageMgrDragId===String(s.id))return;
+            var rect=item.getBoundingClientRect();
+            var after=(e.clientY-rect.top)>(rect.height/2);
+            item.classList.toggle("drag-after",after);
+            item.classList.toggle("drag-before",!after);
+        });
+        item.addEventListener("dragleave",function(){
+            item.classList.remove("drag-before","drag-after");
+        });
+        item.addEventListener("drop",function(e){
+            e.preventDefault();
+            var dragId=pageMgrDragId||String((e.dataTransfer&&e.dataTransfer.getData("text/plain"))||"");
+            var targetId=String(s.id);
+            item.classList.remove("drag-before","drag-after");
+            if(!dragId||dragId===targetId)return;
+            var ids=orderedStepIdsWithPositions();
+            var fromIdx=ids.findIndex(function(id){return String(id)===dragId;});
+            var toIdx=ids.findIndex(function(id){return String(id)===targetId;});
+            if(fromIdx<0||toIdx<0)return;
+            var rect=item.getBoundingClientRect();
+            var after=(e.clientY-rect.top)>(rect.height/2);
+            var moved=ids.splice(fromIdx,1)[0];
+            var insertIdx=toIdx+(after?1:0);
+            if(fromIdx<toIdx&&after)insertIdx=toIdx;
+            if(fromIdx<toIdx&&!after)insertIdx=toIdx-1;
+            if(insertIdx<0)insertIdx=0;
+            if(insertIdx>ids.length)insertIdx=ids.length;
+            ids.splice(insertIdx,0,moved);
+            persistStepOrder(ids).then(function(){
+                renderStepOptions();
+                syncPageManagerList();
+                showBuilderToast("Page order updated.","success");
+            }).catch(function(err){
+                showBuilderToast((err&&err.message)||"Failed to reorder pages.","error");
+            });
+        });
+        pageMgrList.appendChild(item);
     });
-    if(state.sid!=null){
-        pageMgrList.value=String(state.sid);
-    }else if(steps.length){
-        pageMgrList.value=String(steps[0].id);
+    if(state.sid==null&&steps.length){
+        state.sid=steps[0].id;
     }
 }
 function closePageManagerModal(){
@@ -814,18 +915,35 @@ function closePageManagerModal(){
 function openPageManagerModal(){
     if(!pageMgrModal)return;
     syncPageManagerList();
+    syncAddPageDraftFromType(true);
+    syncRenameDraftFromSelected();
     pageMgrModal.classList.add("open");
     pageMgrModal.setAttribute("aria-hidden","false");
-    if(pageMgrList)pageMgrList.focus();
+    if(pageMgrAddTitle)pageMgrAddTitle.focus();
 }
 function createPageFromManager(){
     var type=String((pageMgrAddType&&pageMgrAddType.value)||"landing").toLowerCase();
     var selected=cur();
-    var defaultTitle=defaultStepTitleForType(type);
-    var titleInput=window.prompt("New page title:",defaultTitle);
-    if(titleInput===null)return;
-    var title=String(titleInput||"").trim()||defaultTitle;
-    var slug=uniqueStepSlug(slugifyPage(title),null);
+    var titleRaw=String((pageMgrAddTitle&&pageMgrAddTitle.value)||"").trim();
+    if(type==="custom" && titleRaw===""){
+        showBuilderToast("Custom page title is required.","error");
+        if(pageMgrAddTitle)pageMgrAddTitle.focus();
+        return;
+    }
+    var title=titleRaw!==""?titleRaw:defaultStepTitleForType(type);
+    if(String(title).trim()===""){
+        showBuilderToast("Page title is required.","error");
+        if(pageMgrAddTitle)pageMgrAddTitle.focus();
+        return;
+    }
+    var slugRaw=String((pageMgrAddSlug&&pageMgrAddSlug.value)||"").trim();
+    var slugBase=slugifyPage(slugRaw!==""?slugRaw:title);
+    if(slugBase===""){
+        showBuilderToast("Page slug is invalid. Use letters, numbers, and hyphen.","error");
+        if(pageMgrAddSlug)pageMgrAddSlug.focus();
+        return;
+    }
+    var slug=uniqueStepSlug(slugBase,null);
     var payload=buildStepPayload({
         title:title,
         slug:slug,
@@ -836,7 +954,7 @@ function createPageFromManager(){
     });
     requestJson(stepStoreUrl,"POST",payload).then(function(resp){
         var created=applyStepUpdate((resp&&resp.step)||payload);
-        if(!created.layout_json)created.layout_json=defaults(created.type);
+        if(!created.layout_json)created.layout_json={root:[],sections:[]};
         var order=orderedStepIdsWithPositions();
         var newIdx=order.findIndex(function(x){return +x===+created.id;});
         if(selected){
@@ -851,6 +969,8 @@ function createPageFromManager(){
             renderStepOptions();
             loadStep(created.id);
             syncPageManagerList();
+            syncRenameDraftFromSelected();
+            syncAddPageDraftFromType(true);
             showBuilderToast("Page added.","success");
         }).catch(function(err){
             showBuilderToast((err&&err.message)||"Page added, but reorder failed.","error");
@@ -861,21 +981,34 @@ function createPageFromManager(){
 }
 function renamePageFromManager(){
     var s=cur();
-    if(!s){alert("No page selected.");return;}
-    var input=getRenameInput(s);
-    if(!input)return;
-    var nextSlug=String(input.slug||"");
+    if(!s){showBuilderToast("No page selected.","error");return;}
+    var nextTitle=String((pageMgrRenameTitle&&pageMgrRenameTitle.value)||"").trim();
+    if(nextTitle===""){
+        showBuilderToast("Page title is required.","error");
+        if(pageMgrRenameTitle)pageMgrRenameTitle.focus();
+        return;
+    }
+    var typedSlug=String((pageMgrRenameSlug&&pageMgrRenameSlug.value)||"").trim();
+    var nextSlug=slugifyPage(typedSlug!==""?typedSlug:nextTitle);
+    if(nextSlug===""){
+        showBuilderToast("Page slug is invalid. Use letters, numbers, and hyphen.","error");
+        if(pageMgrRenameSlug)pageMgrRenameSlug.focus();
+        return;
+    }
+    nextSlug=uniqueStepSlug(nextSlug,s.id);
+    if(pageMgrRenameSlug)pageMgrRenameSlug.value=nextSlug;
     var refs=(nextSlug!==String(s.slug||"").toLowerCase())?referencingStepsForSlug(s.slug,s.id):[];
     if(refs.length){
         var msg="This page is linked from: "+refs.join(", ")+". Continue rename?";
         if(!window.confirm(msg))return;
     }
-    var payload=buildStepPayload(s,{title:input.title,slug:nextSlug});
+    var payload=buildStepPayload(s,{title:nextTitle,slug:nextSlug});
     requestJson(stepUrlFromTpl(stepUpdateTpl,s.id),"PUT",payload).then(function(resp){
         var updated=applyStepUpdate((resp&&resp.step)||payload);
         state.sid=updated.id;
         renderStepOptions();
         syncPageManagerList();
+        syncRenameDraftFromSelected();
         showBuilderToast("Page renamed.","success");
     }).catch(function(err){
         showBuilderToast((err&&err.message)||"Failed to rename page.","error");
@@ -883,9 +1016,9 @@ function renamePageFromManager(){
 }
 function deletePageFromManager(){
     var s=cur();
-    if(!s){alert("No page selected.");return;}
+    if(!s){showBuilderToast("No page selected.","error");return;}
     var guard=canDeleteStep(s);
-    if(!guard.ok){alert(guard.message);return;}
+    if(!guard.ok){showBuilderToast(guard.message,"error");return;}
     var refs=referencingStepsForSlug(s.slug,s.id);
     if(refs.length){
         var warn="This page is linked from: "+refs.join(", ")+". Delete anyway?";
@@ -902,6 +1035,7 @@ function deletePageFromManager(){
             settings.innerHTML="<p class='meta'>Select a component to edit.</p>";
             renderStepOptions();
             syncPageManagerList();
+            syncRenameDraftFromSelected();
             showBuilderToast("Page deleted.","success");
             return;
         }
@@ -912,6 +1046,7 @@ function deletePageFromManager(){
             renderStepOptions();
             loadStep(state.sid);
             syncPageManagerList();
+            syncRenameDraftFromSelected();
             showBuilderToast("Page deleted.","success");
         }).catch(function(err){
             showBuilderToast((err&&err.message)||"Page deleted, but reorder failed.","error");
@@ -936,13 +1071,37 @@ function wireStepManagement(){
         pageMgrClose.onclick=function(){closePageManagerModal();};
     }
     if(pageMgrList){
-        pageMgrList.onchange=function(){
-            var id=Number(pageMgrList.value||0);
-            if(!id)return;
-            state.sid=id;
-            renderStepOptions();
-            loadStep(id);
-        };
+        pageMgrList.addEventListener("dragover",function(e){
+            e.preventDefault();
+        });
+        pageMgrList.addEventListener("drop",function(e){
+            if(e.target!==pageMgrList)return;
+            e.preventDefault();
+            var dragId=pageMgrDragId||String((e.dataTransfer&&e.dataTransfer.getData("text/plain"))||"");
+            if(!dragId)return;
+            var ids=orderedStepIdsWithPositions();
+            var fromIdx=ids.findIndex(function(id){return String(id)===dragId;});
+            if(fromIdx<0)return;
+            var moved=ids.splice(fromIdx,1)[0];
+            ids.push(moved);
+            persistStepOrder(ids).then(function(){
+                renderStepOptions();
+                syncPageManagerList();
+                showBuilderToast("Page order updated.","success");
+            }).catch(function(err){
+                showBuilderToast((err&&err.message)||"Failed to reorder pages.","error");
+            });
+        });
+    }
+    if(pageMgrAddType){
+        pageMgrAddType.onchange=function(){syncAddPageDraftFromType(true);};
+    }
+    if(pageMgrAddTitle){
+        pageMgrAddTitle.addEventListener("input",function(){
+            if(pageMgrAddSlug && String(pageMgrAddSlug.value||"").trim()===""){
+                pageMgrAddSlug.value=slugifyPage(pageMgrAddTitle.value||"");
+            }
+        });
     }
     if(pageMgrCreateBtn){
         pageMgrCreateBtn.onclick=function(){createPageFromManager();};
@@ -2075,7 +2234,7 @@ function createRootItem(type){
     return it?Object.assign({kind:"el"},it):null;
 }
 function createDefaultElement(type){
-    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000"},settings:{}},text:{content:"Text",style:{fontSize:"16px",color:"#000000"},settings:{}},menu:{content:"",style:{fontSize:"16px"},settings:{items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{padding:"10px 10px 10px 10px"},settings:{slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:500,fixedHeight:500}},image:{content:"",style:{width:"100%"},settings:{src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#2563eb",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center"},settings:{link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#1d4ed8",padding:"0px",borderRadius:"0px"},settings:{iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{},settings:{alignment:"left",width:"100%",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{},settings:{src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px"},settings:{}}}[type]||null;
+    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000"},settings:{}},text:{content:"Text",style:{fontSize:"16px",color:"#000000"},settings:{}},menu:{content:"",style:{fontSize:"16px"},settings:{items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{padding:"10px 10px 10px 10px"},settings:{slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:500,fixedHeight:500}},image:{content:"",style:{width:"100%"},settings:{src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#2563eb",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center"},settings:{actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#1d4ed8",padding:"0px",borderRadius:"0px"},settings:{iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{},settings:{alignment:"left",width:"100%",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{},settings:{src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px"},settings:{}}}[type]||null;
     if(!d)return null;
     return {id:uid("el"),type:type,content:d.content,style:clone(d.style),settings:clone(d.settings)};
 }
@@ -4809,9 +4968,21 @@ function renderSettings(){
         var buttonWrapBgControl=(t.type==="button")?'<label>Background color</label><input id="btnWrapBg" type="color">':'';
         var buttonTextStyleControl=(t.type==="button")?'<label>Text style</label><div class="menu-style-row"><button type="button" id="btnBold" class="menu-align-btn" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button><button type="button" id="btnItalic" class="menu-align-btn" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button></div>':'';
         var buttonRadiusControl=(t.type==="button")?(radiusHelpLabelHtml("btnRadiusHelp","Border radius")+'<div class="px-wrap"><input id="btnRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div>'):'';
-        var buttonLinkControl=(t.type==="button")?'<label>Link</label><input id="btnLink" placeholder="/contact or https://example.com">':'';
+        var buttonStepOptions=(t.type==="button")?steps.filter(function(s){return String(s.id)!==String(state.sid);}).map(function(s){
+            var sl=String(s.slug||"").replace(/"/g,'&quot;');
+            var tt=String(s.title||s.slug||"Untitled").replace(/"/g,'&quot;');
+            return '<option value="'+sl+'">'+tt+' ('+sl+')</option>';
+        }).join(''):'';
+        var buttonStepDisabled=false;
+        if(t.type==="button" && buttonStepOptions===""){
+            buttonStepOptions='<option value="">No other pages found</option>';
+            buttonStepDisabled=true;
+        }
+        var buttonActionControl=(t.type==="button")
+            ? '<label>Button action</label><select id="btnAction"><option value="next_step">Next step</option><option value="step">Specific step</option><option value="link">Custom URL</option><option value="checkout">Checkout submit</option><option value="offer_accept">Accept offer</option><option value="offer_decline">Decline offer</option></select><div id="btnStepWrap" style="display:none;"><label>Target page</label><select id="btnStep"'+(buttonStepDisabled?' disabled':'')+'>'+buttonStepOptions+'</select></div><div id="btnLinkWrap" style="display:none;"><label>Link URL</label><input id="btnLink" placeholder="/contact or https://example.com"></div>'
+            : '';
         var sharedBgControls=(t.type==="button")?'':'<label>Background color</label><input id="bg" type="color"><label>Background image URL</label><input id="bgImg" placeholder="https://..."><label>Upload background image</label><input id="bgUp" type="file" accept="image/*">';
-        settings.innerHTML='<div class="menu-section-title">Content</div>'+(rich?'<div class="rt-box"><div class="rt-tools"><button id="rtBold" type="button" title="Bold (Ctrl+B)"><b>B</b></button><button id="rtItalic" type="button" title="Italic (Ctrl+I)"><i>I</i></button><button id="rtUnderline" type="button"><u>U</u></button></div><div id="contentRt" class="rt-editor" contenteditable="true"></div></div>':'<label>Content</label><textarea id="content" rows="4"></textarea>')+buttonLinkControl+'<div class="menu-split"></div><div class="menu-section-title">Layout</div><label>Alignment</label><select id="a"><option value="">Default</option><option>left</option><option>center</option><option>right</option></select><div class="menu-split"></div><div class="menu-section-title">Spacing</div>'+sizeBlock+'<div class="menu-split"></div><div class="menu-section-title">Style</div>'+buttonWrapBgControl+buttonBgControl+buttonRadiusControl+buttonTextStyleControl+sharedBgControls+'<label>Color</label><input id="co" type="color"><label>Font size</label><div class="px-wrap"><input id="fs" type="number" step="1"><span class="px-unit">px</span></div>'+textTypographyControls+fontSelectHtml('ff')+moveControls+remove;
+        settings.innerHTML='<div class="menu-section-title">Content</div>'+(rich?'<div class="rt-box"><div class="rt-tools"><button id="rtBold" type="button" title="Bold (Ctrl+B)"><b>B</b></button><button id="rtItalic" type="button" title="Italic (Ctrl+I)"><i>I</i></button><button id="rtUnderline" type="button"><u>U</u></button></div><div id="contentRt" class="rt-editor" contenteditable="true"></div></div>':'<label>Content</label><textarea id="content" rows="4"></textarea>')+buttonActionControl+'<div class="menu-split"></div><div class="menu-section-title">Layout</div><label>Alignment</label><select id="a"><option value="">Default</option><option>left</option><option>center</option><option>right</option></select><div class="menu-split"></div><div class="menu-section-title">Spacing</div>'+sizeBlock+'<div class="menu-split"></div><div class="menu-section-title">Style</div>'+buttonWrapBgControl+buttonBgControl+buttonRadiusControl+buttonTextStyleControl+sharedBgControls+'<label>Color</label><input id="co" type="color"><label>Font size</label><div class="px-wrap"><input id="fs" type="number" step="1"><span class="px-unit">px</span></div>'+textTypographyControls+fontSelectHtml('ff')+moveControls+remove;
         if(rich){
             bindRichEditor("contentRt",t.content,v=>t.content=v);
             const rt=document.getElementById("contentRt");
@@ -4880,6 +5051,55 @@ function renderSettings(){
             }
             syncBtnTextStyleControls();
             bind("btnWrapBg",(t.settings&&t.settings.containerBgColor)||"#ffffff",v=>{t.settings=t.settings||{};t.settings.containerBgColor=v;},{undo:true});
+            t.settings=t.settings||{};
+            var allowedActionTypes=["next_step","step","link","checkout","offer_accept","offer_decline"];
+            var curAction=String(t.settings.actionType||"").trim().toLowerCase();
+            if(allowedActionTypes.indexOf(curAction)<0){
+                var legacyLink=String(t.settings.link||"").trim();
+                curAction=(legacyLink!==""&&legacyLink!=="#")?"link":"next_step";
+            }
+            t.settings.actionType=curAction;
+            if(typeof t.settings.actionStepSlug!=="string")t.settings.actionStepSlug="";
+            var btnAction=document.getElementById("btnAction"),btnStep=document.getElementById("btnStep");
+            var btnStepWrap=document.getElementById("btnStepWrap"),btnLinkWrap=document.getElementById("btnLinkWrap");
+            function syncButtonActionUi(){
+                var mode=String((t.settings&&t.settings.actionType)||"next_step");
+                if(btnAction)btnAction.value=mode;
+                if(btnStepWrap)btnStepWrap.style.display=(mode==="step")?"block":"none";
+                if(btnLinkWrap)btnLinkWrap.style.display=(mode==="link")?"block":"none";
+                if(btnStep){
+                    var wanted=String((t.settings&&t.settings.actionStepSlug)||"");
+                    var hasOption=Array.from(btnStep.options||[]).some(function(o){return String(o.value)===wanted;});
+                    if(hasOption)btnStep.value=wanted;
+                    else if(btnStep.options&&btnStep.options.length)btnStep.value=btnStep.options[0].value;
+                }
+            }
+            if(btnAction){
+                btnAction.value=curAction;
+                btnAction.addEventListener("change",function(){
+                    saveToHistory();
+                    t.settings=t.settings||{};
+                    t.settings.actionType=String(btnAction.value||"next_step");
+                    syncButtonActionUi();
+                    renderCanvas();
+                });
+            }
+            if(btnStep){
+                var initialSlug=String(t.settings.actionStepSlug||"");
+                var hasInitial=Array.from(btnStep.options||[]).some(function(o){return String(o.value)===initialSlug;});
+                if(hasInitial)btnStep.value=initialSlug;
+                else if(btnStep.options&&btnStep.options.length){
+                    btnStep.value=btnStep.options[0].value;
+                    t.settings.actionStepSlug=String(btnStep.value||"");
+                }
+                btnStep.addEventListener("change",function(){
+                    saveToHistory();
+                    t.settings=t.settings||{};
+                    t.settings.actionStepSlug=String(btnStep.value||"").trim();
+                    renderCanvas();
+                });
+            }
+            syncButtonActionUi();
             bind("btnLink",(t.settings&&t.settings.link)||"#",v=>{t.settings=t.settings||{};var u=String(v||"").trim();t.settings.link=(u==="")?"#":u;},{undo:true});
             bindPx("btnRadius",(t.style&&t.style.borderRadius)||"",v=>sty().borderRadius=v,{undo:true});
             bindRadiusHelpButton("btnRadiusHelp");
