@@ -972,7 +972,21 @@
                                                                 @php
                                                                     $ft = strtolower(trim((string) ($f['type'] ?? 'text')));
                                                                     $lbl = trim((string) ($f['label'] ?? '')) !== '' ? $f['label'] : $ft;
-                                                                    $nm = in_array($ft, ['first_name', 'last_name', 'email', 'phone_number', 'province', 'city_municipality', 'barangay', 'street'], true) ? $ft : 'custom_' . $loop->index;
+                                                                    $labelKey = strtolower(trim($lbl));
+                                                                    if ($ft === 'custom') {
+                                                                        if (str_contains($labelKey, 'email')) {
+                                                                            $ft = 'email';
+                                                                        } elseif (str_contains($labelKey, 'phone') || str_contains($labelKey, 'mobile')) {
+                                                                            $ft = 'phone_number';
+                                                                        } elseif ($labelKey === 'name' || $labelKey === 'full name') {
+                                                                            $ft = 'name';
+                                                                        } elseif (str_contains($labelKey, 'first') && str_contains($labelKey, 'name')) {
+                                                                            $ft = 'first_name';
+                                                                        } elseif (str_contains($labelKey, 'last') && str_contains($labelKey, 'name')) {
+                                                                            $ft = 'last_name';
+                                                                        }
+                                                                    }
+                                                                    $nm = in_array($ft, ['name', 'first_name', 'last_name', 'email', 'phone_number', 'phone', 'province', 'city_municipality', 'barangay', 'street'], true) ? $ft : 'custom_' . $loop->index;
                                                                     $req = (bool) ($f['required'] ?? false);
                                                                     if ($ft === 'email') {
                                                                         $req = true;

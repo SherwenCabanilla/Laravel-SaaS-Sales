@@ -47,6 +47,7 @@ class FunnelStep extends Model
         'layout_style',
         'template',
         'template_data',
+        'step_tags',
         'background_color',
         'button_color',
         'layout_json',
@@ -56,6 +57,7 @@ class FunnelStep extends Model
         'is_active' => 'boolean',
         'price' => 'decimal:2',
         'template_data' => 'array',
+        'step_tags' => 'array',
         'layout_json' => 'array',
     ];
 

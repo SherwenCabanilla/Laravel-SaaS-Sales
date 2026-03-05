@@ -29,6 +29,7 @@ class FunnelController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
+            'default_tags' => 'nullable|string|max:500',
         ]);
 
         $user = auth()->user();
@@ -40,6 +41,7 @@ class FunnelController extends Controller
                 'name' => $validated['name'],
                 'slug' => $this->generateUniqueFunnelSlug($validated['name'], $user->tenant_id),
                 'description' => $validated['description'] ?? null,
+                'default_tags' => $this->normalizeTagsString($validated['default_tags'] ?? null),
                 'status' => 'draft',
             ]);
 
@@ -59,6 +61,7 @@ class FunnelController extends Controller
                     'slug' => $step['slug'],
                     'type' => $step['type'],
                     'content' => $step['content'],
+                    'step_tags' => [],
                     'cta_label' => $step['cta_label'] ?? null,
                     'price' => $step['price'] ?? null,
                     'position' => $index + 1,
@@ -343,9 +346,11 @@ class FunnelController extends Controller
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
             'status' => ['required', Rule::in(['draft', 'published'])],
+            'default_tags' => 'nullable|string|max:500',
         ]);
 
         try {
+            $validated['default_tags'] = $this->normalizeTagsString($validated['default_tags'] ?? null);
             $funnel->update($validated);
             return redirect()->back()->with('success', 'Edited Successfully');
         } catch (\Throwable $e) {
@@ -389,6 +394,7 @@ class FunnelController extends Controller
             'button_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'cta_label' => 'nullable|string|max:120',
             'price' => 'nullable|numeric|min:0.01',
+            'step_tags' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -406,6 +412,7 @@ class FunnelController extends Controller
                 'type' => $validated['type'],
                 'template' => $validated['template'] ?? 'simple',
                 'template_data' => $validated['template_data'] ?? null,
+                'step_tags' => $this->normalizeTagsString($validated['step_tags'] ?? null),
                 'content' => $validated['content'] ?? null,
                 'hero_image_url' => $heroUrl,
                 'layout_style' => $validated['layout_style'] ?? 'centered',
@@ -436,6 +443,7 @@ class FunnelController extends Controller
                         'content' => $step->content,
                         'cta_label' => $step->cta_label,
                         'price' => $step->price,
+                        'step_tags' => $step->step_tags ?? [],
                     ],
                 ]);
             }
@@ -479,6 +487,7 @@ class FunnelController extends Controller
             'cta_label' => 'nullable|string|max:120',
             'price' => 'nullable|numeric|min:0.01',
             'is_active' => 'nullable|boolean',
+            'step_tags' => 'nullable|string|max:500',
         ]);
 
         try {
@@ -495,6 +504,7 @@ class FunnelController extends Controller
                 'type' => $validated['type'],
                 'template' => $validated['template'] ?? ($step->template ?: 'simple'),
                 'template_data' => $validated['template_data'] ?? null,
+                'step_tags' => $this->normalizeTagsString($validated['step_tags'] ?? null),
                 'content' => $validated['content'] ?? null,
                 'hero_image_url' => $heroUrl,
                 'layout_style' => $validated['layout_style'] ?? ($step->layout_style ?: 'centered'),
@@ -523,6 +533,7 @@ class FunnelController extends Controller
                         'content' => $step->content,
                         'cta_label' => $step->cta_label,
                         'price' => $step->price,
+                        'step_tags' => $step->step_tags ?? [],
                     ],
                 ]);
             }
@@ -1339,5 +1350,25 @@ class FunnelController extends Controller
         }
 
         return $slug;
+    }
+
+    private function normalizeTagsString(?string $raw): array
+    {
+        if ($raw === null) {
+            return [];
+        }
+
+        return collect(explode(',', $raw))
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter(fn ($tag) => $tag !== '')
+            ->map(function ($tag) {
+                $clean = preg_replace('/[^a-z0-9\-_ ]/i', '', $tag) ?? '';
+                return mb_substr(trim($clean), 0, 40);
+            })
+            ->filter(fn ($tag) => $tag !== '')
+            ->unique()
+            ->take(20)
+            ->values()
+            ->all();
     }
 }

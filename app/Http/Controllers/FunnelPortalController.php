@@ -42,19 +42,15 @@ class FunnelPortalController extends Controller
             'last_name' => 'nullable|string|max:150',
             'name' => 'nullable|string|max:150',
             'email' => 'required|email|max:150',
-            'phone_number' => 'required_without:phone|string|max:20',
+            'phone_number' => 'nullable|string|max:20',
             'phone' => 'nullable|string|max:20',
-            'province' => 'required|string|max:150',
-            'city_municipality' => 'required|string|max:150',
-            'barangay' => 'required|string|max:150',
-            'street' => 'required|string|max:180',
+            'province' => 'nullable|string|max:150',
+            'city_municipality' => 'nullable|string|max:150',
+            'barangay' => 'nullable|string|max:150',
+            'street' => 'nullable|string|max:180',
         ], [
             'email.required' => 'Email is required.',
             'email.email' => 'Please enter a valid email.',
-            'province.required' => 'Province is required.',
-            'city_municipality.required' => 'City / Municipality is required.',
-            'barangay.required' => 'Barangay is required.',
-            'street.required' => 'Street is required.',
         ]);
 
         $name = trim(
@@ -84,7 +80,18 @@ class FunnelPortalController extends Controller
 
         $lead->name = $name !== '' ? $name : $lead->name;
         $lead->phone = $phone !== '' ? $phone : ($lead->phone ?? '');
+        $lead->tags = $this->mergeTags(
+            $lead->tags ?? [],
+            $funnel->default_tags ?? [],
+            $step->step_tags ?? []
+        );
         $lead->save();
+
+        $lead->increment('score', 20);
+        $lead->activities()->create([
+            'activity_type' => 'Scoring',
+            'notes' => 'Form Submitted (+20 points)',
+        ]);
 
         session()->put($this->leadSessionKey($funnel->id), $lead->id);
 
@@ -197,5 +204,22 @@ class FunnelPortalController extends Controller
     {
         $leadId = session()->get($this->leadSessionKey($funnelId));
         return $leadId ? (int) $leadId : null;
+    }
+
+    private function mergeTags(array ...$groups): array
+    {
+        return collect($groups)
+            ->flatten(1)
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter(fn ($tag) => $tag !== '')
+            ->map(function ($tag) {
+                $clean = preg_replace('/[^a-z0-9\-_ ]/i', '', $tag) ?? '';
+                return mb_substr(trim($clean), 0, 40);
+            })
+            ->filter(fn ($tag) => $tag !== '')
+            ->unique()
+            ->take(30)
+            ->values()
+            ->all();
     }
 }

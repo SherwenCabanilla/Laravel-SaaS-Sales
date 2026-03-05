@@ -23,6 +23,20 @@
         <td>{{ $lead->phone }}</td>
         <td>{{ $lead->assignedAgent->name ?? 'Unassigned' }}</td>
         <td>
+            @php($leadTags = is_array($lead->tags) ? $lead->tags : [])
+            @if(count($leadTags))
+                <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    @foreach($leadTags as $tag)
+                        <span style="padding: 2px 8px; border-radius: 999px; background: #E0E7FF; color: #3730A3; font-size: 11px; font-weight: 700;">
+                            {{ $tag }}
+                        </span>
+                    @endforeach
+                </div>
+            @else
+                <span style="font-size: 12px; color: #94A3B8;">No tags</span>
+            @endif
+        </td>
+        <td>
             <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; {{ $statusStyles[$lead->status] ?? 'background-color: #E5E7EB; color: #374151;' }}">
                 {{ $statusLabels[$lead->status] ?? ucfirst($lead->status) }}
             </span>
@@ -46,6 +60,6 @@
     </tr>
 @empty
     <tr>
-        <td colspan="7" style="text-align: center;">No leads found.</td>
+        <td colspan="8" style="text-align: center;">No leads found.</td>
     </tr>
 @endforelse

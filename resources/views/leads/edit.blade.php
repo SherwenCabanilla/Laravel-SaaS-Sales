@@ -73,6 +73,8 @@
                             @endforeach
                         </select>
                     </div>
+                @else
+                    <input type="hidden" name="assigned_to" value="{{ $lead->assigned_to }}">
                 @endif
 
                 <div style="margin-bottom: 20px;">
@@ -81,6 +83,35 @@
                         style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;"
                         value="{{ old('score', $lead->score) }}">
                 </div>
+
+                @if($canEditTags ?? false)
+                    <div style="margin-bottom: 20px;">
+                        <label for="tags" style="display: block; margin-bottom: 8px; font-weight: bold;">Tags</label>
+                        <input type="text" name="tags" id="tags"
+                            style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;"
+                            value="{{ old('tags', implode(', ', is_array($lead->tags) ? $lead->tags : [])) }}"
+                            placeholder="e.g. webinar, warm-lead, q1-campaign">
+                        <p style="margin-top: 6px; color: #475569; font-size: 12px; font-weight: 600;">
+                            Comma-separated tags. Sales agents can view but not edit.
+                        </p>
+                    </div>
+                @else
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: bold;">Tags</label>
+                        @php($leadTags = is_array($lead->tags) ? $lead->tags : [])
+                        @if(count($leadTags))
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                @foreach($leadTags as $tag)
+                                    <span style="padding: 4px 10px; border-radius: 999px; background: #E0E7FF; color: #3730A3; font-size: 12px; font-weight: 700;">
+                                        {{ $tag }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        @else
+                            <p style="margin:0;color:#94A3B8;font-size:12px;">No tags</p>
+                        @endif
+                    </div>
+                @endif
 
                 <div style="display: flex; gap: 10px;">
                     <button type="submit"

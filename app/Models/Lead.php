@@ -26,8 +26,13 @@ class Lead extends Model
         'email',
         'phone',
         'source_campaign',
+        'tags',
         'status',
         'score',
+    ];
+
+    protected $casts = [
+        'tags' => 'array',
     ];
 
     protected static function booted(): void

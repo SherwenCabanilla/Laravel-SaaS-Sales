@@ -281,6 +281,21 @@
 <div class="fb-top">
     <div><strong>{{ $funnel->name }}</strong> <span style="font-size:12px;opacity:.9;">({{ ucfirst($funnel->status) }})</span></div>
     <div class="fb-actions">
+        <form method="POST" action="{{ route('funnels.update', $funnel) }}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="name" value="{{ $funnel->name }}">
+            <input type="hidden" name="description" value="{{ $funnel->description }}">
+            <input type="hidden" name="status" value="{{ $funnel->status }}">
+            <input
+                type="text"
+                name="default_tags"
+                value="{{ old('default_tags', implode(', ', $funnel->default_tags ?? [])) }}"
+                placeholder="Funnel tags: e.g. webinar, q1-campaign"
+                style="min-width:280px;padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font-size:12px;"
+            >
+            <button class="fb-btn" type="submit"><i class="fas fa-tags"></i> Save Tags</button>
+        </form>
         <button id="saveBtn" class="fb-btn primary" type="button"><i class="fas fa-save"></i> Save</button>
         <button id="previewBtn" class="fb-btn" type="button"><i class="fas fa-eye"></i> Preview</button>
         @if($funnel->status === 'published')
@@ -387,6 +402,8 @@
                     <input id="pageMgrRenameTitle" type="text" placeholder="Selected page title">
                     <label for="pageMgrRenameSlug">Slug</label>
                     <input id="pageMgrRenameSlug" type="text" placeholder="selected-page-slug">
+                    <label for="pageMgrRenameTags">Step tags (comma separated)</label>
+                    <input id="pageMgrRenameTags" type="text" placeholder="e.g. opt-in, warm-lead">
                     <div class="page-mgr-actions">
                         <button id="pageMgrRenameBtn" type="button" class="fb-btn">Rename</button>
                         <button id="pageMgrDeleteBtn" type="button" class="fb-btn danger">Delete</button>
@@ -418,6 +435,7 @@
             'content' => $step->content,
             'cta_label' => $step->cta_label,
             'price' => $step->price,
+            'step_tags' => $step->step_tags ?? [],
         ];
     })->all();
 @endphp
@@ -506,7 +524,7 @@ const iconCatalog=[
     {name:"linkedin-in",label:"LinkedIn",keywords:"social",styles:["brands"]},
 ];
 
-const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
 let pageMgrDragId=null;
 if(canvas)canvas.classList.add("canvas-outline-mode");
 if(!steps.length){canvas.textContent="No steps found.";return;}
@@ -589,6 +607,20 @@ function escapeRegExp(v){return String(v||"").replace(/[.*+?^${}()|[\]\\]/g,"\\$
 function slugifyPage(v){
     var s=String(v||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
     return s||"page";
+}
+function normalizeTagArray(input){
+    var list=Array.isArray(input)?input:String(input||"").split(",");
+    var seen={};
+    var out=[];
+    list.forEach(function(item){
+        var t=String(item||"").toLowerCase().trim().replace(/[^a-z0-9\-_ ]/g,"");
+        if(!t)return;
+        t=t.slice(0,40);
+        if(seen[t])return;
+        seen[t]=true;
+        out.push(t);
+    });
+    return out.slice(0,30);
 }
 function pageTypeLabel(v){
     var t=String(v||"").toLowerCase();
@@ -699,7 +731,8 @@ function buildStepPayload(stepLike,overrides){
         price:(s.price==null||String(s.price)==="")?"":String(s.price),
         background_color:String(s.background_color||""),
         button_color:String(s.button_color||""),
-        is_active:((s.is_active===false||String(s.is_active)==="0")?0:1)
+        is_active:((s.is_active===false||String(s.is_active)==="0")?0:1),
+        step_tags:normalizeTagArray(s.step_tags).join(", ")
     };
 }
 function defaultStepTitleForType(type){
@@ -741,6 +774,7 @@ function mergeStepData(raw){
         cta_label:String(r.cta_label||""),
         price:(r.price==null||String(r.price)==="")?"":String(r.price),
         button_color:(typeof r.button_color==="string"&&r.button_color.trim()!=="")?r.button_color.trim():null,
+        step_tags:normalizeTagArray(r.step_tags),
     };
 }
 function applyStepUpdate(rawStep){
@@ -823,10 +857,12 @@ function syncRenameDraftFromSelected(){
     if(!s){
         if(pageMgrRenameTitle)pageMgrRenameTitle.value="";
         if(pageMgrRenameSlug)pageMgrRenameSlug.value="";
+        if(pageMgrRenameTags)pageMgrRenameTags.value="";
         return;
     }
     if(pageMgrRenameTitle)pageMgrRenameTitle.value=String(s.title||"");
     if(pageMgrRenameSlug)pageMgrRenameSlug.value=String(s.slug||"");
+    if(pageMgrRenameTags)pageMgrRenameTags.value=normalizeTagArray(s.step_tags).join(", ");
 }
 function syncPageManagerList(){
     if(!pageMgrList)return;
@@ -1002,7 +1038,8 @@ function renamePageFromManager(){
         var msg="This page is linked from: "+refs.join(", ")+". Continue rename?";
         if(!window.confirm(msg))return;
     }
-    var payload=buildStepPayload(s,{title:nextTitle,slug:nextSlug});
+    var nextTags=normalizeTagArray((pageMgrRenameTags&&pageMgrRenameTags.value)||"");
+    var payload=buildStepPayload(s,{title:nextTitle,slug:nextSlug,step_tags:nextTags});
     requestJson(stepUrlFromTpl(stepUpdateTpl,s.id),"PUT",payload).then(function(resp){
         var updated=applyStepUpdate((resp&&resp.step)||payload);
         state.sid=updated.id;
@@ -2303,13 +2340,6 @@ function addComponent(type){
         return;
     }
     s.elements=Array.isArray(s.elements)?s.elements:[];
-    if(type==="carousel"){
-        const car=createDefaultElement("carousel");
-        if(!car)return;
-        s.elements.push(car);
-        state.sel={k:"el",scope:"section",s:s.id,e:car.id};
-        return;
-    }
     if(type==="row"){(s.rows=s.rows||[]).push(createDefaultRow());return;}
     let r=row(p.s,p.r)||(s?.rows||[])[0];
     if(!r){
@@ -2489,21 +2519,6 @@ function addComponentAt(type,target,place){
     }
     s.elements=Array.isArray(s.elements)?s.elements:[];
     s.rows=Array.isArray(s.rows)?s.rows:[];
-    if(type==="carousel"){
-        var secInsertIdx=s.elements.length;
-        if(t.k==="el" && t.scope==="section"){
-            var sf=s.elements.findIndex(x=>x.id===t.e);
-            if(sf>=0)secInsertIdx=(place==="before"?sf:sf+1);
-        }else if(t.k==="sec"){
-            secInsertIdx=(place==="before"?0:s.elements.length);
-        }
-        var secCarousel=createDefaultElement("carousel");
-        if(!secCarousel)return false;
-        s.elements.splice(Math.max(0,Math.min(secInsertIdx,s.elements.length)),0,secCarousel);
-        state.sel={k:"el",scope:"section",s:s.id,e:secCarousel.id};
-        return true;
-    }
-
     if(type==="row"){
         var rIdx=s.rows.length;
         if(t.k==="row"){

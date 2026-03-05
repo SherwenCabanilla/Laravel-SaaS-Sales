@@ -14,7 +14,12 @@ class Funnel extends Model
         'name',
         'slug',
         'description',
+        'default_tags',
         'status',
+    ];
+
+    protected $casts = [
+        'default_tags' => 'array',
     ];
 
     public function tenant(): BelongsTo

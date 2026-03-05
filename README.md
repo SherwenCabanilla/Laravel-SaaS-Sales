@@ -40,7 +40,7 @@ Deliver a platform that:
 - [x] Landing pages and opt-in forms
 - [x] Sales pages
 - [x] Checkout page builder integration
-- [ ] Lead form capture and tagging
+- [x] Lead form capture and tagging
 
 ### Step 3 (Week 4): Automation Engine
 - [ ] Email sequences

@@ -22,9 +22,15 @@
             <div></div>
         @endif
 
-        <div class="search-box">
+        <div class="search-box" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="searchInput" placeholder="Search leads..."
-                style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
+                style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 240px;">
+            <select id="tagFilterInput" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 180px;">
+                <option value="">All tags</option>
+                @foreach(($availableTags ?? []) as $tagOption)
+                    <option value="{{ $tagOption }}" {{ ($tagFilter ?? '') === $tagOption ? 'selected' : '' }}>{{ $tagOption }}</option>
+                @endforeach
+            </select>
         </div>
     </div>
 
@@ -39,8 +45,16 @@
     <div id="pipelineContainer" class="card pipeline-card">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
             <span style="font-weight: 600;">Filter by lead or agent</span>
-            <input type="text" id="pipelineSearchInput" placeholder="Search pipeline..."
-                style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 260px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="text" id="pipelineSearchInput" placeholder="Search pipeline..."
+                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 220px;">
+                <select id="pipelineTagFilterInput" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; min-width: 180px;">
+                    <option value="">All tags</option>
+                    @foreach(($availableTags ?? []) as $tagOption)
+                        <option value="{{ $tagOption }}" {{ ($pipelineTagFilter ?? '') === $tagOption ? 'selected' : '' }}>{{ $tagOption }}</option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
         <p style="font-size: 12px; color: #64748B; margin-bottom: 12px; font-weight: 600;">
@@ -64,6 +78,7 @@
                     <th>Email</th>
                     <th>Phone</th>
                     <th>Assigned To</th>
+                    <th>Tags</th>
                     <th>Status</th>
                     <th>Score</th>
                     <th>Actions</th>
@@ -135,6 +150,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
+            const tagFilterInput = document.getElementById('tagFilterInput');
             const tableBody = document.getElementById('tableBody');
             const paginationLinks = document.getElementById('paginationLinks');
             const quickAssignForm = document.getElementById('quickAssignForm');
@@ -155,7 +171,8 @@
                 if (query.length > 0 && query.length < 2) return;
 
                 timeout = setTimeout(() => {
-                    fetch(`{{ route('leads.index') }}?search=${encodeURIComponent(query)}`, {
+                    const tagValue = tagFilterInput ? (tagFilterInput.value || '') : '';
+                    fetch(`{{ route('leads.index') }}?search=${encodeURIComponent(query)}&tag=${encodeURIComponent(tagValue)}`, {
                         headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
                     })
                         .then(response => response.json())
@@ -190,6 +207,14 @@
                         .catch(error => console.error('Search error:', error));
                 }, 300);
             });
+
+            if (tagFilterInput) {
+                tagFilterInput.addEventListener('change', function() {
+                    if (searchInput) {
+                        searchInput.dispatchEvent(new Event('keyup'));
+                    }
+                });
+            }
 
             // Custom dropdown for Lead selection
             var leadDropdownWrapper = document.getElementById('leadDropdownWrapper');
@@ -296,14 +321,16 @@
             }
 
             var pipelineSearchInput = document.getElementById('pipelineSearchInput');
+            var pipelineTagFilterInput = document.getElementById('pipelineTagFilterInput');
             var pipelineGrid = document.getElementById('pipelineGrid');
             var pipelineSearchTimeout = null;
             if (pipelineSearchInput && pipelineGrid) {
-                pipelineSearchInput.addEventListener('input', function() {
+                var triggerPipelineSearch = function() {
                     var q = (this.value || '').trim();
+                    var tagQ = pipelineTagFilterInput ? (pipelineTagFilterInput.value || '').trim() : '';
                     clearTimeout(pipelineSearchTimeout);
                     pipelineSearchTimeout = setTimeout(function() {
-                        var url = '{{ route("leads.index") }}?pipeline_only=1&pipeline_search=' + encodeURIComponent(q);
+                        var url = '{{ route("leads.index") }}?pipeline_only=1&pipeline_search=' + encodeURIComponent(q) + '&pipeline_tag=' + encodeURIComponent(tagQ);
                         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
                             .then(function(r) { return r.json(); })
                             .then(function(data) {
@@ -321,7 +348,14 @@
                             })
                             .catch(function(err) { console.error('Pipeline search error:', err); });
                     }, 300);
-                });
+                };
+
+                pipelineSearchInput.addEventListener('input', triggerPipelineSearch);
+                if (pipelineTagFilterInput) {
+                    pipelineTagFilterInput.addEventListener('change', function() {
+                        triggerPipelineSearch.call(pipelineSearchInput);
+                    });
+                }
             }
         });
     </script>

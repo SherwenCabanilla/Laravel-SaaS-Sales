@@ -81,6 +81,17 @@
                 </div>
             @endif
 
+            <div style="margin-bottom: 20px;">
+                <label for="tags" style="display: block; margin-bottom: 8px; font-weight: bold;">Tags</label>
+                <input type="text" name="tags" id="tags"
+                    style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;"
+                    value="{{ old('tags') }}"
+                    placeholder="e.g. webinar, warm-lead, q1-campaign">
+                @error('tags')
+                    <span style="color: red; font-size: 12px;">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div style="display: flex; gap: 10px;">
                 <button type="submit"
                     style="padding: 10px 20px; background-color: #2563EB; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">

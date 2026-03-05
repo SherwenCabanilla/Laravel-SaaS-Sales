@@ -41,6 +41,8 @@ class LeadController extends Controller
 
         $query = Lead::where('tenant_id', $user->tenant_id)->with('assignedAgent');
         $pipelineSearch = trim((string) $request->get('pipeline_search', ''));
+        $tagFilter = trim((string) $request->get('tag', ''));
+        $pipelineTagFilter = trim((string) $request->get('pipeline_tag', ''));
 
         if ($user->hasRole('sales-agent')) {
             $query->where('assigned_to', $user->id);
@@ -56,6 +58,10 @@ class LeadController extends Controller
             });
         }
 
+        if ($tagFilter !== '') {
+            $this->applyTagFilter($query, $tagFilter);
+        }
+
         $leads = $query->latest()->paginate(10);
         
         // Create separate query for pipeline (independent of main list search/pagination)
@@ -63,8 +69,9 @@ class LeadController extends Controller
         if ($user->hasRole('sales-agent')) {
             $pipelineQuery->where('assigned_to', $user->id);
         }
-        $pipelineLeads = $this->buildPipelineLeads($pipelineQuery, $pipelineSearch);
+        $pipelineLeads = $this->buildPipelineLeads($pipelineQuery, $pipelineSearch, $pipelineTagFilter);
         $assignableAgents = $this->getAssignableAgents($user->tenant_id);
+        $availableTags = $this->extractTenantTags($user->tenant_id);
 
         // For Assign Lead dropdown: all leads (up to 500) so page 2+ leads appear
         $leadsForDropdown = (clone $query)->latest()->take(500)->get();
@@ -72,11 +79,12 @@ class LeadController extends Controller
         // AJAX: pipeline-only (View Lead Pipeline modal search – searches all data, shows up to 12 per stage)
         if ($request->ajax() && $request->has('pipeline_only')) {
             $pipeSearch = trim((string) $request->get('pipeline_search', ''));
+            $pipeTag = trim((string) $request->get('pipeline_tag', ''));
             $pipeQuery = Lead::where('tenant_id', $user->tenant_id)->with('assignedAgent');
             if ($user->hasRole('sales-agent')) {
                 $pipeQuery->where('assigned_to', $user->id);
             }
-            $pipeLeads = $this->buildPipelineLeads($pipeQuery, $pipeSearch);
+            $pipeLeads = $this->buildPipelineLeads($pipeQuery, $pipeSearch, $pipeTag);
             $pipeHtml = view('leads._pipeline_grid', [
                 'pipelineStatuses' => Lead::PIPELINE_STATUSES,
                 'pipelineLeads' => $pipeLeads,
@@ -107,6 +115,9 @@ class LeadController extends Controller
             'pipelineLeads' => $pipelineLeads,
             'assignableAgents' => $assignableAgents,
             'pipelineSearch' => $pipelineSearch,
+            'tagFilter' => $tagFilter,
+            'pipelineTagFilter' => $pipelineTagFilter,
+            'availableTags' => $availableTags,
         ]);
     }
 
@@ -133,6 +144,7 @@ class LeadController extends Controller
             'source_campaign' => 'required|string|max:100',
             'status' => ['required', Rule::in(array_keys(Lead::PIPELINE_STATUSES))],
             'assigned_to' => 'required|integer',
+            'tags' => 'nullable|string|max:500',
         ], [
             'phone.regex' => 'Phone number must be a valid Philippine mobile number (09XXXXXXXXX).',
         ]);
@@ -147,6 +159,7 @@ class LeadController extends Controller
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
                 'source_campaign' => $validated['source_campaign'],
+                'tags' => $this->parseTagsInput($validated['tags'] ?? null),
                 'status' => $validated['status'],
                 'score' => 0,
             ]);
@@ -165,6 +178,7 @@ class LeadController extends Controller
             'lead' => $lead->load('activities'),
             'statuses' => Lead::PIPELINE_STATUSES,
             'assignableAgents' => $this->getAssignableAgents(auth()->user()->tenant_id),
+            'canEditTags' => $this->canEditLeadTags(auth()->user()),
         ]);
     }
 
@@ -181,12 +195,18 @@ class LeadController extends Controller
             'status' => ['required', Rule::in(array_keys(Lead::PIPELINE_STATUSES))],
             'score' => 'nullable|integer|min:0',
             'assigned_to' => 'required|integer',
+            'tags' => 'nullable|string|max:500',
         ], [
             'phone.regex' => 'Phone number must be a valid Philippine mobile number (09XXXXXXXXX).',
         ]);
 
         try {
             $validated['assigned_to'] = $this->normalizeAssignee($validated['assigned_to'] ?? null, $user, $lead->assigned_to);
+            if ($this->canEditLeadTags($user)) {
+                $validated['tags'] = $this->parseTagsInput($validated['tags'] ?? null);
+            } else {
+                unset($validated['tags']);
+            }
             $lead->update($validated);
 
             return redirect()->route('leads.index')->with('success', 'Edited Successfully');
@@ -365,7 +385,7 @@ class LeadController extends Controller
         return $requestedAssignee;
     }
 
-    private function buildPipelineLeads($baseQuery, string $pipelineSearch = ''): array
+    private function buildPipelineLeads($baseQuery, string $pipelineSearch = '', string $tagFilter = ''): array
     {
         $queryForCounts = clone $baseQuery;
         if ($pipelineSearch !== '') {
@@ -382,6 +402,11 @@ class LeadController extends Controller
                         $aq->where('name', 'like', "%{$search}%");
                     });
             });
+        }
+
+        if ($tagFilter !== '') {
+            $this->applyTagFilter($queryForCounts, $tagFilter);
+            $this->applyTagFilter($baseQuery, $tagFilter);
         }
 
         // Get total counts for each status (before limiting to 12)
@@ -402,5 +427,57 @@ class LeadController extends Controller
         }
 
         return $grouped;
+    }
+
+    private function parseTagsInput(?string $raw): array
+    {
+        if ($raw === null) {
+            return [];
+        }
+
+        return collect(explode(',', $raw))
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter(fn ($tag) => $tag !== '')
+            ->map(function ($tag) {
+                $clean = preg_replace('/[^a-z0-9\-_ ]/i', '', $tag) ?? '';
+                return mb_substr(trim($clean), 0, 40);
+            })
+            ->filter(fn ($tag) => $tag !== '')
+            ->unique()
+            ->take(30)
+            ->values()
+            ->all();
+    }
+
+    private function canEditLeadTags(User $user): bool
+    {
+        return $user->hasRole('account-owner') || $user->hasRole('marketing-manager');
+    }
+
+    private function applyTagFilter($query, string $tag): void
+    {
+        $needle = mb_strtolower(trim($tag));
+        if ($needle === '') {
+            return;
+        }
+
+        $query->where('tags', 'like', '%"' . $needle . '"%');
+    }
+
+    private function extractTenantTags(int $tenantId): array
+    {
+        $tags = Lead::where('tenant_id', $tenantId)
+            ->get(['tags'])
+            ->pluck('tags')
+            ->filter(fn ($value) => is_array($value))
+            ->flatten(1)
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter(fn ($tag) => $tag !== '')
+            ->unique()
+            ->sort()
+            ->values()
+            ->all();
+
+        return $tags;
     }
 }
