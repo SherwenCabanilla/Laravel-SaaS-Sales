@@ -197,11 +197,11 @@
                                     });
                                 }
                             }
-                            if (query.length > 0) {
+                            const hasFilter = (query || '').trim().length > 0 || (tagValue || '').trim().length > 0;
+                            if (hasFilter) {
                                 paginationLinks.style.display = 'none';
                             } else {
                                 paginationLinks.style.display = 'block';
-                                if (query === '') window.location.reload();
                             }
                         })
                         .catch(error => console.error('Search error:', error));
