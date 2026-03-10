@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="http://127.0.0.1:8000/css/new_login.css">
+</head>
+<body>
+    
+    <div class="login-container">
+        <!-- Left Info Panel -->
+        <div class="info-panel">
+            <img src="http://127.0.0.1:8000/images/logo3.png" alt="Funnel System Logo" class="info-logo">
+            <h1>Grow Your Sales Efficiently</h1>
+            <p class="info-subtitle">Manage leads, automate marketing campaigns, and track performance in one platform.</p>
+
+            <ul class="features">
+                <li><strong>Lead Management:</strong> Capture and organize all your leads seamlessly</li>
+                <li><strong>Marketing Automation:</strong> Automate email sequences and customer follow-ups</li>
+                <li><strong>Analytics Dashboard:</strong> Monitor campaign performance and conversion rates</li>
+            </ul>
+        </div>
+
+        <!-- Right Login Panel -->
+        <div class="login-card">
+            <img src="http://127.0.0.1:8000/images/logo2.png" alt="Funnel System Logo" class="login-logo">
+
+            <h1>Login to Funnel System</h1>
+            <p class="subtitle">Access your sales and marketing dashboard</p>
+
+            <form method="POST" action="http://127.0.0.1:8000/login">
+                <input type="hidden" name="_token" value="0dbSX0YPSb85VdJdrDgt1g3tQ3WJmYmD6agMvpTc" autocomplete="off">                <label for="email">Email Address</label>
+                <input type="email" name="email" placeholder="Email" required>
+
+                <label for="password">Password</label>
+                <div class="password-container">
+                    <input type="password" name="password" id="password" placeholder="Password" required>
+                    <i class="fas fa-eye toggle-password" onclick="togglePassword()"></i>
+                </div>
+
+                <button type="submit">Login</button>
+            </form>
+
+            <p class="register-link">
+                Don't have an account? Register here</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const icon = document.querySelector('.toggle-password');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
+
+</body>
+</html>
