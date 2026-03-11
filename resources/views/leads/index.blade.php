@@ -11,10 +11,10 @@
         @if(auth()->user()->hasRole('account-owner') || auth()->user()->hasRole('marketing-manager'))
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                 <a href="{{ route('leads.create') }}" class="btn-create"><i class="fas fa-plus"></i> Add New Lead</a>
-                <button type="button" id="togglePipelineBtn" class="btn-create" style="background-color: var(--theme-accent, #0EA5E9); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                <button type="button" id="togglePipelineBtn" class="btn-create" style="background-color: var(--theme-accent, var(--theme-accent, #6B4A7A)); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i class="fas fa-columns"></i> View Lead Pipeline
                 </button>
-                <button type="button" id="toggleAssignBtn" class="btn-create" style="background-color: var(--theme-primary, #2563EB); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                <button type="button" id="toggleAssignBtn" class="btn-create" style="background-color: var(--theme-primary, var(--theme-primary, #240E35)); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 600;">
                     <i class="fas fa-user-check"></i> Assign Lead
                 </button>
             </div>
@@ -107,18 +107,18 @@
                         <label for="leadSelect" style="display: block; margin-bottom: 6px; font-weight: 600;">Lead</label>
                         <div class="custom-dropdown" id="leadDropdownWrapper" style="position: relative;">
                             <input type="hidden" name="lead_id" id="leadSelectHidden" value="">
-                            <div class="custom-dropdown-toggle" id="leadDropdownToggle" style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                            <div class="custom-dropdown-toggle" id="leadDropdownToggle" style="width: 100%; padding: 10px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                                 <span id="leadDropdownText" style="color: #64748B;">Select a lead...</span>
                                 <i class="fas fa-chevron-down" style="color: #64748B; font-size: 12px;"></i>
                             </div>
-                            <div class="custom-dropdown-menu" id="leadDropdownMenu" style="display: none; position: absolute; width: 100%; background: #fff; border: 1px solid #DBEAFE; border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10000; max-height: 300px; overflow-y: auto;">
-                                <div style="padding: 8px; border-bottom: 1px solid #E2E8F0; position: sticky; top: 0; background: #fff; z-index: 10;">
-                                    <input type="text" id="leadDropdownSearch" placeholder="Search leads..." style="width: 100%; padding: 8px; border: 1px solid #DBEAFE; border-radius: 4px; font-size: 14px;">
+                            <div class="custom-dropdown-menu" id="leadDropdownMenu" style="display: none; position: absolute; width: 100%; background: #fff; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10000; max-height: 300px; overflow-y: auto;">
+                                <div style="padding: 8px; border-bottom: 1px solid var(--theme-border, #E6E1EF); position: sticky; top: 0; background: #fff; z-index: 10;">
+                                    <input type="text" id="leadDropdownSearch" placeholder="Search leads..." style="width: 100%; padding: 8px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 4px; font-size: 14px;">
                                 </div>
                                 <div id="leadDropdownOptions" style="max-height: 250px; overflow-y: auto;">
                                     @forelse($leadsForDropdown ?? $leads as $lead)
                                         <div class="custom-dropdown-option" data-value="{{ $lead->id }}" data-text="{{ $lead->name }} ({{ $lead->assignedAgent->name ?? 'Unassigned' }})" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #F1F5F9; transition: background 0.2s;">
-                                            <strong style="display: block; font-size: 14px; color: #1E40AF;">{{ $lead->name }}</strong>
+                                            <strong style="display: block; font-size: 14px; color: var(--theme-primary-dark, #2E1244);">{{ $lead->name }}</strong>
                                             <small style="color: #64748B; font-size: 12px;">{{ $lead->assignedAgent->name ?? 'Unassigned' }}</small>
                                         </div>
                                     @empty
@@ -130,7 +130,7 @@
                     </div>
                     <div style="margin-bottom: 10px;">
                         <label for="agentSelect">Sales Agent</label>
-                        <select id="agentSelect" name="assigned_to" style="width: 100%; padding: 10px; border: 1px solid #DBEAFE; border-radius: 6px;">
+                        <select id="agentSelect" name="assigned_to" style="width: 100%; padding: 10px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;">
                             <option value="">Unassigned</option>
                             @foreach($assignableAgents as $agent)
                                 <option value="{{ $agent->id }}">{{ $agent->name }}</option>
@@ -138,7 +138,7 @@
                         </select>
                     </div>
                     <button type="submit"
-                        style="padding: 8px 16px; background-color: var(--theme-primary, #2563EB); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        style="padding: 8px 16px; background-color: var(--theme-primary, var(--theme-primary, #240E35)); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
                         Save Assignment
                     </button>
                 </form>
@@ -191,7 +191,7 @@
                                         opt.setAttribute('data-value', lead.id);
                                         opt.setAttribute('data-text', lead.name + ' (' + lead.assigned + ')');
                                         opt.style.cssText = 'padding: 10px; cursor: pointer; border-bottom: 1px solid #F1F5F9; transition: background 0.2s;';
-                                        opt.innerHTML = '<strong style="display: block; font-size: 14px; color: #1E40AF;">' + lead.name + '</strong><small style="color: #64748B; font-size: 12px;">' + lead.assigned + '</small>';
+                                        opt.innerHTML = '<strong style="display: block; font-size: 14px; color: var(--theme-primary-dark, #2E1244);">' + lead.name + '</strong><small style="color: #64748B; font-size: 12px;">' + lead.assigned + '</small>';
                                         leadDropdownOptions.appendChild(opt);
                                         allLeadOptions.push(opt);
                                     });
@@ -271,7 +271,7 @@
                             var text = opt.getAttribute('data-text');
                             if (leadSelectHidden) leadSelectHidden.value = value;
                             if (leadDropdownText) leadDropdownText.textContent = text;
-                            if (leadDropdownText) leadDropdownText.style.color = '#1E40AF';
+                            if (leadDropdownText) leadDropdownText.style.color = 'var(--theme-primary-dark, #2E1244)';
                             leadDropdownMenu.style.display = 'none';
                             if (leadDropdownSearch) leadDropdownSearch.value = '';
                             filterLeadOptions('');
@@ -373,12 +373,12 @@
         .pipeline-modal-body { flex: 1; overflow-y: auto; overflow-x: hidden; }
         .pipeline-card { margin-bottom: 0; overflow: visible; }
         .pipeline-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-        .pipeline-column { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px; max-height: 460px; overflow-y: auto; }
+        .pipeline-column { background: var(--theme-surface-softer, #F7F7FB); border: 1px solid var(--theme-border, #E6E1EF); border-radius: 8px; padding: 10px; max-height: 460px; overflow-y: auto; }
         .pipeline-lead-card { padding: 8px; border-radius: 6px; border: 1px solid #E5E7EB; background: white; margin-bottom: 8px; }
         .pipeline-empty { font-size: 12px; color: #94A3B8; margin: 0; font-weight: 700; }
         .assign-modal-box { max-width: 600px; width: 100%; }
         .custom-dropdown { position: relative; }
-        .custom-dropdown-toggle:hover { border-color: #93C5FD; background: #F8FAFC; }
+        .custom-dropdown-toggle:hover { border-color: var(--theme-border, #E6E1EF); background: var(--theme-surface-softer, #F7F7FB); }
         .custom-dropdown-option:hover { background: #F1F5F9 !important; }
         .custom-dropdown-menu::-webkit-scrollbar { width: 8px; }
         .custom-dropdown-menu::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 4px; }

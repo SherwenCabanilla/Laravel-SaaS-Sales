@@ -16,7 +16,7 @@
 <body>
     @if(session('success') || session('error'))
         <div id="statusToastContainer" style="position:fixed;top:18px;right:18px;z-index:9999;">
-            <div style="display:flex;gap:12px;align-items:center;background:#fff;border-radius:14px;width:min(90vw,380px);padding:12px 38px 12px 12px;border:1px solid #E2E8F0;box-shadow:0 18px 38px rgba(15,23,42,.2);position:relative;">
+            <div style="display:flex;gap:12px;align-items:center;background:#fff;border-radius:14px;width:min(90vw,380px);padding:12px 38px 12px 12px;border:1px solid var(--theme-border, #E6E1EF);box-shadow:0 18px 38px rgba(15,23,42,.2);position:relative;">
                 <i class="fas {{ session('success') ? 'fa-check' : 'fa-times' }}" style="font-size:24px;color:{{ session('success') ? '#65A30D' : '#B91C1C' }};"></i>
                 <div>
                     <h4 style="margin:0 0 6px 0;font-size:15px;font-weight:800;color:{{ session('success') ? '#65A30D' : '#B91C1C' }};">

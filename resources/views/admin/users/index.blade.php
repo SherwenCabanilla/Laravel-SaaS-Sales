@@ -66,7 +66,7 @@
                 <input type="hidden" name="suspension_reason" id="suspensionReasonHidden" value="">
                 <div id="statusModalReasonWrap" style="margin-bottom: 16px;">
                     <label for="modalSuspensionReason" style="display: block; margin-bottom: 6px; font-weight: 600;">Reason</label>
-                    <select id="modalSuspensionReason" style="width: 100%; padding: 10px; border: 1px solid #E2E8F0; border-radius: 6px;">
+                    <select id="modalSuspensionReason" style="width: 100%; padding: 10px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;">
                         <option value="">Select reason...</option>
                         <option value="Policy violation">Policy violation</option>
                         <option value="Payment issue">Payment issue</option>
@@ -77,13 +77,13 @@
                     <div id="statusModalReasonOtherWrap" style="margin-top: 12px; display: none;">
                         <label for="modalSuspensionReasonOther" style="display: block; margin-bottom: 6px; font-weight: 600;">Please specify</label>
                         <input type="text" id="modalSuspensionReasonOther" placeholder="Enter reason..." maxlength="255"
-                            style="width: 100%; padding: 10px; border: 1px solid #E2E8F0; border-radius: 6px;">
+                            style="width: 100%; padding: 10px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;">
                     </div>
                 </div>
-                <p id="statusModalConfirmText" style="display: none; margin-bottom: 16px; color: #475569;"></p>
+                <p id="statusModalConfirmText" style="display: none; margin-bottom: 16px; color: var(--theme-muted, #6B7280);"></p>
                 <div style="display: flex; gap: 8px;">
                     <button type="submit" id="statusModalSubmit" style="padding: 8px 16px; background-color: #B91C1C; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Suspend</button>
-                    <button type="button" id="statusModalCancel" style="padding: 8px 16px; background-color: #E2E8F0; color: #475569; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
+                    <button type="button" id="statusModalCancel" style="padding: 8px 16px; background-color: var(--theme-border, #E6E1EF); color: var(--theme-muted, #6B7280); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancel</button>
                 </div>
             </form>
         </div>

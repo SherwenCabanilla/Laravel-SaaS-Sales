@@ -130,8 +130,8 @@
                 datasets: [{
                     label: 'Leads',
                     data: @json($leadTrendValues),
-                    borderColor: '#2563EB',
-                    backgroundColor: 'rgba(37, 99, 235, 0.18)',
+                    borderColor: '#240E35',
+                    backgroundColor: 'rgba(36, 14, 53, 0.18)',
                     fill: true,
                     tension: 0.35
                 }]
@@ -150,7 +150,7 @@
                 datasets: [{
                     label: 'Users',
                     data: @json($usersByRole->pluck('users_count')->values()),
-                    backgroundColor: '#3B82F6'
+                    backgroundColor: '#6B4A7A'
                 }]
             },
             options: {

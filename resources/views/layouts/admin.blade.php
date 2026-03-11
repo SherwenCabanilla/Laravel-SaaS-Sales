@@ -8,25 +8,37 @@
     @php
         $authUser = auth()->user();
         $tenant = $authUser?->tenant;
-        $themePrimary = $tenant->theme_primary_color ?? '#2563EB';
-        $themeAccent = $tenant->theme_accent_color ?? '#0EA5E9';
-        $themeSidebarBg = $tenant->theme_sidebar_bg ?? '#4169E1';
-        $themeSidebarText = $tenant->theme_sidebar_text ?? '#F8FAFF';
-        $themeSidebarIcon = '#E6F0FF';
-        $themeBodyBg = '#EFF6FF';
-        $themeBodyText = '#0F172A';
-        $themePrimaryDark = '#1E40AF';
+        $themePrimary = $tenant->theme_primary_color ?? '#240E35';
+        $themeAccent = $tenant->theme_accent_color ?? '#6B4A7A';
+        $themeSidebarBg = $tenant->theme_sidebar_bg ?? '#240E35';
+        $themeSidebarText = $tenant->theme_sidebar_text ?? '#F8F4FB';
+        $themeSidebarIcon = '#E7D8F0';
+        $themeBodyBg = '#F7F7FB';
+        $themeBodyText = '#111827';
+        $themePrimaryDark = '#2E1244';
+        $themeSurface = '#FFFFFF';
+        $themeSurfaceSoft = '#F3EEF7';
+        $themeSurfaceSofter = '#F7F7FB';
+        $themeBorder = '#E6E1EF';
+        $themeAccentStrong = '#9E7BB5';
+        $themeMuted = '#6B7280';
     @endphp
     <style>
         :root {
             --theme-primary: {{ $themePrimary }};
             --theme-primary-dark: {{ $themePrimaryDark }};
             --theme-accent: {{ $themeAccent }};
+            --theme-accent-strong: {{ $themeAccentStrong }};
             --theme-sidebar-bg: {{ $themeSidebarBg }};
             --theme-sidebar-text: {{ $themeSidebarText }};
             --theme-sidebar-icon: {{ $themeSidebarIcon }};
             --theme-body-bg: {{ $themeBodyBg }};
             --theme-body-text: {{ $themeBodyText }};
+            --theme-surface: {{ $themeSurface }};
+            --theme-surface-soft: {{ $themeSurfaceSoft }};
+            --theme-surface-softer: {{ $themeSurfaceSofter }};
+            --theme-border: {{ $themeBorder }};
+            --theme-muted: {{ $themeMuted }};
         }
         body.builder-full-width .main-content {
             margin-left: 0;

@@ -23,7 +23,6 @@
 
     <div class="actions" style="justify-content: space-between; align-items: center;">
         <a href="{{ route('funnels.create') }}" class="btn-create"><i class="fas fa-plus"></i> New Funnel</a>
-        <p style="font-size: 12px; font-weight: 700; color: #475569;">Build landing -> opt-in -> sales -> checkout -> upsell/downsell flows.</p>
     </div>
 
     <div class="card">
@@ -55,7 +54,7 @@
                             @endif
                         </td>
                         <td style="display:flex; gap: 10px;">
-                            <a href="{{ route('funnels.edit', $funnel) }}" style="color:#2563EB; text-decoration:none; font-weight:700;">
+                            <a href="{{ route('funnels.edit', $funnel) }}" style="color:var(--theme-primary, #240E35); text-decoration:none; font-weight:700;">
                                 <i class="fas fa-pen"></i> Builder
                             </a>
                             <form method="POST" action="{{ route('funnels.destroy', $funnel) }}" onsubmit="return confirm('Delete this funnel?')">
