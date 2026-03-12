@@ -134,20 +134,17 @@
             border-radius: 999px; font-size: 12px; font-weight: 800; color: #1d4ed8; background: #dbeafe;
         }
         .preview-toolbar {
-            position: fixed;
-            top: 12px;
-            left: 12px;
-            right: 12px;
+            position: relative;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
             z-index: 10;
-            pointer-events: none;
-        }
-        .preview-toolbar .btn,
-        .preview-toolbar .preview-badge {
-            pointer-events: auto;
+            margin: 12px;
+            padding: 10px 12px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
         }
     </style>
 </head>

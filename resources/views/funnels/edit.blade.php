@@ -2940,6 +2940,26 @@ document.addEventListener("mousemove",function(e){
     var finalY=(snap.y!==null)?snap.y:rawY;
     var maxX=Math.max(0,hostRect.width-elW);
     var maxY=Math.max(0,hostRect.height-elH);
+
+    // Auto-grow freeform section height while dragging near the bottom edge.
+    var secNode=elDrag.host.closest&&elDrag.host.closest(".sec");
+    if(secNode){
+        var secId=secNode.getAttribute("data-sec-id");
+        var sObj=secId?sec(secId):null;
+        var isFreeform=!!(sObj&&sObj.__freeformCanvas);
+        if(isFreeform){
+            var bottomNeeded=(finalY+elH+20);
+            if(bottomNeeded>hostRect.height){
+                var nextH=Math.max(bottomNeeded,hostRect.height+40);
+                elDrag.host.style.minHeight=Math.round(nextH)+"px";
+                secNode.style.minHeight=elDrag.host.style.minHeight;
+                sObj.style=sObj.style||{};
+                sObj.style.minHeight=elDrag.host.style.minHeight;
+                hostRect=elDrag.host.getBoundingClientRect();
+                maxY=Math.max(0,hostRect.height-elH);
+            }
+        }
+    }
     if(finalX<0)finalX=0;
     if(finalY<0)finalY=0;
     if(finalX>maxX)finalX=maxX;
