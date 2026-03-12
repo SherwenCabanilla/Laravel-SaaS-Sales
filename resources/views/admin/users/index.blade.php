@@ -23,7 +23,7 @@
         <!-- Live Search Input -->
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="Search users..." 
-                   style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; width: 300px;">
+                   style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 300px;">
         </div>
     </div>
 
@@ -93,7 +93,7 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
         .modal-box { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
         .status-modal-box { width: 100%; max-width: 520px; }
-        .modal-close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #64748B; line-height: 1; padding: 0 4px; }
+        .modal-close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--theme-muted, #6B7280); line-height: 1; padding: 0 4px; }
         .modal-close-btn:hover { color: #1E293B; }
     </style>
 

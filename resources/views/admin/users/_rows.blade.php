@@ -36,7 +36,7 @@
                     {{ $user->status === 'active' ? 'Suspend' : 'Activate' }}
                 </button>
             @else
-                <span style="color: #64748B; font-size: 12px; font-weight: 700;">N/A</span>
+                <span style="color: var(--theme-muted, #6B7280); font-size: 12px; font-weight: 700;">N/A</span>
             @endif
         </td>
     </tr>

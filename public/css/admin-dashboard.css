@@ -316,7 +316,7 @@ body {
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--theme-accent, #6B4A7A);
+    color: var(--theme-primary, #240E35);
     font-weight: 700;
 }
 
@@ -348,7 +348,7 @@ body {
 .card h3 {
     font-size: 14px;
     margin-bottom: 10px;
-    color: var(--theme-accent, #6B4A7A);
+    color: var(--theme-primary-dark, #2E1244);
     text-transform: uppercase;
 }
 
@@ -439,7 +439,7 @@ table tr:hover {
     padding: 10px 15px;
     border: none;
     border-radius: 6px;
-    background-color: var(--theme-primary, #240E35);
+    background-color: #240E35;
     color: white;
     cursor: pointer;
     display: flex;
@@ -450,7 +450,7 @@ table tr:hover {
 }
 
 .actions button:hover {
-    background-color: var(--theme-primary-dark, #2E1244);
+    background-color: #2E1244;
 }
 
 .btn-create {
@@ -460,15 +460,24 @@ table tr:hover {
     padding: 10px 15px;
     border: none;
     border-radius: 6px;
-    background-color: var(--theme-primary, #240E35);
-    color: #fff;
+    background-color: #240E35 !important;
+    color: #F8F4FB !important;
     cursor: pointer;
     font-weight: 600;
     text-decoration: none;
 }
 
 .btn-create:hover {
-    background-color: var(--theme-primary-dark, #2E1244);
+    background-color: #2E1244 !important;
+}
+
+table a {
+    color: var(--theme-primary, #240E35);
+    text-decoration: none;
+}
+
+table a:hover {
+    text-decoration: underline;
 }
 
 .status-toast-container {

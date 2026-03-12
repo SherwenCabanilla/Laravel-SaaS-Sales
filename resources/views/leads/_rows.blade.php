@@ -27,13 +27,13 @@
             @if(count($leadTags))
                 <div class="lead-tags" title="{{ implode(', ', $leadTags) }}">
                     @foreach($leadTags as $tag)
-                        <span class="lead-tag" style="padding: 2px 8px; border-radius: 999px; background: #E0E7FF; color: #3730A3; font-size: 11px; font-weight: 700;">
+                        <span class="lead-tag" style="padding: 2px 8px; border-radius: 999px; background: #E7D8F0; color: #240E35; font-size: 11px; font-weight: 700;">
                             {{ $tag }}
                         </span>
                     @endforeach
                 </div>
             @else
-                <span style="font-size: 12px; color: #94A3B8;">No tags</span>
+                <span style="font-size: 12px; color: var(--theme-muted, #6B7280);">No tags</span>
             @endif
         </td>
         <td>

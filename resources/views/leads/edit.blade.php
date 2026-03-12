@@ -91,7 +91,7 @@
                             style="width: 100%; padding: 10px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;"
                             value="{{ old('tags', implode(', ', is_array($lead->tags) ? $lead->tags : [])) }}"
                             placeholder="e.g. webinar, warm-lead, q1-campaign">
-                        <p style="margin-top: 6px; color: #475569; font-size: 12px; font-weight: 600;">
+                        <p style="margin-top: 6px; color: var(--theme-muted, #6B7280); font-size: 12px; font-weight: 600;">
                             Comma-separated tags. Sales agents can view but not edit.
                         </p>
                     </div>
@@ -102,13 +102,13 @@
                         @if(count($leadTags))
                             <div style="display:flex;gap:6px;flex-wrap:wrap;">
                                 @foreach($leadTags as $tag)
-                                    <span style="padding: 4px 10px; border-radius: 999px; background: #E0E7FF; color: #3730A3; font-size: 12px; font-weight: 700;">
+                                    <span style="padding: 4px 10px; border-radius: 999px; background: #E7D8F0; color: #240E35; font-size: 12px; font-weight: 700;">
                                         {{ $tag }}
                                     </span>
                                 @endforeach
                             </div>
                         @else
-                            <p style="margin:0;color:#94A3B8;font-size:12px;">No tags</p>
+                            <p style="margin:0;color:var(--theme-muted, #6B7280);font-size:12px;">No tags</p>
                         @endif
                     </div>
                 @endif
@@ -177,7 +177,7 @@
                 <form action="{{ route('leads.score-event', $lead->id) }}" method="POST">
                     @csrf
                     <input type="hidden" name="event" value="email_opened">
-                    <button type="submit" style="padding: 6px 10px; border: 1px solid #BFDBFE; background: var(--theme-surface-soft, #F3EEF7); border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    <button type="submit" style="padding: 6px 10px; border: 1px solid var(--theme-border, #E6E1EF); background: var(--theme-surface-soft, #F3EEF7); border-radius: 6px; cursor: pointer; font-weight: 600;">
                         +5 Email Opened
                     </button>
                 </form>

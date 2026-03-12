@@ -144,28 +144,26 @@
                 <div style="font-weight:700;">{{ $companyName }}</div>
             </div>
 
-            @if($user->hasRole('account-owner'))
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <form action="{{ route('profile.company-logo.update') }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <label for="company_logo" style="display:inline-block;padding:8px 12px;border:none;border-radius:6px;background:var(--theme-accent, #6B4A7A);color:#fff;cursor:pointer;font-weight:600;font-size:14px;height:38px;box-sizing:border-box;line-height:22px;vertical-align:middle;">
-                            <i class="fas fa-camera"></i> Upload Company Logo
-                        </label>
-                        <input id="company_logo" type="file" name="company_logo" accept="image/*" style="display:none;" onchange="this.form.submit()">
-                    </form>
-                    <form action="{{ route('profile.company-logo.delete') }}" method="POST">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" style="padding:8px 12px;border:none;border-radius:6px;background:#DC2626;color:#fff;cursor:pointer;font-weight:600;font-size:14px;height:38px;box-sizing:border-box;line-height:22px;">
-                            Delete Company Logo
-                        </button>
-                    </form>
-                </div>
-            @endif
+            <div style="display:flex; gap:8px; align-items:center;">
+                <form action="{{ route('profile.company-logo.update') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <label for="company_logo" style="display:inline-block;padding:8px 12px;border:none;border-radius:6px;background:var(--theme-accent, #6B4A7A);color:#fff;cursor:pointer;font-weight:600;font-size:14px;height:38px;box-sizing:border-box;line-height:22px;vertical-align:middle;">
+                        <i class="fas fa-camera"></i> Upload Company Logo
+                    </label>
+                    <input id="company_logo" type="file" name="company_logo" accept="image/*" style="display:none;" onchange="this.form.submit()">
+                </form>
+                <form action="{{ route('profile.company-logo.delete') }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" style="padding:8px 12px;border:none;border-radius:6px;background:#DC2626;color:#fff;cursor:pointer;font-weight:600;font-size:14px;height:38px;box-sizing:border-box;line-height:22px;">
+                        Delete Company Logo
+                    </button>
+                </form>
+            </div>
         </div>
     @endif
 
-    @if($user->tenant && $user->hasRole('account-owner'))
+    @if($user->tenant)
         <div class="card" style="margin-top: 18px;">
             <h3>Company Theme</h3>
             <form action="{{ route('profile.theme.update') }}" method="POST">
@@ -189,7 +187,7 @@
                         ],
                         [
                             'name' => 'Blue + Orange (Complementary)',
-                            'primary' => '#2563EB',
+                            'primary' => '#240E35',
                             'accent' => '#EA580C',
                             'sidebar_bg' => '#FFFFFF',
                             'sidebar_text' => '#1E3A8A',
@@ -226,7 +224,7 @@
                             'name' => 'Navy + Amber (Complementary)',
                             'primary' => '#1E3A8A',
                             'accent' => '#F59E0B',
-                            'sidebar_bg' => '#EFF6FF',
+                            'sidebar_bg' => '#240E35',
                             'sidebar_text' => '#1E3A8A',
                         ],
                     ];
@@ -263,7 +261,7 @@
                                     <span title="Sidebar BG" style="width:18px;height:18px;border-radius:6px;background:{{ $preset['sidebar_bg'] }};border:1px solid var(--theme-border, #E6E1EF);"></span>
                                     <span title="Sidebar Text" style="width:18px;height:18px;border-radius:6px;background:{{ $preset['sidebar_text'] }};border:1px solid var(--theme-border, #E6E1EF);"></span>
                                 </div>
-                                <div style="margin-top:8px;color:#64748B;font-size:12px;font-weight:600;">
+                                <div style="margin-top:8px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">
                                     Click to apply
                                 </div>
                             </button>
@@ -284,7 +282,7 @@
                                    style="flex:1;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;font-weight:700;color:#0F172A;"
                                    placeholder="#RRGGBB">
                         </div>
-                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Used for buttons and highlights.</div>
+                        <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">Used for buttons and highlights.</div>
                     </div>
 
                     <div class="theme-field">
@@ -296,7 +294,7 @@
                                    style="flex:1;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;font-weight:700;color:#0F172A;"
                                    placeholder="#RRGGBB">
                         </div>
-                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Used for secondary actions and accents.</div>
+                        <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">Used for secondary actions and accents.</div>
                     </div>
 
                     <div class="theme-field">
@@ -308,7 +306,7 @@
                                    style="flex:1;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;font-weight:700;color:#0F172A;"
                                    placeholder="#RRGGBB">
                         </div>
-                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Sidebar panel background.</div>
+                        <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">Sidebar panel background.</div>
                     </div>
 
                     <div class="theme-field">
@@ -320,7 +318,7 @@
                                    style="flex:1;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;font-weight:700;color:#0F172A;"
                                    placeholder="#RRGGBB">
                         </div>
-                        <div style="margin-top:6px;color:#64748B;font-size:12px;font-weight:600;">Sidebar menu text.</div>
+                        <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">Sidebar menu text.</div>
                     </div>
                 </div>
 
@@ -348,7 +346,7 @@
                         <input type="password" id="old_password" name="old_password" required
                             style="width: 100%; padding: 10px; padding-right: 40px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;">
                         <i class="fas fa-eye toggle-password" id="toggleOldPassword"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B;"></i>
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--theme-muted, #6B7280);"></i>
                     </div>
                 </div>
                 <div style="margin-bottom: 16px;">
@@ -357,7 +355,7 @@
                         <input type="password" id="new_password" name="new_password" required
                             style="width: 100%; padding: 10px; padding-right: 40px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;">
                         <i class="fas fa-eye toggle-password" id="toggleNewPassword"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B;"></i>
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--theme-muted, #6B7280);"></i>
                     </div>
                 </div>
                 <div style="margin-bottom: 16px;">
@@ -366,7 +364,7 @@
                         <input type="password" id="new_password_confirmation" name="new_password_confirmation" required
                             style="width: 100%; padding: 10px; padding-right: 40px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px;">
                         <i class="fas fa-eye toggle-password" id="toggleNewPasswordConfirmation"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #64748B;"></i>
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--theme-muted, #6B7280);"></i>
                     </div>
                 </div>
                 <p style="margin-bottom: 16px; color: var(--theme-muted, #6B7280); font-size: 12px; font-weight: 600;">
@@ -388,7 +386,7 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
         .modal-box { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
         .password-modal-box { width: 100%; max-width: 480px; }
-        .modal-close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: #64748B; line-height: 1; padding: 0 4px; }
+        .modal-close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--theme-muted, #6B7280); line-height: 1; padding: 0 4px; }
         .modal-close-btn:hover { color: #1E293B; }
     </style>
 @endsection

@@ -50,7 +50,7 @@
                                     {{ route('funnels.portal.step', ['funnelSlug' => $funnel->slug]) }}
                                 </a>
                             @else
-                                <span style="color: #64748B;">Publish to enable</span>
+                                <span style="color: var(--theme-muted, #6B7280);">Publish to enable</span>
                             @endif
                         </td>
                         <td style="display:flex; gap: 10px;">

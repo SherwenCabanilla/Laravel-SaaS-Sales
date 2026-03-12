@@ -39,7 +39,7 @@
                 @error('phone')
                     <span style="color: red; font-size: 12px;">{{ $message }}</span>
                 @enderror
-                <p style="margin-top: 6px; color: #475569; font-size: 12px; font-weight: 600;">
+                <p style="margin-top: 6px; color: var(--theme-muted, #6B7280); font-size: 12px; font-weight: 600;">
                     Enter an 11-digit Philippine number starting with 09 (numbers only).
                 </p>
             </div>
