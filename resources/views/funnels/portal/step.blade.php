@@ -576,11 +576,14 @@
                                                     if ($absTop === '' && $absFreeY > 0) $absTop = $absFreeY . 'px';
                                                     $absWidth = trim((string) ($rawStyle['width'] ?? ''));
                                                     $absHeight = trim((string) ($rawStyle['height'] ?? ''));
-                                                    $absZIndex = max(0, (int) ($rawStyle['zIndex'] ?? ($rawStyle['z-index'] ?? 0)));
                                                     $absPosStyle = 'position:absolute;left:' . ($absLeft !== '' ? $absLeft : '0px') . ';top:' . ($absTop !== '' ? $absTop : '0px') . ';margin:0;box-sizing:border-box;';
                                                     if ($absWidth !== '') $absPosStyle .= 'width:' . preg_replace('/[^#(),.%\-\sA-Za-z0-9]/', '', $absWidth) . ';';
                                                     if ($absHeight !== '') $absPosStyle .= 'height:' . preg_replace('/[^#(),.%\-\sA-Za-z0-9]/', '', $absHeight) . ';';
-                                                    $absPosStyle .= 'z-index:' . ($absZIndex > 0 ? $absZIndex : 1) . ';';
+                                                    $hasZIndex = array_key_exists('zIndex', $rawStyle) || array_key_exists('z-index', $rawStyle);
+                                                    if ($hasZIndex) {
+                                                        $absZIndex = max(0, (int) ($rawStyle['zIndex'] ?? ($rawStyle['z-index'] ?? 0)));
+                                                        $absPosStyle .= 'z-index:' . $absZIndex . ';';
+                                                    }
                                                 }
                                             @endphp
 
