@@ -56,6 +56,34 @@
 #fbSettingsCard #settings::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
 #fbSettingsCard #settings::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
 #fbSettingsCard #settings::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+#fbLeftPanelHistory .fb-card{display:flex;flex-direction:column;max-height:calc(100vh - 120px);min-height:0}
+#fbHistoryContainer{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding-right:4px}
+#fbHistoryContainer::-webkit-scrollbar{width:8px}
+#fbHistoryContainer::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
+#fbHistoryContainer::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
+#fbHistoryContainer::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+.fb-history-shell{display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
+.fb-history-status{border-radius:12px;padding:12px}
+.fb-history-label{padding:2px 2px 0;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+.fb-history-note{padding:0 2px 2px;color:#64748b;font-size:12px;line-height:1.45}
+.fb-history-accordion{display:flex;flex-direction:column;border-top:1px solid #EEE7F5}
+.fb-history-group{border-bottom:1px solid #EEE7F5}
+.fb-history-group-toggle{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 20px;align-items:center;gap:10px;padding:12px 2px;border:none;background:transparent;cursor:pointer;text-align:left}
+.fb-history-group-main{min-width:0;display:flex;flex-direction:column;gap:2px}
+.fb-history-group-title{font-size:14px;font-weight:800;color:#240E35;line-height:1.2}
+.fb-history-group-meta{font-size:12px;color:#6B7280;line-height:1.25}
+.fb-history-group-arrow{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:#6B4A7A;font-size:13px}
+.fb-history-group-panel{padding:0 0 8px}
+.fb-history-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0 10px 12px;margin-left:6px;border-left:2px solid #EEE7F5}
+.fb-history-entry + .fb-history-entry{border-top:1px solid #F6F1FA}
+.fb-history-entry.is-open{border-left-color:#10B981;background:linear-gradient(90deg,rgba(16,185,129,.08),rgba(255,255,255,0));border-radius:0 12px 12px 0}
+.fb-history-entry-text{min-width:0;display:flex;flex-direction:column;gap:4px}
+.fb-history-entry-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.fb-history-entry-title{font-size:14px;font-weight:800;color:#240E35;line-height:1.2}
+.fb-history-entry-meta{font-size:12px;color:#64748b;line-height:1.25}
+.fb-history-tag{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;background:#ECFDF5;color:#047857;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.fb-history-action{min-height:32px;padding:7px 12px;border:none;border-radius:999px;background:#240E35;color:#fff;white-space:nowrap;box-shadow:none;font-size:12px}
+.fb-history-pill{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:#F3EEF7;color:#240E35;font-size:11px;font-weight:800;white-space:nowrap;border:1px solid #E6E1EF}
 .fb-h{font-size:16px;font-weight:900;color:#240E35;margin:2px 0 10px}
 .fb-lib button{display:block;width:100%;text-align:left;margin-bottom:7px;padding:9px;border:1px solid #E7D8F0;border-radius:8px;background:#F3EEF7;font-weight:700;cursor:grab}
 .fb-lib i{width:18px;margin-right:6px;color:#2E1244}
@@ -439,7 +467,7 @@
         <div class="fb-left-panel hidden" id="fbLeftPanelHistory">
             <div class="fb-card settings">
                 <h3 class="fb-h">Version History</h3>
-                <p class="meta" style="margin:0 0 10px;">Save versions for this page only. Autosave keeps working quietly in the background.</p>
+                <p class="meta" style="margin:0 0 10px;">This page saves automatically. Newest version is at the top, and Restore takes you back.</p>
                 <div id="fbHistoryContainer"></div>
             </div>
         </div>
@@ -556,12 +584,16 @@
             'cta_label' => $step->cta_label,
             'price' => $step->price,
             'step_tags' => $step->step_tags ?? [],
-            'manual_versions' => $step->revisions->filter(function ($revision) {
-                return ($revision->version_type ?? null) === 'manual';
+            'revision_history' => $step->revisions->sortBy(function ($revision) {
+                return [
+                    $revision->created_at?->getTimestamp() ?? 0,
+                    $revision->id,
+                ];
             })->values()->map(function ($revision) {
                 return [
                     'id' => $revision->id,
-                    'label' => $revision->label ?: 'Saved version',
+                    'label' => $revision->label ?: null,
+                    'version_type' => $revision->version_type ?? 'autosave',
                     'layout_json' => $revision->layout_json,
                     'background_color' => $revision->background_color,
                     'created_at' => $revision->created_at?->toIso8601String(),
@@ -946,10 +978,10 @@ function mergeStepData(raw){
         price:(r.price==null||String(r.price)==="")?"":String(r.price),
         button_color:(typeof r.button_color==="string"&&r.button_color.trim()!=="")?r.button_color.trim():null,
         step_tags:normalizeTagArray(r.step_tags),
-        manual_versions:normalizeVersionHistory(r.manual_versions),
+        revision_history:normalizeRevisionHistory(r.revision_history||r.manual_versions),
     };
 }
-function normalizeVersionHistory(raw){
+function normalizeRevisionHistory(raw){
     var list=Array.isArray(raw)?raw:[];
     return list.map(function(item){
         var entry=(item&&typeof item==="object")?item:{};
@@ -967,8 +999,9 @@ function normalizeVersionHistory(raw){
         }
         return {
             id:Number(entry.id||0),
-            label:String(entry.label||"Saved version").trim()||"Saved version",
+            label:String(entry.label||"").trim(),
             time:String(entry.created_at||entry.time||""),
+            type:String(entry.version_type||entry.type||"autosave").trim().toLowerCase()||"autosave",
             layout:layout,
         };
     }).sort(function(a,b){
@@ -1441,16 +1474,69 @@ function sectionRootContext(sectionId){
 }
 
 const undoHistory=[];const redoHistory=[];const maxUndo=40;
-const maxVisibleHistory=5;
 var realLayoutData=null;
 var previewState=null;
 function formatHistoryTime(ts){
     var d=new Date(ts);
+    if(isNaN(d.getTime()))return "Saved earlier";
     var t=new Date();
     var isToday=d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear();
-    var hm=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var hm=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'});
     if(isToday)return "Today, "+hm;
     return d.toLocaleDateString([],{month:'short',day:'numeric'})+", "+hm;
+}
+function formatHistoryMinuteLabel(ts){
+    var d=new Date(ts);
+    if(isNaN(d.getTime()))return "Earlier";
+    var t=new Date();
+    var isToday=d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear();
+    var hm=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    if(isToday)return "Today, "+hm;
+    return d.toLocaleDateString([],{month:'short',day:'numeric'})+", "+hm;
+}
+function formatHistorySecondLabel(ts){
+    var d=new Date(ts);
+    if(isNaN(d.getTime()))return "Saved earlier";
+    var t=new Date();
+    var isToday=d.getDate()===t.getDate()&&d.getMonth()===t.getMonth()&&d.getFullYear()===t.getFullYear();
+    var hms=d.toLocaleTimeString([],{hour:'numeric',minute:'2-digit',second:'2-digit'});
+    if(isToday)return hms;
+    return d.toLocaleDateString([],{month:'short',day:'numeric'})+", "+hms;
+}
+function historyMinuteKey(ts){
+    var d=new Date(ts);
+    if(isNaN(d.getTime()))return "unknown";
+    var pad=function(n){return String(n).padStart(2,"0");};
+    return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"-"+pad(d.getHours())+"-"+pad(d.getMinutes());
+}
+function buildHistoryGroups(entries,currentStepId){
+    var groups=[];
+    var byKey={};
+    var stepKey=Number(currentStepId||0);
+    for(var idx=entries.length-1;idx>=0;idx--){
+        var entry=entries[idx];
+        var minuteKey=historyMinuteKey(entry&&entry.time);
+        var stateKey="step-"+stepKey+"-"+minuteKey;
+        if(!byKey[stateKey]){
+            byKey[stateKey]={
+                key:stateKey,
+                minuteKey:minuteKey,
+                label:formatHistoryMinuteLabel(entry&&entry.time),
+                items:[]
+            };
+            groups.push(byKey[stateKey]);
+        }
+        byKey[stateKey].items.push({entry:entry,index:idx});
+    }
+    return groups;
+}
+function escapeHtml(value){
+    return String(value==null?"":value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
 }
 function historyLayoutsMatch(a,b){
     try{
@@ -1467,7 +1553,7 @@ function currentHistoryLayout(){
 }
 function savedHistoryEntries(){
     var s=cur();
-    return normalizeVersionHistory(s&&s.manual_versions);
+    return normalizeRevisionHistory(s&&s.revision_history);
 }
 function saveToHistory(){
     if(!state.layout||state.isPreviewingHistory)return;
@@ -1586,7 +1672,7 @@ function submitManualVersion(){
             return requestJson(versionUrlForStep(s.id),"POST",{label:rawLabel});
         })
         .then(function(resp){
-            s.manual_versions=normalizeVersionHistory(resp&&resp.manual_versions);
+            s.revision_history=normalizeRevisionHistory((s&&s.revision_history||[]).concat((resp&&resp.manual_versions)||[]));
             closeVersionModal();
             renderHistoryDrawer();
             saveMsg.textContent="Version saved "+new Date().toLocaleTimeString();
@@ -1638,15 +1724,23 @@ function renderHistoryBanner(){
 }
 window.historyExpanded = window.historyExpanded || {};
 window.toggleHistoryGroup = function(lbl){
-    window.historyExpanded[lbl] = !window.historyExpanded[lbl];
+    var key=String(lbl||"");
+    var current=!!window.historyExpanded[key];
+    var m=key.match(/^(step-\d+-)/);
+    var prefix=m?m[1]:"";
+    Object.keys(window.historyExpanded).forEach(function(existingKey){
+        if(!prefix || existingKey.indexOf(prefix)===0){
+            window.historyExpanded[existingKey]=false;
+        }
+    });
+    window.historyExpanded[key]=!current;
     renderHistoryDrawer();
 };
 function renderHistoryDrawer(){
     var container=document.getElementById("fbHistoryContainer");
     if(!container)return;
+    var currentStep=cur();
     var entries=savedHistoryEntries();
-    var visibleStart=Math.max(0,entries.length-maxVisibleHistory);
-    var visibleEntries=entries.slice(visibleStart);
     var currentLayout=currentHistoryLayout();
     var latestSaved=entries.length?entries[entries.length-1]:null;
     var openSavedIndex=-1;
@@ -1658,12 +1752,12 @@ function renderHistoryDrawer(){
     }
     var statusBg="#eff6ff";
     var statusBorder="#bfdbfe";
-    var statusTitle="Current version";
-    var statusText="This is what is open in the builder right now.";
+    var statusTitle="Current page";
+    var statusText="Changes on this page save automatically.";
     if(!entries.length){
         statusBg="#fff7ed";
         statusBorder="#fed7aa";
-        statusText="No saved versions yet. Make a change and wait a moment for autosave.";
+        statusText="No versions yet. Make a change and wait a moment for autosave.";
     }else if(openSavedIndex===entries.length-1){
         statusBg="#ecfdf5";
         statusBorder="#86efac";
@@ -1671,53 +1765,84 @@ function renderHistoryDrawer(){
     }else if(openSavedIndex>=0){
         statusBg="#fff7ed";
         statusBorder="#fdba74";
-        statusText="You are viewing an older saved version. It will become current after autosave.";
+        statusText="You are viewing an older version. Autosave will make it the newest version.";
     }else if(latestSaved){
         statusBg="#fff7ed";
         statusBorder="#fdba74";
-        statusText="You have changes in the builder that are not saved yet.";
+        statusText="Recent changes are still waiting for autosave.";
     }
 
-    var html="<div class='history-list' style='display:flex;flex-direction:column;gap:8px;max-height:80vh;overflow-y:auto;padding-right:4px;'>";
-    html+="<div style='border:1px solid "+statusBorder+";border-radius:12px;background:"+statusBg+";padding:12px;'>";
-    html+="<div style='font-size:14px;font-weight:800;color:#240E35;display:flex;align-items:center;gap:8px;'><i class='fas fa-star' style='color:#10b981;'></i> "+statusTitle+"</div>";
-    html+="<div style='font-size:12px;color:#475569;margin-top:4px;'>"+statusText+"</div>";
+    var html="<div class='fb-history-shell'>";
+    html+="<div class='fb-history-status' style='border:1px solid "+statusBorder+";background:"+statusBg+";'>";
+    html+="<div style='font-size:14px;font-weight:800;color:#240E35;display:flex;align-items:center;gap:8px;'><i class='fas fa-star' style='color:#10b981;'></i> "+escapeHtml(statusTitle)+"</div>";
+    html+="<div style='font-size:12px;color:#475569;margin-top:4px;line-height:1.45;'>"+escapeHtml(statusText)+"</div>";
     html+="</div>";
-    html+="<button class='fb-btn primary' style='width:100%;justify-content:center;' onclick='window.createManualVersion()'><i class='fas fa-bookmark'></i> Save Current Version</button>";
 
     if(!entries.length){
-        html+="<div style='padding:10px 4px;color:#64748b;font-size:12px;'>No saved versions yet for this page. Use Save Current Version before a big change.</div>";
+        html+="<div style='padding:10px 4px;color:#64748b;font-size:12px;line-height:1.45;'>Your autosaved timeline will appear here for this page.</div>";
         html+="</div>";
         container.innerHTML=html;
         return;
     }
 
-    html+="<div style='padding:2px 4px 0;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;'>Saved versions</div>";
-    html+="<div style='padding:0 4px 2px;color:#64748b;font-size:12px;'>Showing the latest "+visibleEntries.length+" saved version"+(visibleEntries.length===1?"":"s")+".</div>";
-    for(var idx=visibleEntries.length-1;idx>=0;idx--){
-        var entry=visibleEntries[idx];
-        var actualIndex=visibleStart+idx;
-        var isOpen=openSavedIndex===actualIndex;
-        var isLatest=actualIndex===entries.length-1;
-        var label=String(entry.label||"Saved version").trim()||"Saved version";
-        if(isLatest&&label==="Saved version")label="Latest saved version";
-        var sub=formatHistoryTime(entry.time||"");
-        var rowBg=isOpen?"#ecfdf5":"#ffffff";
-        var rowBorder=isOpen?"#86efac":"#E6E1EF";
-        var badgeBg=isOpen?"#10b981":"#240E35";
-        var badgeText=isOpen?"Open now":"Restore";
-        html+="<div style='border:1px solid "+rowBorder+";border-radius:12px;background:"+rowBg+";padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;'>";
-        html+="<div style='min-width:0;'>";
-        html+="<div style='font-size:14px;font-weight:800;color:#240E35;'>"+label+"</div>";
-        html+="<div style='font-size:12px;color:#64748b;margin-top:3px;'>"+sub+"</div>";
-        html+="</div>";
-        if(isOpen){
-            html+="<span style='display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:"+badgeBg+";color:#fff;font-size:11px;font-weight:800;white-space:nowrap;'>"+badgeText+"</span>";
-        }else{
-            html+="<button class='fb-btn' style='min-height:34px;padding:8px 12px;border:none;border-radius:999px;background:"+badgeBg+";color:#fff;white-space:nowrap;' onclick='window.restoreSavedRevision("+actualIndex+")'>"+badgeText+"</button>";
+    html+="<div class='fb-history-label'>Version timeline</div>";
+    html+="<div class='fb-history-note'>Grouped by minute so the list stays tidy.</div>";
+    html+="<div class='fb-history-accordion'>";
+    var groups=buildHistoryGroups(entries,currentStep&&currentStep.id);
+    for(var groupIdx=0;groupIdx<groups.length;groupIdx++){
+        var group=groups[groupIdx];
+        var containsOpen=group.items.some(function(item){return item.index===openSavedIndex;});
+        var hasState=Object.prototype.hasOwnProperty.call(window.historyExpanded,group.key);
+        var expanded=hasState ? !!window.historyExpanded[group.key] : (groupIdx===0 || containsOpen);
+        var countLabel=group.items.length+" save"+(group.items.length===1?"":"s");
+        var chevron=expanded?"fa-chevron-down":"fa-chevron-right";
+        html+="<div class='fb-history-group'>";
+        html+="<button type='button' class='fb-history-group-toggle' onclick='window.toggleHistoryGroup(\""+group.key+"\")'>";
+        html+="<span class='fb-history-group-main'>";
+        html+="<span class='fb-history-group-title'>"+escapeHtml(group.label)+"</span>";
+        html+="<span class='fb-history-group-meta'>"+escapeHtml(countLabel)+(containsOpen?" | Current":"")+"</span>";
+        html+="</span>";
+        html+="<span class='fb-history-group-arrow'><i class='fas "+chevron+"'></i></span>";
+        html+="</button>";
+        if(expanded){
+            html+="<div class='fb-history-group-panel'>";
+            for(var itemIdx=0;itemIdx<group.items.length;itemIdx++){
+                var item=group.items[itemIdx];
+                var entry=item.entry;
+                var actualIndex=item.index;
+                var isOpen=openSavedIndex===actualIndex;
+                var isLatest=actualIndex===entries.length-1;
+                var hasCustomLabel=String(entry.label||"").trim()!=="";
+                var label=hasCustomLabel ? String(entry.label).trim() : formatHistorySecondLabel(entry.time||"");
+                var sub="Saved automatically";
+                if(hasCustomLabel){
+                    sub=formatHistorySecondLabel(entry.time||"");
+                }else if(String(entry.type||"autosave")==="manual"){
+                    sub="Saved manually";
+                }
+                var badgeText=isOpen?"Open now":"Restore";
+                html+="<div class='fb-history-entry"+(isOpen?" is-open":"")+"'>";
+                html+="<div class='fb-history-entry-text'>";
+                html+="<div class='fb-history-entry-title-row'>";
+                html+="<div class='fb-history-entry-title'>"+escapeHtml(label)+"</div>";
+                if(isLatest){
+                    html+="<span class='fb-history-tag'>Newest</span>";
+                }
+                html+="</div>";
+                html+="<div class='fb-history-entry-meta'>"+escapeHtml(sub)+"</div>";
+                html+="</div>";
+                if(isOpen){
+                    html+="<span class='fb-history-pill'>"+escapeHtml(badgeText)+"</span>";
+                }else{
+                    html+="<button class='fb-btn fb-history-action' onclick='window.restoreSavedRevision("+actualIndex+")'>"+escapeHtml(badgeText)+"</button>";
+                }
+                html+="</div>";
+            }
+            html+="</div>";
         }
         html+="</div>";
     }
+    html+="</div>";
     html+="</div>";
     container.innerHTML=html;
 }
@@ -8132,6 +8257,7 @@ function persistCurrentStep(){
         .then(function(p){
             s.layout_json=p.layout_json||clone(state.layout);
             s.background_color=(p&&typeof p.background_color==="string"&&p.background_color.trim()!=="")?p.background_color.trim():null;
+            s.revision_history=normalizeRevisionHistory(p&&p.revision_history);
             var others=steps.filter(function(step){return +step.id!==+s.id;});
             if(!others.length)return null;
             var jobs=others.map(function(step){
@@ -8147,6 +8273,7 @@ function persistCurrentStep(){
         })
         .then(function(){
             saveMsg.textContent=(_autoSaveMode?"Autosaved ":"Saved all pages ")+new Date().toLocaleTimeString();
+            if(typeof renderHistoryDrawer==="function")renderHistoryDrawer();
         });
 }
 document.getElementById("saveBtn").onclick=()=>{
