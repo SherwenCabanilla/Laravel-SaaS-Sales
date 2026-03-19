@@ -693,6 +693,7 @@ class FunnelController extends Controller
             'price' => $step->price,
             'button_color' => $step->button_color,
             'step_tags' => $step->step_tags ?? [],
+            'revision_history' => $this->revisionHistoryPayload($step),
             'manual_versions' => $this->manualVersionPayload($step),
         ];
     }
@@ -747,9 +748,16 @@ class FunnelController extends Controller
             ? $step->revisions
             : $step->revisions()->get();
 
-        return $revisions->map(function (FunnelStepRevision $revision) {
+        return $revisions
+            ->sortBy(fn (FunnelStepRevision $revision) => [
+                $revision->created_at?->getTimestamp() ?? 0,
+                $revision->id,
+            ])
+            ->map(function (FunnelStepRevision $revision) {
             return [
                 'id' => $revision->id,
+                'label' => trim((string) ($revision->label ?? '')) !== '' ? trim((string) $revision->label) : null,
+                'version_type' => (string) ($revision->version_type ?? 'autosave'),
                 'layout_json' => $this->normalizeRevisionLayout($revision->layout_json),
                 'background_color' => $this->normalizeRevisionBackground($revision->background_color),
                 'created_at' => $revision->created_at?->toIso8601String(),
