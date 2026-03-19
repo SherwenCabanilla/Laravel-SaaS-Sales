@@ -46,7 +46,7 @@
             background: {{ $step->button_color ?: 'var(--theme-primary, #2563eb)' }};
             color: #fff;
             text-decoration: none;
-            font-weight: 700;
+            font-weight: inherit;
             cursor: pointer;
             box-shadow: none;
         }
