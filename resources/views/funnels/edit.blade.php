@@ -157,6 +157,7 @@
 .settings .meta{font-size:12px;color:#475569;font-weight:700;margin-bottom:8px}
 .fb-link-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 .fb-link-row select{flex:1;min-width:0;margin-bottom:0}
+.fb-link-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
 .fb-link-actions{display:flex;gap:8px;margin-bottom:8px}
 .fb-link-banner{position:sticky;top:8px;z-index:120;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#240E35;color:#fff;border-radius:999px;padding:8px 12px;margin:6px auto 10px;max-width:360px;font-size:12px;font-weight:700;box-shadow:0 10px 24px rgba(36,14,53,.25)}
 .fb-link-banner button{background:#fff;color:#240E35;border:0;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer}
@@ -333,6 +334,8 @@
 .fb-drop-guide-v,.fb-drop-guide-h{position:absolute;pointer-events:none;z-index:60;display:none;background:#6B4A7A;opacity:.85}
 .fb-drop-guide-v{top:0;bottom:0;width:1px;box-shadow:0 0 0 1px rgba(168,85,247,.15)}
 .fb-drop-guide-h{left:0;right:0;height:1px;box-shadow:0 0 0 1px rgba(168,85,247,.15)}
+.fb-drop-preview{position:absolute;pointer-events:none;z-index:65;border:2px dashed #6B4A7A;background:rgba(107,74,122,.08);box-shadow:0 10px 24px rgba(36,14,53,.12);border-radius:10px;display:none}
+.fb-drop-insert{position:absolute;left:6px;right:6px;height:3px;background:#6B4A7A;box-shadow:0 0 0 1px rgba(168,85,247,.25);z-index:65;pointer-events:none;border-radius:3px;display:none}
 @keyframes paddingPulse{
     0%{inset:12px}
     50%{inset:20px}
@@ -1758,18 +1761,53 @@ function collectElementsByType(type){
     });
     return out;
 }
-function getLinkedPricingIdForSelection(){
+function normalizeLinkedPricingIds(raw){
+    if(Array.isArray(raw))return raw.map(v=>String(v||"").trim()).filter(Boolean);
+    if(typeof raw==="string"&&raw.trim()!=="")return [raw.trim()];
+    return [];
+}
+function getLinkedPricingIds(item){
+    if(!item||item.type!=="countdown")return [];
+    var settings=item.settings||{};
+    var ids=normalizeLinkedPricingIds(settings.linkedPricingIds);
+    if(!ids.length){
+        ids=normalizeLinkedPricingIds(settings.linkedPricingId);
+    }
+    var out=[];
+    ids.forEach(function(id){
+        if(id!==""&&out.indexOf(id)===-1)out.push(id);
+    });
+    return out;
+}
+function setLinkedPricingIds(item,ids){
+    if(!item||item.type!=="countdown")return [];
+    item.settings=item.settings||{};
+    var clean=normalizeLinkedPricingIds(ids);
+    var out=[];
+    clean.forEach(function(id){
+        if(id!==""&&out.indexOf(id)===-1)out.push(id);
+    });
+    if(out.length){
+        item.settings.linkedPricingIds=out;
+        if(Object.prototype.hasOwnProperty.call(item.settings,"linkedPricingId"))delete item.settings.linkedPricingId;
+    }else{
+        if(Object.prototype.hasOwnProperty.call(item.settings,"linkedPricingIds"))delete item.settings.linkedPricingIds;
+        if(Object.prototype.hasOwnProperty.call(item.settings,"linkedPricingId"))delete item.settings.linkedPricingId;
+    }
+    return out;
+}
+function getLinkedPricingIdsForSelection(){
     var t=selectedTarget();
-    if(t&&t.type==="countdown"&&t.settings&&t.settings.linkedPricingId){
-        return String(t.settings.linkedPricingId||"");
+    if(t&&t.type==="countdown"){
+        return getLinkedPricingIds(t);
     }
     if(state.linkPick&&state.linkPick.sourceId){
         var src=findElementById(state.linkPick.sourceId);
-        if(src&&src.type==="countdown"&&src.settings&&src.settings.linkedPricingId){
-            return String(src.settings.linkedPricingId||"");
+        if(src&&src.type==="countdown"){
+            return getLinkedPricingIds(src);
         }
     }
-    return "";
+    return [];
 }
 function startPricingLink(sourceId){
     var src=findElementById(sourceId);
@@ -1784,19 +1822,49 @@ function startPricingLink(sourceId){
     state.linkPick={type:"pricing",sourceId:String(src.id||"")};
     renderCanvas();
     renderSettings();
-    showBuilderToast("Click a pricing component to link.","success");
+    showBuilderToast("Click pricing components to link. Press Esc to finish.","success");
     return true;
 }
 function collectCountdownLinks(){
     var links=[];
+    var allPricings=[];
+    function scanForPricings(list){
+        if(!Array.isArray(list))return;
+        list.forEach(function(el){
+            if(!el||typeof el!=="object")return;
+            if(el.type==="pricing")allPricings.push(el);
+            if(el.type==="carousel"){
+                var slides=ensureCarouselSlides(el.settings||{});
+                slides.forEach(function(sl){(sl.rows||[]).forEach(function(rw){(rw.columns||[]).forEach(function(col){scanForPricings(col.elements);});});});
+            }
+        });
+    }
+    (state.layout.sections||[]).forEach(function(sec){
+        scanForPricings(sec.elements);
+        (sec.rows||[]).forEach(function(rw){(rw.columns||[]).forEach(function(col){scanForPricings(col.elements);});});
+    });
+
     function scanElements(list){
         if(!Array.isArray(list))return;
         list.forEach(function(el){
             if(!el||typeof el!=="object")return;
-            if(el.type==="countdown"&&el.settings&&el.settings.linkedPricingId){
+            if(el.type==="countdown"){
                 var fromId=String(el.id||"");
-                var toId=String(el.settings.linkedPricingId||"");
-                if(fromId!==""&&toId!=="")links.push({from:fromId,to:toId});
+                var ids=getLinkedPricingIds(el);
+                ids.forEach(function(toId){
+                    if(fromId!==""&&toId!=="")links.push({from:fromId,to:toId});
+                });
+                var cPromo=String((el.settings&&el.settings.promoKey)||"").trim();
+                if(cPromo!==""){
+                    allPricings.forEach(function(p){
+                        var pPromo=String((p.settings&&p.settings.promoKey)||"").trim();
+                        if(pPromo===cPromo){
+                            var pId=String(p.id||"");
+                            var exists=links.find(function(l){return l.from===fromId&&l.to===pId;});
+                            if(!exists&&fromId!==""&&pId!=="")links.push({from:fromId,to:pId});
+                        }
+                    });
+                }
             }
             if(el.type==="carousel"){
                 var slides=ensureCarouselSlides(el.settings||{});
@@ -1837,8 +1905,40 @@ function ensureLinkLayer(){
     svg.setAttribute("viewBox","0 0 "+w+" "+h);
     return svg;
 }
+function updateWireVisibility(hoveredId){
+    var svg=canvas&&canvas.__linkLayer;
+    if(!svg)return;
+    var showAll=!!state.linkPick;
+    var wires=svg.querySelectorAll('.wire');
+    wires.forEach(function(w){
+        if(showAll){
+            w.setAttribute("opacity","0.9");
+        }else{
+            if(hoveredId&&w.classList.contains("component-wire-"+hoveredId)){
+                w.setAttribute("opacity","0.9");
+            }else{
+                w.setAttribute("opacity","0");
+            }
+        }
+    });
+}
 function drawLinkWires(){
     if(!canvas)return;
+    if(!canvas.__wireHoverBound){
+        canvas.__wireHoverBound=true;
+        canvas.addEventListener("mousemove",function(e){
+            var el=e.target.closest&&e.target.closest('.el[data-el-id]');
+            var id=el?el.getAttribute('data-el-id'):null;
+            if(canvas.__wireHoverId!==id){
+                canvas.__wireHoverId=id;
+                updateWireVisibility(id);
+            }
+        });
+        canvas.addEventListener("mouseleave",function(){
+            canvas.__wireHoverId=null;
+            updateWireVisibility(null);
+        });
+    }
     var links=collectCountdownLinks();
     var svg=canvas.__linkLayer;
     if(!links.length){
@@ -1887,26 +1987,37 @@ function drawLinkWires(){
             c1x=sp.x;c1y=sp.y+(dy>0?curve:-curve);
             c2x=ep.x;c2y=ep.y-(dy>0?curve:-curve);
         }
+        var pClass="wire component-wire-"+link.from+" component-wire-"+link.to;
+        var initOp=(state.linkPick?"0.9":"0");
         var path=document.createElementNS("http://www.w3.org/2000/svg","path");
         path.setAttribute("d","M "+sp.x+" "+sp.y+" C "+c1x+" "+c1y+" "+c2x+" "+c2y+" "+ep.x+" "+ep.y);
         path.setAttribute("stroke","#6B4A7A");
         path.setAttribute("stroke-width","2");
         path.setAttribute("fill","none");
-        path.setAttribute("opacity","0.9");
+        path.setAttribute("class",pClass);
+        path.setAttribute("opacity",initOp);
+        path.style.transition="opacity 0.2s";
         svg.appendChild(path);
         var c1=document.createElementNS("http://www.w3.org/2000/svg","circle");
         c1.setAttribute("cx",sp.x);
         c1.setAttribute("cy",sp.y);
         c1.setAttribute("r","4");
         c1.setAttribute("fill","#6B4A7A");
+        c1.setAttribute("class",pClass);
+        c1.setAttribute("opacity",initOp);
+        c1.style.transition="opacity 0.2s";
         var c2=document.createElementNS("http://www.w3.org/2000/svg","circle");
         c2.setAttribute("cx",ep.x);
         c2.setAttribute("cy",ep.y);
         c2.setAttribute("r","4");
         c2.setAttribute("fill","#6B4A7A");
+        c2.setAttribute("class",pClass);
+        c2.setAttribute("opacity",initOp);
+        c2.style.transition="opacity 0.2s";
         svg.appendChild(c1);
         svg.appendChild(c2);
     });
+    updateWireVisibility(canvas.__wireHoverId);
 }
 function inferNodeKind(node){
     if(!node||typeof node!=="object")return "";
@@ -2217,40 +2328,89 @@ function pasteFromClipboard(){
     }
     return pasteNodeInMain(node,nodeKind);
 }
-const ctxMenu={node:null,copyBtn:null,pasteBtn:null,connectBtn:null,open:false};
+function nudgeDuplicatePosition(node){
+    if(!node||typeof node!=="object")return;
+    if(!node.style)node.style={};
+    if(!node.settings)node.settings={};
+    var isAbs=(String(node.settings.positionMode||"").toLowerCase()==="absolute")||(String(node.style.position||"").toLowerCase()==="absolute");
+    if(!isAbs)return;
+    var dx=20,dy=20;
+    var leftRaw=parseFloat(String(node.style.left||"").replace("px",""));
+    var topRaw=parseFloat(String(node.style.top||"").replace("px",""));
+    if(!isNaN(leftRaw))node.style.left=(leftRaw+dx)+"px";
+    if(!isNaN(topRaw))node.style.top=(topRaw+dy)+"px";
+    if(!isNaN(leftRaw)||!isNaN(topRaw))return;
+    var fx=Number(node.settings.freeX),fy=Number(node.settings.freeY);
+    if(!isNaN(fx))node.settings.freeX=fx+dx;
+    if(!isNaN(fy))node.settings.freeY=fy+dy;
+    if(!isNaN(fx))node.style.left=Math.round(node.settings.freeX)+"px";
+    if(!isNaN(fy))node.style.top=Math.round(node.settings.freeY)+"px";
+}
+function duplicateSelected(){
+    var target=selectedTarget();
+    if(!target)return false;
+    var node=cloneWithNewIds(target);
+    var nodeKind=inferNodeKind(node);
+    if(nodeKind==="")return false;
+    if(nodeKind==="el")nudgeDuplicatePosition(node);
+    saveToHistory();
+    if(state.carouselSel){
+        var okCar=pasteNodeInCarousel(node,nodeKind);
+        if(okCar)return true;
+        return false;
+    }
+    if(nodeKind==="el" && state.sel && state.sel.k==="el" && state.sel.scope==="section"){
+        var s=sec(state.sel.s);
+        if(s && s.__freeformCanvas){
+            ensureRootModel();
+            var rs=rootItems();
+            var idx=rs.findIndex(function(it){
+                return String((it&&it.kind)||"").toLowerCase()==="el" && String(it.id||"")===String(target.id||"");
+            });
+            if(idx>=0)rs.splice(idx+1,0,Object.assign({kind:"el"},node));
+            else rs.push(Object.assign({kind:"el"},node));
+            syncSectionsFromRoot();
+            state.sel={k:"el",scope:"section",s:s.id,e:node.id};
+            state.carouselSel=null;
+            return true;
+        }
+    }
+    if(state.sel && state.sel.k==="sec" && nodeKind==="sec"){
+        ensureRootModel();
+        var sctx=sectionRootContext(state.sel.s);
+        var rs=rootItems();
+        if(sctx.index>=0)rs.splice(sctx.index+1,0,Object.assign({kind:"section"},node));
+        else rs.push(Object.assign({kind:"section"},node));
+        syncSectionsFromRoot();
+        state.sel={k:"sec",s:node.id};
+        state.carouselSel=null;
+        return true;
+    }
+    return pasteNodeInMain(node,nodeKind);
+}
+const ctxMenu={node:null,dupBtn:null,connectBtn:null,deleteBtn:null,open:false};
 function ensureContextMenu(){
     if(ctxMenu.node&&ctxMenu.node.parentNode)return ctxMenu.node;
     var menu=document.createElement("div");
     menu.className="fb-ctx-menu";
     menu.id="fbCtxMenu";
-    menu.innerHTML='<button type="button" id="fbCtxCopy" class="fb-ctx-item">Copy</button><button type="button" id="fbCtxPaste" class="fb-ctx-item">Paste</button><button type="button" id="fbCtxConnect" class="fb-ctx-item">Connect to pricing</button>';
+    menu.innerHTML='<button type="button" id="fbCtxDuplicate" class="fb-ctx-item">Duplicate</button><button type="button" id="fbCtxConnect" class="fb-ctx-item">Connect to pricing</button><button type="button" id="fbCtxDelete" class="fb-ctx-item" style="color:#ef4444;">Delete</button>';
     document.body.appendChild(menu);
     ctxMenu.node=menu;
-    ctxMenu.copyBtn=menu.querySelector("#fbCtxCopy");
-    ctxMenu.pasteBtn=menu.querySelector("#fbCtxPaste");
+    ctxMenu.dupBtn=menu.querySelector("#fbCtxDuplicate");
     ctxMenu.connectBtn=menu.querySelector("#fbCtxConnect");
-    if(ctxMenu.copyBtn){
-        ctxMenu.copyBtn.addEventListener("click",function(e){
+    ctxMenu.deleteBtn=menu.querySelector("#fbCtxDelete");
+    if(ctxMenu.dupBtn){
+        ctxMenu.dupBtn.addEventListener("click",function(e){
             e.preventDefault();
             e.stopPropagation();
-            if(ctxMenu.copyBtn.disabled)return;
-            if(copySelectedToClipboard()){
-                hideContextMenu();
-                showBuilderToast("Copied component.","success");
-            }
-        });
-    }
-    if(ctxMenu.pasteBtn){
-        ctxMenu.pasteBtn.addEventListener("click",function(e){
-            e.preventDefault();
-            e.stopPropagation();
-            if(ctxMenu.pasteBtn.disabled)return;
-            if(pasteFromClipboard()){
+            if(ctxMenu.dupBtn.disabled)return;
+            if(duplicateSelected()){
                 hideContextMenu();
                 render();
-                showBuilderToast("Pasted component.","success");
+                showBuilderToast("Duplicated component.","success");
             }else{
-                showBuilderToast("Paste failed for this target.","error");
+                showBuilderToast("Duplicate failed for this target.","error");
             }
         });
     }
@@ -2268,6 +2428,17 @@ function ensureContextMenu(){
             startPricingLink(t.id);
         });
     }
+    if(ctxMenu.deleteBtn){
+        ctxMenu.deleteBtn.addEventListener("click",function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            if(ctxMenu.deleteBtn.disabled)return;
+            hideContextMenu();
+            removeSelected();
+            render();
+            showBuilderToast("Deleted component.","success");
+        });
+    }
     menu.addEventListener("contextmenu",function(e){e.preventDefault();});
     return menu;
 }
@@ -2278,7 +2449,9 @@ function syncContextMenuState(){
     var t=selectedTarget();
     var canConnect=!!(t&&t.type==="countdown");
     if(ctxMenu.copyBtn)ctxMenu.copyBtn.disabled=!hasSelection;
+    if(ctxMenu.dupBtn)ctxMenu.dupBtn.disabled=!hasSelection;
     if(ctxMenu.pasteBtn)ctxMenu.pasteBtn.disabled=!hasClipboard;
+    if(ctxMenu.deleteBtn)ctxMenu.deleteBtn.disabled=!hasSelection;
     if(ctxMenu.connectBtn){
         ctxMenu.connectBtn.disabled=!canConnect;
         ctxMenu.connectBtn.style.display=canConnect?"block":"none";
@@ -3025,6 +3198,114 @@ function showFreeDropGuides(ev,host){
     }else{
         guides.h.style.display="none";
     }
+}
+
+const dropPreview={node:null,host:null,line:null,lineHost:null};
+
+function clearDropPreview(){
+    if(dropPreview.node)dropPreview.node.style.display="none";
+    if(dropPreview.line)dropPreview.line.style.display="none";
+    dropPreview.host=null;
+    dropPreview.lineHost=null;
+}
+
+function ensureDropPreview(host){
+    if(!host)return null;
+    if(getComputedStyle(host).position==="static")host.style.position="relative";
+    if(!dropPreview.node||dropPreview.node.parentNode!==host){
+        if(dropPreview.node&&dropPreview.node.parentNode)dropPreview.node.parentNode.removeChild(dropPreview.node);
+        var n=document.createElement("div");
+        n.className="fb-drop-preview";
+        host.appendChild(n);
+        dropPreview.node=n;
+    }
+    dropPreview.host=host;
+    return dropPreview.node;
+}
+
+function ensureDropInsertLine(host){
+    if(!host)return null;
+    if(getComputedStyle(host).position==="static")host.style.position="relative";
+    if(!dropPreview.line||dropPreview.line.parentNode!==host){
+        if(dropPreview.line&&dropPreview.line.parentNode)dropPreview.line.parentNode.removeChild(dropPreview.line);
+        var n=document.createElement("div");
+        n.className="fb-drop-insert";
+        host.appendChild(n);
+        dropPreview.line=n;
+    }
+    dropPreview.lineHost=host;
+    return dropPreview.line;
+}
+
+function getPreviewSize(type,host){
+    var w=0,h=0;
+    try{
+        var probe=createDefaultElement(type);
+        if(probe&&probe.style&&probe.style.width)w=parseInt(probe.style.width)||0;
+        if(probe&&probe.style&&probe.style.height)h=parseInt(probe.style.height)||0;
+    }catch(_e){}
+    var hostW=(host&&(host.clientWidth||host.offsetWidth))||320;
+    if(!w||w<=0)w=Math.min(320,Math.max(140,hostW-24));
+    if(hostW>0&&w>(hostW-12))w=Math.max(60,hostW-12);
+    if(!h||h<=0)h=estimateNewElementHeight(type,host.closest?host.closest(".col"):null);
+    return {w:w,h:h};
+}
+
+function showDropPreview(type,host,ev){
+    if(!type||!host){clearDropPreview();return;}
+    var node=ensureDropPreview(host);
+    if(!node)return;
+    var pos=computeFreeDropPosition(ev,host);
+    var size=getPreviewSize(type,host);
+    var hostH=(host.clientHeight||host.offsetHeight)||0;
+    if(hostH>0&&size.h>(hostH-12))size.h=Math.max(40,hostH-12);
+    var left=Math.round(pos.x-(size.w/2));
+    var top=Math.round(pos.y-(size.h/2));
+    var maxX=Math.max(0,(host.clientWidth||0)-size.w);
+    var maxY=Math.max(0,(host.clientHeight||0)-size.h);
+    if(left<0)left=0;
+    if(top<0)top=0;
+    if(left>maxX)left=maxX;
+    if(top>maxY)top=maxY;
+    node.style.width=size.w+"px";
+    node.style.height=size.h+"px";
+    node.style.left=left+"px";
+    node.style.top=top+"px";
+    node.style.display="block";
+    if(dropPreview.line)dropPreview.line.style.display="none";
+}
+
+function showDropInsert(host,place){
+    if(!host){clearDropPreview();return;}
+    var line=ensureDropInsertLine(host);
+    if(!line)return;
+    line.style.display="block";
+    line.style.top=(place==="before")?"0":"calc(100% - 3px)";
+    if(dropPreview.node)dropPreview.node.style.display="none";
+}
+
+function nearestColumnNode(rowInner,clientX){
+    if(!rowInner)return null;
+    var cols=Array.from(rowInner.querySelectorAll(":scope > .col"));
+    if(!cols.length)return null;
+    var px=Number(clientX)||0;
+    var nearest=cols[0],best=Infinity;
+    cols.forEach(function(colEl){
+        var rect=colEl.getBoundingClientRect();
+        var cx=rect.left+(rect.width/2);
+        var d=Math.abs(px-cx);
+        if(d<best){best=d;nearest=colEl;}
+    });
+    return nearest;
+}
+
+function getStructureInsertHost(type,node){
+    var t=String(type||"").toLowerCase();
+    if(!node)return null;
+    if(t==="section")return node.closest(".sec")||node;
+    if(t==="row")return node.closest(".row")||node.closest(".sec")||node;
+    if(t==="column")return node.closest(".col")||node.closest(".row")||node;
+    return node;
 }
 
 function estimateNewElementHeight(type,colNode){
@@ -3825,10 +4106,10 @@ function renderElement(item,ctx){
     var isEditing=!!(state.editingEl&&state.editingEl===item.id);
     if(isSelected){w.classList.add("sel");}
     if(isEditing)w.classList.add("el--editing");
-    var linkedTargetId=String(state._linkTargetId||"");
+    var linkedTargetIds=Array.isArray(state._linkTargetIds)?state._linkTargetIds.map(v=>String(v||"")):[];
     if(item.type==="pricing"){
         if(state.linkPick&&state.linkPick.type==="pricing")w.classList.add("el--link-candidate");
-        if(linkedTargetId!==""&&String(item.id||"")===linkedTargetId)w.classList.add("el--link-target");
+        if(linkedTargetIds.indexOf(String(item.id||""))>=0)w.classList.add("el--link-target");
     }
     if(item.type==="countdown"&&state.linkPick&&String(item.id||"")===String(state.linkPick.sourceId||""))w.classList.add("el--link-source");
     w.onmousedown=function(e){e.stopPropagation();startElDrag(e,w,item,ctx);};
@@ -3848,12 +4129,33 @@ function renderElement(item,ctx){
                 return;
             }
             saveToHistory();
-            src.settings=src.settings||{};
-            src.settings.linkedPricingId=item.id;
-            state.linkPick=null;
+            var idStr=String(item.id||"");
+            var ids=getLinkedPricingIds(src);
+            var idx=ids.indexOf(idStr);
+            if(idx>=0){
+                ids.splice(idx,1);
+                setLinkedPricingIds(src,ids);
+                showBuilderToast("Unlinked countdown from pricing.","success");
+            }else{
+                ids.push(idStr);
+                setLinkedPricingIds(src,ids);
+                // Auto-fill pricing promo key from countdown promo key.
+                // If countdown has no promo key, generate one automatically.
+                var srcPromo=String((src.settings&&src.settings.promoKey)||"").trim();
+                if(srcPromo===""){
+                    srcPromo="AUTO-" + Math.random().toString(36).substr(2, 8).toUpperCase();
+                    src.settings=src.settings||{};
+                    src.settings.promoKey=srcPromo;
+                }
+                item.settings=item.settings||{};
+                var curPromo=String(item.settings.promoKey||"").trim();
+                if(curPromo===""){
+                    item.settings.promoKey=srcPromo;
+                }
+                showBuilderToast("Linked countdown to pricing.","success");
+            }
             renderCanvas();
             renderSettings();
-            showBuilderToast("Linked countdown to pricing.","success");
             return;
         }
         if(!elDrag.active&&!elDrag.justFinished){
@@ -3888,16 +4190,28 @@ function renderElement(item,ctx){
         e.preventDefault();
         e.stopPropagation();
         const t=e.dataTransfer&&e.dataTransfer.getData?e.dataTransfer.getData("c"):"";
-        if(t&&!isStructureComponent(t)){
+        if(!t){
+            clearFreeDropGuides();
+            clearDropPreview();
+            return;
+        }
+        if(!isStructureComponent(t)){
             var freeHost=w.parentElement||null;
             showFreeDropGuides(e,freeHost);
+            showDropPreview(t,freeHost,e);
         }else{
             clearFreeDropGuides();
+            var insHost=getStructureInsertHost(t,w);
+            var place=insHost?dropPlacement(e,insHost):null;
+            showDropInsert(insHost,place);
         }
     };
     w.ondragleave=e=>{
         e.stopPropagation();
-        if(!w.contains(e.relatedTarget))clearFreeDropGuides();
+        if(!w.contains(e.relatedTarget)){
+            clearFreeDropGuides();
+            clearDropPreview();
+        }
     };
     w.ondrop=e=>{
         e.preventDefault();
@@ -3917,6 +4231,7 @@ function renderElement(item,ctx){
             place=dropPlacement(e,w);
         }
         clearFreeDropGuides();
+        clearDropPreview();
         if(addComponentAt(t,dropTarget,place))render();
     };
     if(item.type==="heading"||item.type==="text"){const n=document.createElement(item.type==="heading"?"h2":"div");n.setAttribute("data-editable","1");n.contentEditable=isEditing?"true":"false";n.style.margin="0";n.style.overflowWrap="break-word";n.style.wordBreak="break-word";n.style.maxWidth="100%";n.style.cursor=isEditing?"text":"move";n.innerHTML=item.content||"";contentStyleApply(n,item.style||{});if(!(item.style&&item.style.color))n.style.color="#000000";n.oninput=()=>{item.content=n.innerHTML||"";queueAutoSave();};onRichTextKeys(n,()=>{item.content=n.innerHTML||"";queueAutoSave();});w.appendChild(n);}
@@ -5238,7 +5553,7 @@ function renderCanvas(){
     state._carAutoTimers=[];
     ensureRootModel();
     if(canvas)canvas.classList.toggle("fb-link-pick",!!state.linkPick);
-    state._linkTargetId=getLinkedPricingIdForSelection();
+    state._linkTargetIds=getLinkedPricingIdsForSelection();
     canvas.innerHTML="";
     var widthMap={full:"",wide:"1200px",medium:"992px",small:"768px",xsmall:"576px"};
     (state.layout.sections||[]).forEach(s=>{
@@ -5289,11 +5604,24 @@ function renderCanvas(){
         sn.ondragover=e=>{
             e.preventDefault();
             const t=e.dataTransfer&&e.dataTransfer.getData?e.dataTransfer.getData("c"):"";
-            if(t&&!isStructureComponent(t))showFreeDropGuides(e,inner);
-            else clearFreeDropGuides();
+            if(!t){
+                clearFreeDropGuides();
+                clearDropPreview();
+                return;
+            }
+            if(!isStructureComponent(t)){
+                showFreeDropGuides(e,inner);
+                showDropPreview(t,inner,e);
+            }else{
+                clearFreeDropGuides();
+                showDropInsert(sn,dropPlacement(e,sn));
+            }
         };
         sn.ondragleave=e=>{
-            if(!sn.contains(e.relatedTarget))clearFreeDropGuides();
+            if(!sn.contains(e.relatedTarget)){
+                clearFreeDropGuides();
+                clearDropPreview();
+            }
         };
         sn.ondrop=e=>{
             e.preventDefault();
@@ -5310,6 +5638,7 @@ function renderCanvas(){
                 ok=addComponentAt(t,{k:"sec",s:s.id},dropPlacement(e,sn));
             }
             clearFreeDropGuides();
+            clearDropPreview();
             if(ok)render();
         };
         s.elements=Array.isArray(s.elements)?s.elements:[];
@@ -5341,7 +5670,30 @@ function renderCanvas(){
             if(widthMap[rowCw]){rowInner.style.maxWidth=widthMap[rowCw];rowInner.style.margin="0 auto";}
             if(!isAutoWrapColumnRow && state.sel&&state.sel.k==="row"&&state.sel.r===r.id)rn.classList.add("sel");
             rn.onclick=e=>{if(isAutoWrapColumnRow)return;e.stopPropagation();state.carouselSel=null;state.editingEl=null;state.sel={k:"row",s:s.id,r:r.id};render();};
-            rn.ondragover=e=>e.preventDefault();
+            rn.ondragover=e=>{
+                e.preventDefault();
+                const t=e.dataTransfer&&e.dataTransfer.getData?e.dataTransfer.getData("c"):"";
+                if(!t){
+                    clearFreeDropGuides();
+                    clearDropPreview();
+                    return;
+                }
+                if(!isStructureComponent(t)){
+                    var nearCol=nearestColumnNode(rowInner,e.clientX);
+                    var host=nearCol?(nearCol.querySelector(".col-inner")||nearCol):rowInner;
+                    showFreeDropGuides(e,host);
+                    showDropPreview(t,host,e);
+                }else{
+                    clearFreeDropGuides();
+                    showDropInsert(rn,dropPlacement(e,rn));
+                }
+            };
+            rn.ondragleave=e=>{
+                if(!rn.contains(e.relatedTarget)){
+                    clearFreeDropGuides();
+                    clearDropPreview();
+                }
+            };
             rn.ondrop=e=>{
                 e.preventDefault();
                 e.stopPropagation();
@@ -5365,11 +5717,15 @@ function renderCanvas(){
                             var nearInner=nearest.querySelector(".col-inner")||nearest;
                             var freePos=computeFreeDropPosition(e,nearInner);
                             if(addComponentAt(t,{k:"col",s:s.id,r:r.id,c:nearId},{mode:"free",x:freePos.x,y:freePos.y}))render();
+                            clearFreeDropGuides();
+                            clearDropPreview();
                             return;
                         }
                     }
                 }
                 if(addComponentAt(t,{k:"row",s:s.id,r:r.id},dropPlacement(e,rn)))render();
+                clearFreeDropGuides();
+                clearDropPreview();
             };
             (r.columns||[]).forEach((c,colIndex)=>{
                 const cn=document.createElement("div");cn.className="col";cn.setAttribute("data-node-kind","column");cn.setAttribute("data-outline-label","Column");cn.setAttribute("data-s",String(s.id||""));cn.setAttribute("data-r",String(r.id||""));styleApply(cn,c.style||{});
@@ -5384,11 +5740,26 @@ function renderCanvas(){
                 cn.ondragover=e=>{
                     e.preventDefault();
                     const t=e.dataTransfer&&e.dataTransfer.getData?e.dataTransfer.getData("c"):"";
-                    if(t&&!isStructureComponent(t))showFreeDropGuides(e,colInner);
-                    else clearFreeDropGuides();
+                    if(!t){
+                        clearFreeDropGuides();
+                        clearDropPreview();
+                        return;
+                    }
+                    if(!isStructureComponent(t)){
+                        showFreeDropGuides(e,colInner);
+                        showDropPreview(t,colInner,e);
+                    }else{
+                        clearFreeDropGuides();
+                        var insHost=getStructureInsertHost(t,cn);
+                        var place=insHost?dropPlacement(e,insHost):null;
+                        showDropInsert(insHost,place);
+                    }
                 };
                 cn.ondragleave=e=>{
-                    if(!cn.contains(e.relatedTarget))clearFreeDropGuides();
+                    if(!cn.contains(e.relatedTarget)){
+                        clearFreeDropGuides();
+                        clearDropPreview();
+                    }
                 };
                 cn.ondrop=e=>{
                     e.preventDefault();
@@ -5405,6 +5776,7 @@ function renderCanvas(){
                         ok=addComponentAt(t,{k:"col",s:s.id,r:r.id,c:c.id},dropPlacement(e,cn));
                     }
                     clearFreeDropGuides();
+                    clearDropPreview();
                     if(ok)render();
                 };
                 var colMaxBot=0;
@@ -5438,7 +5810,7 @@ function renderCanvas(){
     if(state.linkPick && state.linkPick.type==="pricing"){
         var banner=document.createElement("div");
         banner.className="fb-link-banner";
-        banner.innerHTML='<span>Click a pricing component to link. Press Esc to cancel.</span><button type="button" id="fbLinkCancel">Cancel</button>';
+        banner.innerHTML='<span>Click pricing components to link or unlink. Press Esc to finish.</span><button type="button" id="fbLinkCancel">Done</button>';
         canvas.insertBefore(banner,canvas.firstChild||null);
         var cancelBtn=banner.querySelector("#fbLinkCancel");
         if(cancelBtn){
@@ -5454,8 +5826,8 @@ function renderCanvas(){
         canvas.__linkScrollBound=true;
         canvas.addEventListener("scroll",function(){drawLinkWires();});
     }
-    canvas.ondragover=e=>{e.preventDefault();clearFreeDropGuides();};
-    canvas.ondrop=e=>{e.preventDefault();clearFreeDropGuides();if(e.target&&e.target.closest&&e.target.closest(".carousel-live-editor"))return;const t=e.dataTransfer.getData("c");if(t){var freePos=computeFreeDropPosition(e,canvas);var ok=(!isStructureComponent(t))?addComponentAt(t,null,{mode:"free",x:freePos.x,y:freePos.y}):addComponentAt(t,null,"after");if(ok)render();}};
+    canvas.ondragover=e=>{e.preventDefault();clearFreeDropGuides();clearDropPreview();};
+    canvas.ondrop=e=>{e.preventDefault();clearFreeDropGuides();clearDropPreview();if(e.target&&e.target.closest&&e.target.closest(".carousel-live-editor"))return;const t=e.dataTransfer.getData("c");if(t){var freePos=computeFreeDropPosition(e,canvas);var ok=(!isStructureComponent(t))?addComponentAt(t,null,{mode:"free",x:freePos.x,y:freePos.y}):addComponentAt(t,null,"after");if(ok)render();}};
 }
 
 function refreshAfterSetting(){
@@ -5534,7 +5906,17 @@ function initContextMenu(){
         canvas.addEventListener("contextmenu",function(e){
             if(!(e&&e.target&&canvas.contains(e.target)))return;
             e.preventDefault();
-            selectFromCanvasTarget(e.target);
+            if(!selectFromCanvasTarget(e.target)){
+                state.sel=null;
+                state.carouselSel=null;
+                renderSettings();
+                hideContextMenu();
+                return;
+            }
+            if(state.sel && state.sel.k !== 'el') {
+                hideContextMenu();
+                return;
+            }
             showContextMenuAt(e.clientX,e.clientY);
         });
     }
@@ -6813,40 +7195,48 @@ function renderSettings(){
         }
         function buildPricingOptions(){
             var list=collectElementsByType("pricing");
-            var linkedId=String((t.settings&&t.settings.linkedPricingId)||"").trim();
-            var found=false;
-            var currentLabel="Not linked";
-            var options="";
+            var linkedIds=getLinkedPricingIds(t);
+            var labels=[];
+            list.forEach(function(el,idx){
+                var id=String((el&&el.id)||"");
+                if(linkedIds.indexOf(id)>=0)labels.push(pricingLabel(el,idx));
+            });
+            var missing=linkedIds.filter(function(id){
+                return !list.some(function(el){return String((el&&el.id)||"")===id;});
+            });
+            var optionsHtml="";
             if(list.length===0){
-                options='<option value="">No pricing components found</option>';
+                optionsHtml='<div class="meta">No pricing components found</div>';
             }else{
-                options='<option value="">Not linked</option>' + list.map(function(el,idx){
+                optionsHtml=list.map(function(el,idx){
                     var id=String((el&&el.id)||"");
-                    if(id===linkedId)found=true;
                     var label=pricingLabel(el,idx);
-                    return '<option value="'+escHtml(id)+'"'+(id===linkedId?' selected':'')+'>'+escHtml(label)+'</option>';
+                    var checked=(linkedIds.indexOf(id)>=0);
+                    return '<label class="inline-check"><input type="checkbox" class="cdPricingCheck" value="'+escHtml(id)+'"'+(checked?' checked':'')+'> '+escHtml(label)+'</label>';
                 }).join("");
             }
-            if(linkedId!==""&&!found){
-                options='<option value="'+escHtml(linkedId)+'" selected>Missing: '+escHtml(linkedId)+'</option>'+options;
-            }
-            if(linkedId!==""){
-                if(found){
-                    list.forEach(function(el,idx){
-                        if(String((el&&el.id)||"")===linkedId)currentLabel=pricingLabel(el,idx);
-                    });
-                }else{
-                    currentLabel="Missing: "+linkedId;
-                }
-            }
-            return {options:options,hasPricing:list.length>0,linkedId:linkedId,currentLabel:currentLabel};
+            var currentLabel=linkedIds.length?labels.join(", "):"Not linked";
+            return {optionsHtml:optionsHtml,hasPricing:list.length>0,linkedIds:linkedIds,currentLabel:currentLabel,missing:missing,linkedCount:linkedIds.length};
         }
         function renderCountdownEditor(){
             var pad=parseSpacing(t.style&&t.style.padding,padDef),mar=parseSpacing(t.style&&t.style.margin,marDef);
             var pricingData=buildPricingOptions();
             var isPicking=!!(state.linkPick&&String(state.linkPick.sourceId||"")===String(t.id||""));
-            var linkMeta=pricingData.hasPricing?"Linked to: <strong>"+escHtml(pricingData.currentLabel)+"</strong>.":"Linked to: <strong>Not linked</strong>. Add a pricing component.";
-            var linkHtml='<div class="menu-section-title">Connection</div><div class="meta">'+linkMeta+'</div><div class="fb-link-row"><select id="cdPricingLink"'+(pricingData.hasPricing?'':' disabled')+'>'+pricingData.options+'</select><button type="button" id="cdPickPricing" class="fb-btn'+(isPicking?' danger':'')+'"'+(pricingData.hasPricing?'':' disabled')+'>'+(isPicking?'Cancel pick':'Pick on canvas')+'</button></div><div class="fb-link-actions"><button type="button" id="cdClearPricing" class="fb-btn"'+(pricingData.linkedId!==""?'':' disabled')+'>Clear link</button></div>';
+            var linkMeta="";
+            if(pricingData.linkedCount>0){
+                linkMeta='Linked to: <strong>'+pricingData.linkedCount+' pricing</strong>';
+                if(pricingData.currentLabel!==""){
+                    linkMeta+=' ('+escHtml(pricingData.currentLabel)+')';
+                }
+                linkMeta+='.';
+            }else{
+                linkMeta='Linked to: <strong>Not linked</strong>. Add a pricing component.';
+            }
+            if(pricingData.missing.length){
+                linkMeta+=' Missing: <strong>'+escHtml(pricingData.missing.join(", "))+'</strong>.';
+            }
+            var pickLabel=isPicking?'Done picking':'Pick on canvas';
+            var linkHtml='<div class="menu-section-title">Connection</div><div class="meta">'+linkMeta+'</div><div class="fb-link-list">'+pricingData.optionsHtml+'</div><div class="fb-link-row"><button type="button" id="cdPickPricing" class="fb-btn'+(isPicking?' danger':'')+'"'+(pricingData.hasPricing?'':' disabled')+'>'+pickLabel+'</button></div><div class="fb-link-actions"><button type="button" id="cdClearPricing" class="fb-btn"'+(pricingData.linkedCount>0?'':' disabled')+'>Clear links</button></div>';
             settings.innerHTML='<div class="menu-section-title">Content</div><label>End date/time</label><input id="cdEnd" type="datetime-local"><label>Label</label><input id="cdLabel"><label>Expired message</label><input id="cdExpired">'+linkHtml+'<div class="menu-split"></div><div class="menu-section-title">Legacy (optional)</div><label>Promo key</label><input id="cdPromo" placeholder="spring-sale">'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Style</div><label>Number color</label><input id="cdNumberColor" type="color"><label>Label color</label><input id="cdLabelColor" type="color"><label>Item spacing</label><div class="px-wrap"><input id="cdGap" type="number" step="1"><span class="px-unit">px</span></div><label>Background color</label><input id="cdBg" type="color"><label>Border</label><input id="cdBorder">'+radiusHelpLabelHtml("cdRadiusHelp","Border radius")+'<div class="px-wrap"><input id="cdRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="cdShadow">'+posControls+moveControls+remove;
             bind("cdEnd",formatDateTimeLocal((t.settings&&t.settings.endAt)||""),v=>{t.settings=t.settings||{};t.settings.endAt=v;renderCanvas();},{undo:true});
             bind("cdLabel",(t.settings&&t.settings.label)||"Offer ends in",v=>{t.settings=t.settings||{};t.settings.label=v;renderCanvas();},{undo:true});
@@ -6859,15 +7249,16 @@ function renderSettings(){
             bind("cdBorder",(t.style&&t.style.border)||"1px solid #E6E1EF",v=>sty().border=v,{undo:true});
             bindPx("cdRadius",(t.style&&t.style.borderRadius)||"16px",v=>sty().borderRadius=v,{undo:true});
             bind("cdShadow",(t.style&&t.style.boxShadow)||"0 12px 24px rgba(15,23,42,.08)",v=>sty().boxShadow=v,{undo:true});
-            var linkSel=document.getElementById("cdPricingLink");
-            if(linkSel){
-                linkSel.addEventListener("change",function(){
-                    saveToHistory();
-                    t.settings=t.settings||{};
-                    var v=String(linkSel.value||"").trim();
-                    if(v==="")delete t.settings.linkedPricingId;
-                    else t.settings.linkedPricingId=v;
-                    renderCanvas();
+            var linkChecks=settings.querySelectorAll(".cdPricingCheck");
+            if(linkChecks&&linkChecks.length){
+                linkChecks.forEach(function(chk){
+                    chk.addEventListener("change",function(){
+                        saveToHistory();
+                        var ids=Array.from(settings.querySelectorAll(".cdPricingCheck:checked")).map(function(n){return String(n.value||"");});
+                        setLinkedPricingIds(t,ids);
+                        renderCanvas();
+                        renderCountdownEditor();
+                    });
                 });
             }
             var pickBtn=document.getElementById("cdPickPricing");
@@ -6885,9 +7276,9 @@ function renderSettings(){
             var clearBtn=document.getElementById("cdClearPricing");
             if(clearBtn){
                 clearBtn.onclick=function(){
-                    if(!t.settings||!t.settings.linkedPricingId)return;
+                    if(!getLinkedPricingIds(t).length)return;
                     saveToHistory();
-                    delete t.settings.linkedPricingId;
+                    setLinkedPricingIds(t,[]);
                     state.linkPick=null;
                     renderCanvas();
                     renderCountdownEditor();
@@ -7327,8 +7718,8 @@ document.addEventListener("keydown",e=>{
         undo();
     }
 });
-document.addEventListener("dragend",clearFreeDropGuides);
-document.addEventListener("drop",clearFreeDropGuides);
+document.addEventListener("dragend",function(){clearFreeDropGuides();clearDropPreview();});
+document.addEventListener("drop",function(){clearFreeDropGuides();clearDropPreview();});
 
 initDimTipHover();
 initContextMenu();
