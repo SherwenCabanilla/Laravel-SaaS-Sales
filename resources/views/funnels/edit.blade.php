@@ -298,6 +298,13 @@
 .page-mgr-item-handle{font-size:12px;color:#64748b}
 .page-mgr-item.is-selected .page-mgr-item-handle{color:rgba(255,255,255,.85)}
 .page-mgr-section{margin-bottom:14px;padding:12px;border:1px solid #E6E1EF;border-radius:12px;background:#F3EEF7}
+.version-modal-card{width:min(460px,96vw)}
+.version-modal-body{padding:18px 20px;background:#F3EEF7;display:flex;flex-direction:column;gap:12px}
+.version-modal-body label{font-size:12px;font-weight:900;color:#2E1244;margin:0}
+.version-modal-body input{width:100%;padding:10px 12px;border:1px solid #E6E1EF;border-radius:10px;background:#fff;font-size:14px}
+.version-modal-note{font-size:12px;color:#64748b;line-height:1.5}
+.version-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.version-modal-actions .fb-btn{min-height:40px}
 .page-mgr-section:last-child{margin-bottom:0}
 .page-mgr-section label{display:block;margin:0 0 6px;font-size:13px;font-weight:800;color:#334155}
 .page-mgr-section input,.page-mgr-section select{width:100%;padding:11px 12px;border:1px solid #E6E1EF;border-radius:10px;background:#fff;font-size:14px;color:#240E35;margin-bottom:10px}
@@ -429,7 +436,8 @@
         </div>
         <div class="fb-left-panel hidden" id="fbLeftPanelHistory">
             <div class="fb-card settings">
-                <h3 class="fb-h">History Drawer</h3>
+                <h3 class="fb-h">Version History</h3>
+                <p class="meta" style="margin:0 0 10px;">Save versions for this page only. Autosave keeps working quietly in the background.</p>
                 <div id="fbHistoryContainer"></div>
             </div>
         </div>
@@ -505,6 +513,26 @@
         </div>
     </div>
 </div>
+<div class="page-mgr-modal" id="versionModal" aria-hidden="true">
+    <div class="page-mgr-card version-modal-card" role="dialog" aria-modal="true" aria-labelledby="versionModalTitle">
+        <div class="page-mgr-head">
+            <h4 id="versionModalTitle">Save Version</h4>
+            <button type="button" class="page-mgr-close" id="versionModalClose" aria-label="Close">X</button>
+        </div>
+        <div class="version-modal-body">
+            <div class="version-modal-note" id="versionModalPageName">Create a restore point for this page.</div>
+            <div>
+                <label for="versionModalLabel">Version name</label>
+                <input id="versionModalLabel" type="text" maxlength="120" placeholder="Optional, e.g. Before checkout redesign">
+            </div>
+            <div class="version-modal-note">This saves a restore point for the current page only.</div>
+            <div class="version-modal-actions">
+                <button type="button" class="fb-btn" id="versionModalCancel">Cancel</button>
+                <button type="button" class="fb-btn primary" id="versionModalSave">Save Version</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -526,6 +554,17 @@
             'cta_label' => $step->cta_label,
             'price' => $step->price,
             'step_tags' => $step->step_tags ?? [],
+            'manual_versions' => $step->revisions->filter(function ($revision) {
+                return ($revision->version_type ?? null) === 'manual';
+            })->values()->map(function ($revision) {
+                return [
+                    'id' => $revision->id,
+                    'label' => $revision->label ?: 'Saved version',
+                    'layout_json' => $revision->layout_json,
+                    'background_color' => $revision->background_color,
+                    'created_at' => $revision->created_at?->toIso8601String(),
+                ];
+            })->values()->all(),
         ];
     })->all();
 @endphp
@@ -534,6 +573,7 @@
 const saveUrl="{{ route('funnels.builder.layout.save',$funnel) }}";
 const uploadUrl="{{ route('funnels.builder.image.upload',$funnel) }}";
 const previewTpl="{{ route('funnels.preview',['funnel'=>$funnel,'step'=>'__STEP__']) }}";
+const stepVersionTpl="{{ route('funnels.steps.versions.store',['funnel'=>$funnel,'step'=>'__STEP__']) }}";
 const stepStoreUrl="{{ route('funnels.steps.store',$funnel) }}";
 const stepUpdateTpl="{{ route('funnels.steps.update',['funnel'=>$funnel,'step'=>'__STEP__']) }}";
 const stepDeleteTpl="{{ route('funnels.steps.destroy',['funnel'=>$funnel,'step'=>'__STEP__']) }}";
@@ -614,7 +654,7 @@ const iconCatalog=[
     {name:"linkedin-in",label:"LinkedIn",keywords:"social",styles:["brands"]},
 ];
 
-const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
 let _autoSaveTimer=null;
 let _autoSaveInFlight=false;
 let _autoSavePending=false;
@@ -904,7 +944,36 @@ function mergeStepData(raw){
         price:(r.price==null||String(r.price)==="")?"":String(r.price),
         button_color:(typeof r.button_color==="string"&&r.button_color.trim()!=="")?r.button_color.trim():null,
         step_tags:normalizeTagArray(r.step_tags),
+        manual_versions:normalizeVersionHistory(r.manual_versions),
     };
+}
+function normalizeVersionHistory(raw){
+    var list=Array.isArray(raw)?raw:[];
+    return list.map(function(item){
+        var entry=(item&&typeof item==="object")?item:{};
+        var sourceLayout=(entry.layout&&typeof entry.layout==="object"&&!Array.isArray(entry.layout))
+            ? entry.layout
+            : ((entry.layout_json&&typeof entry.layout_json==="object"&&!Array.isArray(entry.layout_json)) ? entry.layout_json : null);
+        var layout=sourceLayout
+            ? clone(sourceLayout)
+            : {root:[],sections:[]};
+        var bg=(typeof entry.background_color==="string"&&entry.background_color.trim()!=="")
+            ? entry.background_color.trim()
+            : ((layout&&layout.__editor&&typeof layout.__editor.canvasBg==="string"&&layout.__editor.canvasBg.trim()!=="") ? layout.__editor.canvasBg.trim() : null);
+        if(bg){
+            layout=withCanvasBgInLayout(layout,bg);
+        }
+        return {
+            id:Number(entry.id||0),
+            label:String(entry.label||"Saved version").trim()||"Saved version",
+            time:String(entry.created_at||entry.time||""),
+            layout:layout,
+        };
+    }).sort(function(a,b){
+        var ta=Date.parse(a.time||"")||0;
+        var tb=Date.parse(b.time||"")||0;
+        return ta-tb;
+    });
 }
 function applyStepUpdate(rawStep){
     var merged=mergeStepData(rawStep);
@@ -1077,6 +1146,35 @@ function closePageManagerModal(){
     pageMgrModal.classList.remove("open");
     pageMgrModal.setAttribute("aria-hidden","true");
 }
+function closeVersionModal(){
+    if(!versionModal)return;
+    versionModal.classList.remove("open");
+    versionModal.setAttribute("aria-hidden","true");
+    if(versionModalSave){
+        versionModalSave.disabled=false;
+        versionModalSave.textContent="Save Version";
+    }
+}
+function openVersionModal(){
+    var s=cur();
+    if(!s){
+        showBuilderToast("No page selected.","error");
+        return;
+    }
+    if(versionModalPageName){
+        versionModalPageName.textContent='Create a restore point for "'+String(s.title||"Untitled")+'".';
+    }
+    if(versionModalLabel)versionModalLabel.value="";
+    if(versionModal){
+        versionModal.classList.add("open");
+        versionModal.setAttribute("aria-hidden","false");
+    }
+    if(versionModalSave){
+        versionModalSave.disabled=false;
+        versionModalSave.textContent="Save Version";
+    }
+    if(versionModalLabel)versionModalLabel.focus();
+}
 function openPageManagerModal(){
     if(!pageMgrModal)return;
     syncPageManagerList();
@@ -1233,8 +1331,33 @@ function wireStepManagement(){
             if(e.target===pageMgrModal)closePageManagerModal();
         });
     }
+    if(versionModal){
+        versionModal.addEventListener("click",function(e){
+            if(e.target===versionModal)closeVersionModal();
+        });
+    }
     if(pageMgrClose){
         pageMgrClose.onclick=function(){closePageManagerModal();};
+    }
+    if(versionModalClose){
+        versionModalClose.onclick=function(){closeVersionModal();};
+    }
+    if(versionModalCancel){
+        versionModalCancel.onclick=function(){closeVersionModal();};
+    }
+    if(versionModalSave){
+        versionModalSave.onclick=function(){submitManualVersion();};
+    }
+    if(versionModalLabel){
+        versionModalLabel.addEventListener("keydown",function(e){
+            if(e.key==="Enter"){
+                e.preventDefault();
+                submitManualVersion();
+            }else if(e.key==="Escape"){
+                e.preventDefault();
+                closeVersionModal();
+            }
+        });
     }
     if(pageMgrList){
         pageMgrList.addEventListener("dragover",function(e){
@@ -1316,6 +1439,7 @@ function sectionRootContext(sectionId){
 }
 
 const undoHistory=[];const redoHistory=[];const maxUndo=40;
+const maxVisibleHistory=5;
 var realLayoutData=null;
 var previewState=null;
 function formatHistoryTime(ts){
@@ -1325,6 +1449,23 @@ function formatHistoryTime(ts){
     var hm=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
     if(isToday)return "Today, "+hm;
     return d.toLocaleDateString([],{month:'short',day:'numeric'})+", "+hm;
+}
+function historyLayoutsMatch(a,b){
+    try{
+        return JSON.stringify(a||{})===JSON.stringify(b||{});
+    }catch(_err){
+        return false;
+    }
+}
+function currentHistoryLayout(){
+    var s=cur();
+    var prefs=editorPrefs();
+    var bg=normalizeCanvasBgValue((prefs&&prefs.canvasBg)||((s&&s.background_color)||""));
+    return withCanvasBgInLayout(clone(state.layout||{root:[],sections:[]}),bg);
+}
+function savedHistoryEntries(){
+    var s=cur();
+    return normalizeVersionHistory(s&&s.manual_versions);
 }
 function saveToHistory(){
     if(!state.layout||state.isPreviewingHistory)return;
@@ -1340,6 +1481,7 @@ function undo(){
     var popped=undoHistory.pop();
     state.layout=popped.layout;
     render();
+    queueAutoSave();
     if(typeof renderHistoryDrawer==='function')renderHistoryDrawer();
 }
 function redo(){
@@ -1348,6 +1490,7 @@ function redo(){
     var popped=redoHistory.pop();
     state.layout=popped.layout;
     render();
+    queueAutoSave();
     if(typeof renderHistoryDrawer==='function')renderHistoryDrawer();
 }
 function previewHistory(index,isRedo){
@@ -1384,6 +1527,85 @@ function restorePreviewHistory(){
     jumpToHistory(idx,rdo);
     renderHistoryBanner();
 }
+function restoreHistory(index,isRedo){
+    if(state.isPreviewingHistory){
+        state.layout=realLayoutData;
+        realLayoutData=null;
+        state.isPreviewingHistory=false;
+        previewState=null;
+    }
+    jumpToHistory(index,isRedo);
+    renderHistoryDrawer();
+    renderHistoryBanner();
+}
+function restoreSavedRevision(index){
+    var entries=savedHistoryEntries();
+    var entry=entries[index];
+    var s=cur();
+    if(!entry||!s)return;
+    if(historyLayoutsMatch(currentHistoryLayout(),entry.layout)){
+        renderHistoryDrawer();
+        return;
+    }
+    undoHistory.push({time:Date.now(),layout:clone(state.layout)});
+    if(undoHistory.length>maxUndo)undoHistory.shift();
+    redoHistory.length=0;
+    state.isPreviewingHistory=false;
+    realLayoutData=null;
+    previewState=null;
+    state.layout=clone(entry.layout);
+    s.layout_json=clone(entry.layout);
+    s.background_color=(entry.layout&&entry.layout.__editor&&typeof entry.layout.__editor.canvasBg==="string"&&entry.layout.__editor.canvasBg.trim()!=="")
+        ? entry.layout.__editor.canvasBg.trim()
+        : null;
+    render();
+    queueAutoSave();
+    saveMsg.textContent="Restoring version...";
+    renderHistoryDrawer();
+    renderHistoryBanner();
+}
+function versionUrlForStep(id){
+    return stepUrlFromTpl(stepVersionTpl,id);
+}
+function submitManualVersion(){
+    var s=cur();
+    if(!s){
+        showBuilderToast("No page selected.","error");
+        return;
+    }
+    var rawLabel=String((versionModalLabel&&versionModalLabel.value)||"").trim();
+    if(versionModalSave){
+        versionModalSave.disabled=true;
+        versionModalSave.textContent="Saving...";
+    }
+    saveMsg.textContent="Saving version...";
+    flushAutoSave()
+        .then(function(){
+            return requestJson(versionUrlForStep(s.id),"POST",{label:rawLabel});
+        })
+        .then(function(resp){
+            s.manual_versions=normalizeVersionHistory(resp&&resp.manual_versions);
+            closeVersionModal();
+            renderHistoryDrawer();
+            saveMsg.textContent="Version saved "+new Date().toLocaleTimeString();
+            showBuilderToast("Version saved for this page.","success");
+        })
+        .catch(function(err){
+            if(versionModalSave){
+                versionModalSave.disabled=false;
+                versionModalSave.textContent="Save Version";
+            }
+            saveMsg.textContent="Version save failed";
+            showBuilderToast((err&&err.message)||"Failed to save version.","error");
+        });
+}
+window.previewHistory=previewHistory;
+window.exitPreviewHistory=exitPreviewHistory;
+window.restorePreviewHistory=restorePreviewHistory;
+window.restoreHistory=restoreHistory;
+window.restoreSavedRevision=restoreSavedRevision;
+window.createManualVersion=openVersionModal;
+window.submitManualVersion=submitManualVersion;
 function renderHistoryBanner(){
     var banner=document.getElementById("fbHistoryBanner");
     if(!banner){
@@ -1406,8 +1628,8 @@ function renderHistoryBanner(){
         banner.style.color="#fff";
         banner.style.boxShadow="0 10px 25px rgba(15,23,42,0.4)";
         banner.innerHTML="<div style='font-size:13px;font-weight:700;'><i class='fas fa-eye' style='margin-right:6px;'></i> Previewing Version</div>" +
-            "<button class='fb-btn' style='background:#10b981;border:none;color:#fff;border-radius:999px;padding:6px 14px;' onclick='restorePreviewHistory()'>Restore Version</button>" +
-            "<button class='fb-btn' style='background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:999px;padding:6px 14px;' onclick='exitPreviewHistory()'>Back</button>";
+            "<button class='fb-btn' style='background:#10b981;border:none;color:#fff;border-radius:999px;padding:6px 14px;' onclick='window.restorePreviewHistory()'>Restore Version</button>" +
+            "<button class='fb-btn' style='background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:999px;padding:6px 14px;' onclick='window.exitPreviewHistory()'>Back</button>";
     }else{
         banner.style.display="none";
     }
@@ -1420,69 +1642,80 @@ window.toggleHistoryGroup = function(lbl){
 function renderHistoryDrawer(){
     var container=document.getElementById("fbHistoryContainer");
     if(!container)return;
-    if(undoHistory.length===0&&redoHistory.length===0){
-        container.innerHTML="<div style='padding:10px;color:#64748b;font-size:12px;'>No version history yet.</div>";
+    var entries=savedHistoryEntries();
+    var visibleStart=Math.max(0,entries.length-maxVisibleHistory);
+    var visibleEntries=entries.slice(visibleStart);
+    var currentLayout=currentHistoryLayout();
+    var latestSaved=entries.length?entries[entries.length-1]:null;
+    var openSavedIndex=-1;
+    for(var i=entries.length-1;i>=0;i--){
+        if(historyLayoutsMatch(currentLayout,entries[i].layout)){
+            openSavedIndex=i;
+            break;
+        }
+    }
+    var statusBg="#eff6ff";
+    var statusBorder="#bfdbfe";
+    var statusTitle="Current version";
+    var statusText="This is what is open in the builder right now.";
+    if(!entries.length){
+        statusBg="#fff7ed";
+        statusBorder="#fed7aa";
+        statusText="No saved versions yet. Make a change and wait a moment for autosave.";
+    }else if(openSavedIndex===entries.length-1){
+        statusBg="#ecfdf5";
+        statusBorder="#86efac";
+        statusText="All changes are saved.";
+    }else if(openSavedIndex>=0){
+        statusBg="#fff7ed";
+        statusBorder="#fdba74";
+        statusText="You are viewing an older saved version. It will become current after autosave.";
+    }else if(latestSaved){
+        statusBg="#fff7ed";
+        statusBorder="#fdba74";
+        statusText="You have changes in the builder that are not saved yet.";
+    }
+
+    var html="<div class='history-list' style='display:flex;flex-direction:column;gap:8px;max-height:80vh;overflow-y:auto;padding-right:4px;'>";
+    html+="<div style='border:1px solid "+statusBorder+";border-radius:12px;background:"+statusBg+";padding:12px;'>";
+    html+="<div style='font-size:14px;font-weight:800;color:#240E35;display:flex;align-items:center;gap:8px;'><i class='fas fa-star' style='color:#10b981;'></i> "+statusTitle+"</div>";
+    html+="<div style='font-size:12px;color:#475569;margin-top:4px;'>"+statusText+"</div>";
+    html+="</div>";
+    html+="<button class='fb-btn primary' style='width:100%;justify-content:center;' onclick='window.createManualVersion()'><i class='fas fa-bookmark'></i> Save Current Version</button>";
+
+    if(!entries.length){
+        html+="<div style='padding:10px 4px;color:#64748b;font-size:12px;'>No saved versions yet for this page. Use Save Current Version before a big change.</div>";
+        html+="</div>";
+        container.innerHTML=html;
         return;
     }
-    
-    function groupHist(arr, isRedo) {
-        var g = [];
-        for(var i=0; i<arr.length; i++){
-            var tStr = formatHistoryTime(arr[i].time);
-            if(g.length===0 || g[g.length-1].label !== tStr) g.push({ label: tStr, items: [] });
-            g[g.length-1].items.push({ index: i, isRedo: isRedo });
-        }
-        return g;
-    }
-    var rGroups = groupHist(redoHistory, true);
-    var uGroups = groupHist(undoHistory, false);
 
-    var html="<div class='history-list' style='display:flex;flex-direction:column;gap:6px;max-height:80vh;overflow-y:auto;padding-right:4px;'>";
-    
-    for(var g=rGroups.length-1;g>=0;g--){
-        var grp=rGroups[g];
-        var gLbl="r_"+grp.label;
-        var exp=window.historyExpanded[gLbl];
-        var hasActive = state.isPreviewingHistory&&previewState&&previewState.isRedo&&grp.items.some(x=>x.index===previewState.index);
-        if(hasActive) exp=true;
-        
-        html+="<div style='border:1px solid #E6E1EF;border-radius:8px;background:#f8fafc;overflow:hidden;'>";
-        html+="<button class='fb-btn' style='width:100%;border:none;background:transparent;color:#334155;justify-content:space-between;padding:8px 10px;' onclick='window.toggleHistoryGroup(\""+gLbl+"\")'><span style='font-weight:800;'><i class='fas fa-folder-open' style='color:#6B4A7A;'></i> "+grp.label+"</span> <span style='font-size:11px;background:#e2e8f0;padding:2px 6px;border-radius:99px;'>"+grp.items.length+" revisions</span></button>";
-        if(exp){
-            for(var i=grp.items.length-1;i>=0;i--){
-                var it=grp.items[i];
-                var active=(state.isPreviewingHistory&&previewState&&previewState.isRedo&&previewState.index===it.index);
-                var bSty=active?"background:#2E1244;color:#fff;":"background:#fff;color:#64748b;";
-                html+="<button class='fb-btn' style='width:100%;border:none;border-radius:0;border-top:1px solid #E6E1EF;"+bSty+"justify-content:flex-start;padding-left:24px;' onclick='previewHistory("+it.index+", true)'><i class='"+(active?"fas fa-check":"fas fa-arrow-right")+"'></i> Snapshot "+(it.index+1)+"</button>";
-            }
+    html+="<div style='padding:2px 4px 0;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em;'>Saved versions</div>";
+    html+="<div style='padding:0 4px 2px;color:#64748b;font-size:12px;'>Showing the latest "+visibleEntries.length+" saved version"+(visibleEntries.length===1?"":"s")+".</div>";
+    for(var idx=visibleEntries.length-1;idx>=0;idx--){
+        var entry=visibleEntries[idx];
+        var actualIndex=visibleStart+idx;
+        var isOpen=openSavedIndex===actualIndex;
+        var isLatest=actualIndex===entries.length-1;
+        var label=String(entry.label||"Saved version").trim()||"Saved version";
+        if(isLatest&&label==="Saved version")label="Latest saved version";
+        var sub=formatHistoryTime(entry.time||"");
+        var rowBg=isOpen?"#ecfdf5":"#ffffff";
+        var rowBorder=isOpen?"#86efac":"#E6E1EF";
+        var badgeBg=isOpen?"#10b981":"#240E35";
+        var badgeText=isOpen?"Open now":"Restore";
+        html+="<div style='border:1px solid "+rowBorder+";border-radius:12px;background:"+rowBg+";padding:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;'>";
+        html+="<div style='min-width:0;'>";
+        html+="<div style='font-size:14px;font-weight:800;color:#240E35;'>"+label+"</div>";
+        html+="<div style='font-size:12px;color:#64748b;margin-top:3px;'>"+sub+"</div>";
+        html+="</div>";
+        if(isOpen){
+            html+="<span style='display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:"+badgeBg+";color:#fff;font-size:11px;font-weight:800;white-space:nowrap;'>"+badgeText+"</span>";
+        }else{
+            html+="<button class='fb-btn' style='min-height:34px;padding:8px 12px;border:none;border-radius:999px;background:"+badgeBg+";color:#fff;white-space:nowrap;' onclick='window.restoreSavedRevision("+actualIndex+")'>"+badgeText+"</button>";
         }
         html+="</div>";
     }
-    
-    var activeCur=!state.isPreviewingHistory;
-    var bCur=activeCur?"background:#10b981;color:#fff;border-color:#10b981;":"background:#fff;color:#240E35;border:1px solid #E6E1EF;";
-    html+="<button class='fb-btn' style='width:100%;"+bCur+"justify-content:flex-start;padding:10px;' "+(activeCur?"disabled":"onclick='exitPreviewHistory()'") +"><i class='fas fa-star'></i> Current Live Version</button>";
-
-    for(var g=uGroups.length-1;g>=0;g--){
-        var grp=uGroups[g];
-        var gLbl="u_"+grp.label;
-        var exp=window.historyExpanded[gLbl];
-        var hasActive = state.isPreviewingHistory&&previewState&&!previewState.isRedo&&grp.items.some(x=>x.index===previewState.index);
-        if(hasActive) exp=true;
-        
-        html+="<div style='border:1px solid #E6E1EF;border-radius:8px;background:#f8fafc;overflow:hidden;'>";
-        html+="<button class='fb-btn' style='width:100%;border:none;background:transparent;color:#334155;justify-content:space-between;padding:8px 10px;' onclick='window.toggleHistoryGroup(\""+gLbl+"\")'><span style='font-weight:800;'><i class='fas fa-folder' style='color:#6B4A7A;'></i> "+grp.label+"</span> <span style='font-size:11px;background:#e2e8f0;padding:2px 6px;border-radius:99px;'>"+grp.items.length+" revisions</span></button>";
-        if(exp){
-            for(var i=grp.items.length-1;i>=0;i--){
-                var it=grp.items[i];
-                var active=(state.isPreviewingHistory&&previewState&&!previewState.isRedo&&previewState.index===it.index);
-                var bSty=active?"background:#2E1244;color:#fff;":"background:#fff;color:#64748b;";
-                html+="<button class='fb-btn' style='width:100%;border:none;border-radius:0;border-top:1px solid #E6E1EF;"+bSty+"justify-content:flex-start;padding-left:24px;' onclick='previewHistory("+it.index+", false)'><i class='"+(active?"fas fa-check":"fas fa-arrow-left")+"'></i> Snapshot "+(it.index+1)+"</button>";
-            }
-        }
-        html+="</div>";
-    }
-    
     html+="</div>";
     container.innerHTML=html;
 }
@@ -7795,18 +8028,18 @@ function persistCurrentStep(){
     if(_canvasInnerWidth>0)prefs.canvasInnerWidth=_canvasInnerWidth;
     var canvasBg=normalizeCanvasBgValue(prefs.canvasBg||"");
     var requestHeaders={"Content-Type":"application/json","X-CSRF-TOKEN":csrf,"Accept":"application/json"};
-    function saveStepLayout(stepId,layout,bg){
+    function saveStepLayout(stepId,layout,bg,skipRevision){
         return fetch(saveUrl,{
             method:"POST",
             headers:requestHeaders,
-            body:JSON.stringify({step_id:stepId,layout_json:layout,background_color:bg})
+            body:JSON.stringify({step_id:stepId,layout_json:layout,background_color:bg,skip_revision:!!skipRevision})
         }).then(function(r){
             if(!r.ok)throw new Error("Save failed");
             return r.json();
         });
     }
     saveMsg.textContent=_autoSaveMode?"Autosaving...":"Saving...";
-    return saveStepLayout(s.id,state.layout,canvasBg)
+    return saveStepLayout(s.id,state.layout,canvasBg,false)
         .then(function(p){
             s.layout_json=p.layout_json||clone(state.layout);
             s.background_color=(p&&typeof p.background_color==="string"&&p.background_color.trim()!=="")?p.background_color.trim():null;
@@ -7815,7 +8048,7 @@ function persistCurrentStep(){
             var jobs=others.map(function(step){
                 var stepLayout=(step.layout_json&&typeof step.layout_json==="object")?step.layout_json:defaults(step.type);
                 stepLayout=withCanvasBgInLayout(stepLayout,canvasBg);
-                return saveStepLayout(step.id,stepLayout,canvasBg).then(function(resp){
+                return saveStepLayout(step.id,stepLayout,canvasBg,true).then(function(resp){
                     step.layout_json=resp.layout_json||clone(stepLayout);
                     step.background_color=(resp&&typeof resp.background_color==="string"&&resp.background_color.trim()!=="")?resp.background_color.trim():null;
                     return true;

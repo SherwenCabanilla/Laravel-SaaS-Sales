@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Funnel;
 use App\Models\FunnelStep;
+use App\Models\FunnelStepRevision;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -11,6 +12,9 @@ use Illuminate\Support\Facades\Storage;
 
 class FunnelController extends Controller
 {
+    private const MAX_STEP_REVISIONS = 40;
+    private const MAX_MANUAL_VERSIONS = 25;
+
     public function index()
     {
         $tenantId = auth()->user()->tenant_id;
@@ -55,7 +59,7 @@ class FunnelController extends Controller
             ];
 
             foreach ($starterSteps as $index => $step) {
-                FunnelStep::create([
+                $createdStep = FunnelStep::create([
                     'funnel_id' => $funnel->id,
                     'title' => $step['title'],
                     'slug' => $step['slug'],
@@ -67,6 +71,7 @@ class FunnelController extends Controller
                     'position' => $index + 1,
                     'is_active' => true,
                 ]);
+                $this->ensureStepHasInitialRevision($createdStep);
             }
 
             return redirect()->route('funnels.edit', $funnel)->with('success', 'Added Successfully');
@@ -79,7 +84,16 @@ class FunnelController extends Controller
     {
         $this->ensureTenantFunnelAccess($funnel);
 
-        $funnel->load(['steps']);
+        $funnel->load(['steps.revisions']);
+        $seededMissingRevisions = false;
+        foreach ($funnel->steps as $step) {
+            if ($this->ensureStepHasInitialRevision($step)) {
+                $seededMissingRevisions = true;
+            }
+        }
+        if ($seededMissingRevisions) {
+            $funnel->load(['steps.revisions']);
+        }
         $defaultStep = $funnel->steps->sortBy('position')->first();
 
         return view('funnels.edit', [
@@ -127,6 +141,7 @@ class FunnelController extends Controller
             ],
             'layout_json' => 'required',
             'background_color' => ['nullable', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'skip_revision' => ['nullable', 'boolean'],
         ]);
 
         $rawLayout = $validated['layout_json'];
@@ -142,6 +157,15 @@ class FunnelController extends Controller
         }
 
         $step = $funnel->steps()->where('id', $validated['step_id'])->firstOrFail();
+        $skipRevision = (bool) ($validated['skip_revision'] ?? false);
+        if (! $skipRevision) {
+            $this->rememberStepRevision(
+                $step,
+                $this->normalizeRevisionLayout($step->layout_json),
+                $this->normalizeRevisionBackground($step->background_color)
+            );
+        }
+
         $layout = $this->sanitizeLayoutJson($rawLayout);
         $this->mergeElementSizeFromRaw($layout, $rawLayout);
 
@@ -150,11 +174,64 @@ class FunnelController extends Controller
             'background_color' => $validated['background_color'] ?? null,
         ]);
 
+        if (! $skipRevision) {
+            $this->rememberStepRevision(
+                $step,
+                $layout,
+                $this->normalizeRevisionBackground($step->background_color)
+            );
+        }
+        $step->load('revisions');
+
         return response()->json([
             'message' => 'Layout saved successfully.',
             'step_id' => $step->id,
             'layout_json' => $layout,
             'background_color' => $step->background_color,
+            'revision_history' => $this->revisionHistoryPayload($step),
+        ]);
+    }
+
+    public function storeVersion(Request $request, Funnel $funnel, FunnelStep $step)
+    {
+        $this->ensureTenantFunnelAccess($funnel);
+        if ((int) $step->funnel_id !== (int) $funnel->id) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'label' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $step->revisions()->create([
+            'user_id' => auth()->id(),
+            'layout_json' => $this->normalizeRevisionLayout($step->layout_json),
+            'background_color' => $this->normalizeRevisionBackground($step->background_color),
+            'version_type' => 'manual',
+            'label' => $this->normalizeManualVersionLabel($validated['label'] ?? null),
+        ]);
+
+        $manualKeepIds = $step->revisions()
+            ->reorder()
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn (FunnelStepRevision $revision) => (string) ($revision->version_type ?? 'autosave') === 'manual')
+            ->take(self::MAX_MANUAL_VERSIONS)
+            ->pluck('id');
+
+        if ($manualKeepIds->isNotEmpty()) {
+            $step->revisions()
+                ->reorder()
+                ->where('version_type', 'manual')
+                ->whereNotIn('id', $manualKeepIds)
+                ->delete();
+        }
+
+        $step->load('revisions');
+
+        return response()->json([
+            'message' => 'Version saved successfully.',
+            'manual_versions' => $this->manualVersionPayload($step),
         ]);
     }
 
@@ -424,27 +501,12 @@ class FunnelController extends Controller
                 'position' => $position,
                 'is_active' => true,
             ]);
+            $this->ensureStepHasInitialRevision($step);
 
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Added Successfully',
-                    'step' => [
-                        'id' => $step->id,
-                        'title' => $step->title,
-                        'slug' => $step->slug,
-                        'type' => $step->type,
-                        'layout_json' => $step->layout_json,
-                        'background_color' => $step->background_color,
-                        'is_active' => (bool) $step->is_active,
-                        'position' => (int) $step->position,
-                        'layout_style' => $step->layout_style,
-                        'template' => $step->template,
-                        'subtitle' => $step->subtitle,
-                        'content' => $step->content,
-                        'cta_label' => $step->cta_label,
-                        'price' => $step->price,
-                        'step_tags' => $step->step_tags ?? [],
-                    ],
+                    'step' => $this->builderStepPayload($step),
                 ]);
             }
 
@@ -518,23 +580,7 @@ class FunnelController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'message' => 'Edited Successfully',
-                    'step' => [
-                        'id' => $step->id,
-                        'title' => $step->title,
-                        'slug' => $step->slug,
-                        'type' => $step->type,
-                        'layout_json' => $step->layout_json,
-                        'background_color' => $step->background_color,
-                        'is_active' => (bool) $step->is_active,
-                        'position' => (int) $step->position,
-                        'layout_style' => $step->layout_style,
-                        'template' => $step->template,
-                        'subtitle' => $step->subtitle,
-                        'content' => $step->content,
-                        'cta_label' => $step->cta_label,
-                        'price' => $step->price,
-                        'step_tags' => $step->step_tags ?? [],
-                    ],
+                    'step' => $this->builderStepPayload($step),
                 ]);
             }
 
@@ -626,6 +672,160 @@ class FunnelController extends Controller
         if ((int) $funnel->tenant_id !== (int) auth()->user()->tenant_id) {
             abort(403, 'Unauthorized action.');
         }
+    }
+
+    private function builderStepPayload(FunnelStep $step): array
+    {
+        return [
+            'id' => $step->id,
+            'title' => $step->title,
+            'slug' => $step->slug,
+            'type' => $step->type,
+            'layout_json' => $step->layout_json,
+            'background_color' => $step->background_color,
+            'position' => (int) $step->position,
+            'is_active' => (bool) $step->is_active,
+            'layout_style' => $step->layout_style,
+            'template' => $step->template,
+            'subtitle' => $step->subtitle,
+            'content' => $step->content,
+            'cta_label' => $step->cta_label,
+            'price' => $step->price,
+            'button_color' => $step->button_color,
+            'step_tags' => $step->step_tags ?? [],
+            'manual_versions' => $this->manualVersionPayload($step),
+        ];
+    }
+
+    private function manualVersionPayload(FunnelStep $step): array
+    {
+        $revisions = $step->relationLoaded('revisions')
+            ? $step->revisions
+            : $step->revisions()->get();
+
+        return $revisions
+            ->filter(fn (FunnelStepRevision $revision) => (string) ($revision->version_type ?? 'autosave') === 'manual')
+            ->sortBy(fn (FunnelStepRevision $revision) => [
+                $revision->created_at?->getTimestamp() ?? 0,
+                $revision->id,
+            ])
+            ->map(function (FunnelStepRevision $revision) {
+                return [
+                    'id' => $revision->id,
+                    'label' => trim((string) ($revision->label ?? '')) !== '' ? trim((string) $revision->label) : 'Saved version',
+                    'layout_json' => $this->normalizeRevisionLayout($revision->layout_json),
+                    'background_color' => $this->normalizeRevisionBackground($revision->background_color),
+                    'created_at' => $revision->created_at?->toIso8601String(),
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    private function ensureStepHasInitialRevision(FunnelStep $step): bool
+    {
+        if ($step->relationLoaded('revisions')) {
+            if ($step->revisions->isNotEmpty()) {
+                return false;
+            }
+        } elseif ($step->revisions()->exists()) {
+            return false;
+        }
+
+        $this->rememberStepRevision(
+            $step,
+            $this->normalizeRevisionLayout($step->layout_json),
+            $this->normalizeRevisionBackground($step->background_color)
+        );
+
+        return true;
+    }
+
+    private function revisionHistoryPayload(FunnelStep $step): array
+    {
+        $revisions = $step->relationLoaded('revisions')
+            ? $step->revisions
+            : $step->revisions()->get();
+
+        return $revisions->map(function (FunnelStepRevision $revision) {
+            return [
+                'id' => $revision->id,
+                'layout_json' => $this->normalizeRevisionLayout($revision->layout_json),
+                'background_color' => $this->normalizeRevisionBackground($revision->background_color),
+                'created_at' => $revision->created_at?->toIso8601String(),
+            ];
+        })->values()->all();
+    }
+
+    private function rememberStepRevision(FunnelStep $step, mixed $layout, ?string $backgroundColor): void
+    {
+        $normalizedLayout = $this->normalizeRevisionLayout($layout);
+        $normalizedBackground = $this->normalizeRevisionBackground($backgroundColor);
+        $latest = $step->revisions()->latest('id')->first();
+
+        if ($latest) {
+            $latestLayout = $this->normalizeRevisionLayout($latest->layout_json);
+            $latestBackground = $this->normalizeRevisionBackground($latest->background_color);
+            if (
+                $this->revisionLayoutsMatch($latestLayout, $normalizedLayout)
+                && $latestBackground === $normalizedBackground
+            ) {
+                return;
+            }
+        }
+
+        $step->revisions()->create([
+            'user_id' => auth()->id(),
+            'layout_json' => $normalizedLayout,
+            'background_color' => $normalizedBackground,
+        ]);
+
+        $keepIds = $step->revisions()
+            ->reorder()
+            ->orderByDesc('id')
+            ->limit(self::MAX_STEP_REVISIONS)
+            ->pluck('id');
+
+        if ($keepIds->isNotEmpty()) {
+            $step->revisions()
+                ->reorder()
+                ->whereNotIn('id', $keepIds)
+                ->delete();
+        }
+    }
+
+    private function normalizeRevisionLayout(mixed $layout): array
+    {
+        if (! is_array($layout)) {
+            return ['root' => [], 'sections' => []];
+        }
+
+        if (! isset($layout['root']) && ! isset($layout['sections'])) {
+            return ['root' => [], 'sections' => []];
+        }
+
+        return $layout;
+    }
+
+    private function normalizeRevisionBackground(?string $backgroundColor): ?string
+    {
+        $bg = trim((string) $backgroundColor);
+        return preg_match('/^#[0-9A-Fa-f]{6}$/', $bg) ? $bg : null;
+    }
+
+    private function normalizeManualVersionLabel(?string $label): string
+    {
+        $value = trim((string) $label);
+        if ($value === '') {
+            return 'Saved version';
+        }
+
+        return mb_substr($value, 0, 120);
+    }
+
+    private function revisionLayoutsMatch(array $left, array $right): bool
+    {
+        return json_encode($left) === json_encode($right);
     }
 
     private function sanitizeLayoutJson(array $layout): array
