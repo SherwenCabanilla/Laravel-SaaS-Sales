@@ -27,12 +27,13 @@ WORKDIR /app
 RUN apk add --no-cache \
     icu-dev \
     libzip-dev \
+    mariadb-connector-c-dev \
     oniguruma-dev \
     postgresql-dev \
     sqlite-dev \
     unzip \
     zip \
-    && docker-php-ext-install intl pdo pdo_pgsql pdo_sqlite zip
+    && docker-php-ext-install intl pdo_mysql pdo_pgsql pdo_sqlite zip
 
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
