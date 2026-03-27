@@ -595,6 +595,14 @@
         </div>
         @endif
 
+        @if(session('error'))
+            <div class="wrap" style="padding: 12px 2rem 0;">
+                <div style="padding: 12px 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; color: #991b1b; font-size: 14px;">
+                    {{ session('error') }}
+                </div>
+            </div>
+        @endif
+
         <div class="step-content--full">
             @if($hasBuilderLayout)
                 @foreach($renderSections as $section)
@@ -1689,6 +1697,18 @@
         var countdowns=document.querySelectorAll("[data-countdown]");
         if(countdowns && countdowns.length){
             function pad2(n){return String(n).padStart(2,"0");}
+            function parseMoneyToNumber(raw){
+                var s=String(raw||"").trim();
+                if(!s)return null;
+                // Keep digits, commas, and decimal dot only.
+                s=s.replace(/[^0-9,.\-]/g,"");
+                if(!s)return null;
+                // Remove thousand separators.
+                s=s.replace(/,/g,"");
+                var n=parseFloat(s);
+                if(!isFinite(n)||isNaN(n))return null;
+                return n;
+            }
             function escapeCssIdent(v){
                 var raw=String(v||"");
                 if(window.CSS && typeof window.CSS.escape==="function")return window.CSS.escape(raw);
@@ -1832,6 +1852,38 @@
             tick();
             setInterval(tick,1000);
         }
+
+        // Ensure the posted checkout amount matches the visible pricing (sale/regular) when present.
+        // This makes PayMongo charge what the customer sees on the page.
+        function findVisiblePricingAmount(){
+            var cards=Array.from(document.querySelectorAll("[data-pricing-id]")||[]);
+            if(!cards.length)return null;
+            var visible=cards.filter(function(p){
+                // Consider as visible if not display:none and in DOM flow.
+                if(!p||!p.getBoundingClientRect)return false;
+                if(p.style && String(p.style.display).toLowerCase()==="none")return false;
+                return true;
+            });
+            var target=(visible[0]||cards[0])||null;
+            if(!target)return null;
+            var priceEl=target.querySelector("[data-pricing-price]");
+            if(!priceEl)return null;
+            return parseMoneyToNumber(priceEl.textContent||"");
+        }
+        document.addEventListener("submit",function(e){
+            var form=e.target;
+            if(!form||form.tagName!=="FORM")return;
+            var method=String(form.getAttribute("method")||"").toLowerCase();
+            if(method!=="post")return;
+            var action=String(form.getAttribute("action")||"");
+            if(action.indexOf("/checkout")<0)return;
+            var amountInput=form.querySelector('input[name="amount"]');
+            if(!amountInput)return;
+            var amount=findVisiblePricingAmount();
+            if(typeof amount==="number" && amount>0){
+                amountInput.value=String(amount);
+            }
+        },true);
         var isPreview={{ ($isPreview ?? false) ? 'true' : 'false' }};
         var editorCanvasWidth={{ (int) ($editorCanvasWidth ?? 0) }};
         if(isPreview&&editorCanvasWidth>0){
