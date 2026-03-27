@@ -231,34 +231,45 @@
         </main>
 
         <footer class="landing-footer">
-            <div class="landing-footer__brand" data-aos="fade-right">
-                <div class="landing-footer__logos">
-                    <img src="{{ asset('images/saas_logo.png') }}" alt="Sales and Marketing Funnel System Logo" class="landing-footer__funnel">
-                    <img src="{{ asset('images/logo2.png') }}" alt="Nehemiah Solutions Logo" class="landing-footer__company">
+            <div class="landing-footer__top" data-aos="fade-up">
+                <div class="landing-footer__brand">
+                    <div class="landing-footer__logos">
+                        <img src="{{ asset('images/saas_logo.png') }}" alt="Sales and Marketing Funnel System Logo" class="landing-footer__funnel">
+                        <img src="{{ asset('images/logo2.png') }}" alt="Nehemiah Solutions Logo" class="landing-footer__company">
+                    </div>
+                    <p>
+                        Built for teams that want to run campaigns, capture leads, and move people through pricing and onboarding with less friction.
+                    </p>
                 </div>
-                <p>
-                    A sales and marketing funnel system for modern businesses that need landing pages, lead operations,
-                    pricing, payment-connected onboarding, and role-based dashboards in one platform.
-                </p>
-            </div>
 
-            <div class="landing-footer__links" data-aos="fade-left" data-aos-delay="100">
-                <div>
-                    <h4>Product</h4>
-                    <a href="#services">Services</a>
-                    <a href="#works">Featured Works</a>
-                    <a href="#pricing">Pricing</a>
-                </div>
-                <div>
-                    <h4>Access</h4>
-                    <a href="{{ route('login') }}">Sign In</a>
-                    <a href="{{ route('register') }}">Register</a>
-                    <a href="#faq">FAQ</a>
+                <div class="landing-footer__columns">
+                    <div class="landing-footer__column">
+                        <h4>Platform</h4>
+                        <a href="#services">Services</a>
+                        <a href="#works">Featured Works</a>
+                        <a href="#pricing">Pricing</a>
+                    </div>
+                    <div class="landing-footer__column">
+                        <h4>Company</h4>
+                        <a href="{{ route('register') }}">Register</a>
+                        <a href="{{ route('login') }}">Sign In</a>
+                        <a href="{{ route('register', ['trial' => 1]) }}">Free Trial</a>
+                    </div>
+                    <div class="landing-footer__column">
+                        <h4>Support</h4>
+                        <a href="#faq">FAQ</a>
+                        <a href="#pricing">Plans</a>
+                        <a href="{{ route('register') }}">Contact Team</a>
+                    </div>
                 </div>
             </div>
 
             <div class="landing-footer__bottom">
                 <span>&copy; {{ now()->year }} Nehemiah Solutions. All rights reserved.</span>
+                <div class="landing-footer__legal">
+                    <a href="#faq">Terms</a>
+                    <a href="#faq">Privacy</a>
+                </div>
             </div>
         </footer>
     </div>
