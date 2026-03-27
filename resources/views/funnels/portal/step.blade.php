@@ -1316,7 +1316,7 @@
                                                 @elseif($type === 'pricing')
                                                     @php
                                                         $plan = trim((string) ($settings['plan'] ?? 'Plan'));
-                                                        $priceVal = trim((string) ($settings['price'] ?? '$0'));
+                                                        $priceVal = trim((string) ($settings['price'] ?? '₱0'));
                                                         $regularPrice = trim((string) ($settings['regularPrice'] ?? ''));
                                                         $period = trim((string) ($settings['period'] ?? ''));
                                                         $subtitle = trim((string) ($settings['subtitle'] ?? ''));
@@ -1381,7 +1381,7 @@
                                                         @endif
                                                         <div class="builder-pricing-title" style="{{ $titleStyle }}@if($pricingTextColor !== '')color: {{ $pricingTextColor }};@endif">{{ $plan !== '' ? $plan : 'Plan' }}</div>
                                                         <div>
-                                                            <span class="builder-pricing-price" data-pricing-price style="{{ $priceStyle }}@if($pricingTextColor !== '')color: {{ $pricingTextColor }};@endif">{{ $priceVal !== '' ? $priceVal : '$0' }}</span>
+                                                            <span class="builder-pricing-price" data-pricing-price style="{{ $priceStyle }}@if($pricingTextColor !== '')color: {{ $pricingTextColor }};@endif">{{ $priceVal !== '' ? $priceVal : '₱0' }}</span>
                                                             @if($period !== '')
                                                                 <span class="builder-pricing-period" style="{{ $periodStyle }}@if($pricingTextColor !== '')color: {{ $pricingTextColor }}; opacity: 0.7;@endif">{{ $period }}</span>
                                                             @endif
