@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\SignupIntent;
+use App\Services\SignupOnboardingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -59,16 +61,24 @@ class PayMongoWebhookController extends Controller
         }
 
         $payment = Payment::query()->where('provider', 'paymongo')->where('provider_reference', $id)->first();
-        if (! $payment || $payment->status === 'paid') {
-            return;
+        $method = $this->extractPaymentMethodFromSession($session);
+        if ($payment && $payment->status !== 'paid') {
+            $payment->update([
+                'status' => 'paid',
+                'payment_method' => $method ?? $payment->payment_method,
+                'payment_date' => now()->toDateString(),
+            ]);
         }
 
-        $method = $this->extractPaymentMethodFromSession($session);
-        $payment->update([
-            'status' => 'paid',
-            'payment_method' => $method ?? $payment->payment_method,
-            'payment_date' => now()->toDateString(),
-        ]);
+        $metadata = data_get($session, 'attributes.metadata');
+        if (is_array($metadata) && ($metadata['flow'] ?? null) === 'trial_upgrade' && $payment) {
+            $this->activateTrialUpgrade($payment, (string) ($metadata['plan_code'] ?? ''), $method);
+        }
+
+        $signupIntent = SignupIntent::query()->where('provider', 'paymongo')->where('provider_reference', $id)->first();
+        if ($signupIntent) {
+            $this->completeSignupIntent($signupIntent, $method);
+        }
     }
 
     private function handlePaymentPaid(array $paymentResource): void
@@ -83,19 +93,29 @@ class PayMongoWebhookController extends Controller
             return;
         }
 
-        $payment = Payment::query()->where('id', $paymentId)->where('provider', 'paymongo')->first();
-        if (! $payment || $payment->status === 'paid') {
-            return;
-        }
-
         $source = data_get($paymentResource, 'attributes.source');
         $method = is_array($source) ? ($source['type'] ?? null) : null;
 
-        $payment->update([
-            'status' => 'paid',
-            'payment_method' => is_string($method) ? $method : $payment->payment_method,
-            'payment_date' => now()->toDateString(),
-        ]);
+        $payment = Payment::query()->where('id', $paymentId)->where('provider', 'paymongo')->first();
+        if ($payment && $payment->status !== 'paid') {
+            $payment->update([
+                'status' => 'paid',
+                'payment_method' => is_string($method) ? $method : $payment->payment_method,
+                'payment_date' => now()->toDateString(),
+            ]);
+        }
+
+        if (($meta['flow'] ?? null) === 'trial_upgrade' && $payment) {
+            $this->activateTrialUpgrade($payment, (string) ($meta['plan_code'] ?? ''), is_string($method) ? $method : null);
+        }
+
+        $signupIntentId = isset($meta['signup_intent_id']) ? (int) $meta['signup_intent_id'] : 0;
+        if ($signupIntentId > 0) {
+            $signupIntent = SignupIntent::query()->find($signupIntentId);
+            if ($signupIntent) {
+                $this->completeSignupIntent($signupIntent, is_string($method) ? $method : null);
+            }
+        }
     }
 
     private function handlePaymentFailed(array $paymentResource): void
@@ -112,10 +132,36 @@ class PayMongoWebhookController extends Controller
 
         $payment = Payment::query()->where('id', $paymentId)->where('provider', 'paymongo')->where('status', 'pending')->first();
         if (! $payment) {
+            $signupIntentId = isset($meta['signup_intent_id']) ? (int) $meta['signup_intent_id'] : 0;
+            if ($signupIntentId > 0) {
+                $signupIntent = SignupIntent::query()->find($signupIntentId);
+                if ($signupIntent && $signupIntent->status !== 'completed') {
+                    app(SignupOnboardingService::class)->markFailed($signupIntent);
+                }
+            }
+
             return;
         }
 
         $payment->update(['status' => 'failed']);
+    }
+
+    private function completeSignupIntent(SignupIntent $signupIntent, ?string $method = null): void
+    {
+        if ($signupIntent->status === 'completed') {
+            return;
+        }
+
+        try {
+            $service = app(SignupOnboardingService::class);
+            $signupIntent = $service->markPaid($signupIntent, $method);
+            $service->finalize($signupIntent);
+        } catch (\Throwable $e) {
+            Log::warning('Signup intent finalization failed', [
+                'signup_intent_id' => $signupIntent->id,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 
     private function extractPaymentMethodFromSession(array $session): ?string
@@ -133,5 +179,24 @@ class PayMongoWebhookController extends Controller
         $type = data_get($first, 'attributes.source.type');
 
         return is_string($type) ? $type : null;
+    }
+
+    private function activateTrialUpgrade(Payment $payment, string $planCode, ?string $method = null): void
+    {
+        if ($planCode === '') {
+            return;
+        }
+
+        try {
+            $service = app(SignupOnboardingService::class);
+            $plan = $service->findPlan($planCode);
+            $service->activateTenantSubscriptionFromPayment($payment, $plan, $method);
+        } catch (\Throwable $e) {
+            Log::warning('Trial upgrade activation failed', [
+                'payment_id' => $payment->id,
+                'plan_code' => $planCode,
+                'message' => $e->getMessage(),
+            ]);
+        }
     }
 }

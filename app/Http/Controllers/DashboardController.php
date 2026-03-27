@@ -18,6 +18,7 @@ class DashboardController extends Controller
 
     public function owner()
     {
+        $tenant = auth()->user()->tenant;
         $tenantId = auth()->user()->tenant_id;
 
         $leadsThisMonth = Lead::where('tenant_id', $tenantId)
@@ -64,7 +65,12 @@ class DashboardController extends Controller
             ->latest()
             ->paginate(10, ['*'], 'activity_page');
 
+        $trialDaysRemaining = $tenant?->trialDaysRemaining() ?? 0;
+        $trialEndsAt = $tenant?->trial_ends_at;
+        $trialActive = $tenant?->status === 'trial' && ! $tenant?->isTrialExpired();
+
         return view('dashboard.account-owner', compact(
+            'tenant',
             'leadsThisMonth',
             'wonCount',
             'lostCount',
@@ -73,7 +79,10 @@ class DashboardController extends Controller
             'pipelineAging',
             'revenueTotal',
             'paymentStatusTotals',
-            'teamActivity'
+            'teamActivity',
+            'trialDaysRemaining',
+            'trialEndsAt',
+            'trialActive'
         ));
     }
 
