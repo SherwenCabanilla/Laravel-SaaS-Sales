@@ -230,6 +230,10 @@
                         <summary>Can the platform support both sales and marketing teams?</summary>
                         <p>Yes. The system is built for shared funnel visibility while still giving different roles the dashboards and permissions they need.</p>
                     </details>
+                    <details class="faq__item" data-aos="fade-up" data-aos-delay="300">
+                        <summary>Can super admins update the landing hero demo video?</summary>
+                        <p>Yes. Super admins can upload, replace, or delete the landing hero demo video from the dashboard settings, and the fallback demo card appears automatically when no video is set.</p>
+                    </details>
                 </div>
             </section>
         </main>
