@@ -106,7 +106,7 @@ class FunnelController extends Controller
         ]);
     }
 
-    public function preview(Funnel $funnel, ?FunnelStep $step = null)
+    public function preview(Request $request, Funnel $funnel, ?FunnelStep $step = null)
     {
         $this->ensureTenantFunnelAccess($funnel);
 
@@ -119,6 +119,7 @@ class FunnelController extends Controller
 
         $resolvedStep = $step ?: $steps->first();
         abort_if(!$resolvedStep, 404);
+        $selectedPricing = $this->previewSelectedPricingFromRequest($request, $steps);
 
         return view('funnels.portal.step', [
             'funnel' => $funnel->load('tenant'),
@@ -127,6 +128,7 @@ class FunnelController extends Controller
             'allSteps' => $steps,
             'isFirstStep' => (int) $steps->first()->id === (int) $resolvedStep->id,
             'isPreview' => true,
+            'selectedPricing' => $selectedPricing,
         ]);
     }
 
@@ -1427,6 +1429,7 @@ class FunnelController extends Controller
             'subtitle' => 300,
             'badge' => 80,
             'ctaLabel' => 120,
+            'ctaActionStepSlug' => 120,
             'ctaLink' => 2048,
             'endAt' => 120,
             'label' => 120,
@@ -1436,6 +1439,9 @@ class FunnelController extends Controller
         ] as $k => $maxLen) {
             $v = $readStringAllowEmpty($k, $maxLen);
             if ($v !== null) {
+                if (in_array($k, ['price', 'regularPrice'], true) && preg_match('/^\s*\$/', $v) === 1) {
+                    $v = preg_replace('/^\s*\$/', '₱', $v) ?? $v;
+                }
                 $safe[$k] = $v;
             }
         }
@@ -1455,6 +1461,7 @@ class FunnelController extends Controller
             'vAlign' => ['top', 'center', 'bottom'],
             'slideshowMode' => ['manual', 'auto'],
             'actionType' => ['next_step', 'step', 'link', 'checkout', 'offer_accept', 'offer_decline'],
+            'ctaActionType' => ['next_step', 'step', 'link', 'checkout'],
             'positionMode' => ['absolute', 'relative', 'flow'],
         ] as $k => $allowed) {
             $v = $readEnum($k, $allowed);
@@ -1775,6 +1782,182 @@ class FunnelController extends Controller
         return $ordered->get($index + 1);
     }
 
+    private function previewSelectedPricingFromRequest(Request $request, $steps): ?array
+    {
+        $sourceStepSlug = strtolower(trim((string) $request->query('offer_step', '')));
+        $pricingId = trim((string) $request->query('offer_pricing', ''));
+        if ($sourceStepSlug === '' || $pricingId === '') {
+            return null;
+        }
+
+        $sourceStep = collect($steps)->first(function ($candidate) use ($sourceStepSlug) {
+            return strtolower(trim((string) ($candidate->slug ?? ''))) === $sourceStepSlug;
+        });
+
+        if ($sourceStep instanceof FunnelStep) {
+            $selection = $this->previewPricingSelectionFromStep($sourceStep, $pricingId);
+            if ($selection !== null) {
+                return $selection;
+            }
+        }
+
+        return $this->previewPricingSelectionSnapshotFromRequest($request, $pricingId, $sourceStepSlug);
+    }
+
+    private function previewPricingSelectionFromStep(FunnelStep $sourceStep, string $pricingId): ?array
+    {
+        $layout = $sourceStep->layout_json;
+        if (! is_array($layout)) {
+            return null;
+        }
+
+        $findInElements = function (array $elements) use (&$findInElements, $pricingId, $sourceStep): ?array {
+            foreach ($elements as $element) {
+                if (! is_array($element)) {
+                    continue;
+                }
+
+                if (
+                    strtolower(trim((string) ($element['type'] ?? ''))) === 'pricing'
+                    && trim((string) ($element['id'] ?? '')) === $pricingId
+                ) {
+                    $settings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
+                    $features = [];
+                    foreach ((is_array($settings['features'] ?? null) ? $settings['features'] : []) as $feature) {
+                        if (! is_scalar($feature)) {
+                            continue;
+                        }
+                        $featureText = mb_substr(trim((string) $feature), 0, 200);
+                        if ($featureText !== '') {
+                            $features[] = $featureText;
+                        }
+                    }
+
+                    return [
+                        'pricingId' => $pricingId,
+                        'sourceStepSlug' => (string) $sourceStep->slug,
+                        'plan' => mb_substr(trim((string) ($settings['plan'] ?? '')), 0, 200),
+                        'price' => $this->normalizePreviewMoneyDisplay($settings['price'] ?? ''),
+                        'regularPrice' => $this->normalizePreviewMoneyDisplay($settings['regularPrice'] ?? ''),
+                        'period' => mb_substr(trim((string) ($settings['period'] ?? '')), 0, 60),
+                        'subtitle' => mb_substr(trim((string) ($settings['subtitle'] ?? '')), 0, 300),
+                        'badge' => mb_substr(trim((string) ($settings['badge'] ?? '')), 0, 80),
+                        'features' => $features,
+                    ];
+                }
+
+                $slides = is_array(data_get($element, 'settings.slides')) ? data_get($element, 'settings.slides') : [];
+                foreach ($slides as $slide) {
+                    $nested = $findInElements(is_array($slide['elements'] ?? null) ? $slide['elements'] : []);
+                    if ($nested !== null) {
+                        return $nested;
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        $findInSections = function (array $sections) use ($findInElements): ?array {
+            foreach ($sections as $section) {
+                if (! is_array($section)) {
+                    continue;
+                }
+
+                $sectionSelection = $findInElements(is_array($section['elements'] ?? null) ? $section['elements'] : []);
+                if ($sectionSelection !== null) {
+                    return $sectionSelection;
+                }
+
+                foreach ((is_array($section['rows'] ?? null) ? $section['rows'] : []) as $row) {
+                    foreach ((is_array($row['columns'] ?? null) ? $row['columns'] : []) as $column) {
+                        $columnSelection = $findInElements(is_array($column['elements'] ?? null) ? $column['elements'] : []);
+                        if ($columnSelection !== null) {
+                            return $columnSelection;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        $rootSelection = $findInSections(is_array($layout['root'] ?? null) ? $layout['root'] : []);
+        if ($rootSelection !== null) {
+            return $rootSelection;
+        }
+
+        return $findInSections(is_array($layout['sections'] ?? null) ? $layout['sections'] : []);
+    }
+
+    private function previewPricingSelectionSnapshotFromRequest(Request $request, string $pricingId = '', string $sourceStepSlug = ''): ?array
+    {
+        $pricingId = trim($pricingId) !== '' ? trim($pricingId) : trim((string) $request->query('offer_pricing', ''));
+        $sourceStepSlug = trim($sourceStepSlug) !== '' ? strtolower(trim($sourceStepSlug)) : strtolower(trim((string) $request->query('offer_step', '')));
+        $plan = mb_substr(trim((string) $request->query('offer_plan', '')), 0, 200);
+        $price = $this->normalizePreviewMoneyDisplay($request->query('offer_price', ''));
+        $regularPrice = $this->normalizePreviewMoneyDisplay($request->query('offer_regular_price', ''));
+        $period = mb_substr(trim((string) $request->query('offer_period', '')), 0, 60);
+        $subtitle = mb_substr(trim((string) $request->query('offer_subtitle', '')), 0, 300);
+        $badge = mb_substr(trim((string) $request->query('offer_badge', '')), 0, 80);
+        $features = [];
+        $rawFeatures = trim((string) $request->query('offer_features', ''));
+        if ($rawFeatures !== '') {
+            $decoded = json_decode($rawFeatures, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $feature) {
+                    if (! is_scalar($feature)) {
+                        continue;
+                    }
+                    $featureText = mb_substr(trim((string) $feature), 0, 200);
+                    if ($featureText !== '') {
+                        $features[] = $featureText;
+                    }
+                }
+            }
+        }
+
+        if (
+            $pricingId === ''
+            && $sourceStepSlug === ''
+            && $plan === ''
+            && $price === ''
+            && $regularPrice === ''
+            && $period === ''
+            && $subtitle === ''
+            && $badge === ''
+            && $features === []
+        ) {
+            return null;
+        }
+
+        return [
+            'pricingId' => $pricingId,
+            'sourceStepSlug' => $sourceStepSlug,
+            'plan' => $plan,
+            'price' => $price,
+            'regularPrice' => $regularPrice,
+            'period' => $period,
+            'subtitle' => $subtitle,
+            'badge' => $badge,
+            'features' => $features,
+        ];
+    }
+
+    private function normalizePreviewMoneyDisplay(mixed $raw): string
+    {
+        $value = trim((string) $raw);
+        if ($value === '') {
+            return '';
+        }
+
+        if (preg_match('/^\s*\$/', $value) === 1) {
+            $value = preg_replace('/^\s*\$/', '₱', $value) ?? $value;
+        }
+
+        return $value;
+    }
+
     private function validatePublishReadiness($steps): array
     {
         $ordered = collect($steps)->values();
@@ -1858,6 +2041,23 @@ class FunnelController extends Controller
                         $stats['offerAcceptActionCount']++;
                     } elseif ($actionType === 'offer_decline') {
                         $stats['offerDeclineActionCount']++;
+                    }
+                }
+                if ($type === 'pricing') {
+                    $actionType = strtolower(trim((string) ($settings['ctaActionType'] ?? '')));
+                    $link = trim((string) ($settings['ctaLink'] ?? ''));
+                    $stepSlug = trim((string) ($settings['ctaActionStepSlug'] ?? ''));
+                    if ($actionType === '') {
+                        $actionType = ($link !== '' && $link !== '#') ? 'link' : 'next_step';
+                    }
+                    if ($actionType === 'next_step') {
+                        $stats['navigateActionCount']++;
+                    } elseif ($actionType === 'step' && $stepSlug !== '') {
+                        $stats['navigateActionCount']++;
+                    } elseif ($actionType === 'link' && $link !== '' && $link !== '#') {
+                        $stats['navigateActionCount']++;
+                    } elseif ($actionType === 'checkout') {
+                        $stats['checkoutActionCount']++;
                     }
                 }
                 if ($type === 'carousel') {
