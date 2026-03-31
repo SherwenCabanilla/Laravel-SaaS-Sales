@@ -289,6 +289,12 @@ class FunnelTrackingService
                 'downsell_acceptance_rate' => $this->rate($downsellAccepted, $downsellAccepted + $downsellDeclined),
                 'abandoned_checkout_rate' => $this->rate($abandonedCount, $checkoutStarts),
             ],
+            'offer_counts' => [
+                'upsell_accepted' => $upsellAccepted,
+                'upsell_declined' => $upsellDeclined,
+                'downsell_accepted' => $downsellAccepted,
+                'downsell_declined' => $downsellDeclined,
+            ],
             'step_visits' => $stepVisits,
             'drop_off' => $dropOff,
             'step_event_breakdown' => $events

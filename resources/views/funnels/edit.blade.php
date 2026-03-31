@@ -419,8 +419,12 @@
 .page-mgr-item.is-dragging{opacity:.55}
 .page-mgr-item.drag-before{box-shadow:inset 0 2px 0 #2E1244}
 .page-mgr-item.drag-after{box-shadow:inset 0 -2px 0 #2E1244}
+.page-mgr-item-copy{display:grid;gap:2px;min-width:0}
+.page-mgr-item-title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page-mgr-item-meta{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}
 .page-mgr-item-handle{font-size:12px;color:#64748b}
 .page-mgr-item.is-selected .page-mgr-item-handle{color:rgba(255,255,255,.85)}
+.page-mgr-item.is-selected .page-mgr-item-meta{color:rgba(255,255,255,.78)}
 .page-mgr-section{margin-bottom:14px;padding:12px;border:1px solid #E6E1EF;border-radius:12px;background:#F3EEF7}
 .version-modal-card{width:min(460px,96vw)}
 .version-modal-body{padding:18px 20px;background:#F3EEF7;display:flex;flex-direction:column;gap:12px}
@@ -671,6 +675,8 @@
                         <option value="opt_in">Opt-in</option>
                         <option value="sales">Sales</option>
                         <option value="checkout">Checkout</option>
+                        <option value="upsell">Upsell</option>
+                        <option value="downsell">Downsell</option>
                         <option value="thank_you">Thank You</option>
                         <option value="custom">Custom</option>
                     </select>
@@ -684,6 +690,17 @@
                     <h5>Manage Selected Page</h5>
                     <label for="pageMgrRenameTitle">Title</label>
                     <input id="pageMgrRenameTitle" type="text" placeholder="Selected page title">
+                    <label for="pageMgrRenameType">Type</label>
+                    <select id="pageMgrRenameType">
+                        <option value="landing">Landing</option>
+                        <option value="opt_in">Opt-in</option>
+                        <option value="sales">Sales</option>
+                        <option value="checkout">Checkout</option>
+                        <option value="upsell">Upsell</option>
+                        <option value="downsell">Downsell</option>
+                        <option value="thank_you">Thank You</option>
+                        <option value="custom">Custom</option>
+                    </select>
                     <label for="pageMgrRenameSlug">Slug</label>
                     <input id="pageMgrRenameSlug" type="text" placeholder="selected-page-slug">
                     <label for="pageMgrRenameTags">Step tags (comma separated)</label>
@@ -857,7 +874,7 @@ const iconCatalog=[
     {name:"linkedin-in",label:"LinkedIn",keywords:"social",styles:["brands"]},
 ];
 
-const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameType=document.getElementById("pageMgrRenameType"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
 let _autoSaveTimer=null;
 let _autoSaveInFlight=false;
 let _autoSavePending=false;
@@ -945,7 +962,7 @@ if(canvasBgReset){
 const uid=p=>p+"_"+Math.random().toString(36).slice(2,10),clone=o=>JSON.parse(JSON.stringify(o));
 const defaults=(stepType)=>{
     const t=String(stepType||"").toLowerCase();
-    if(t==="landing"||t==="opt_in"||t==="sales"||t==="checkout"||t==="thank_you"){
+    if(t==="landing"||t==="opt_in"||t==="sales"||t==="checkout"||t==="upsell"||t==="downsell"||t==="thank_you"){
         return {root:[],sections:[]};
     }
     return {
@@ -1928,6 +1945,83 @@ function templateMembershipCheckoutLayout(){
     });
     return buildTemplateLayout("#F3EEF7",[section,faq]);
 }
+function templateUpsellVipUpgradeLayout(){
+    var hero=makeSplitInfoSection(
+        makePanelColumn([
+            makeEl("heading","Wait. Add the VIP Upgrade before you go.",{fontSize:"30px",color:"#240E35",fontWeight:"800",margin:"0 0 12px"},{}),
+            makeEl("text","This upsell page is built for a fast yes after checkout. Highlight the added transformation, not a whole new pitch.",{fontSize:"15px",color:"#64748b",lineHeight:"1.7",margin:"0 0 18px"},{}),
+            makeEl("text",buildChecklistHtml("Use this space to explain:",[
+                "What buyers get on top of the original purchase",
+                "Why adding it now is the best time",
+                "What result becomes easier or faster with this upgrade"
+            ]),{fontSize:"15px",color:"#64748b",lineHeight:"1.7",margin:"0"},{}),
+            makeEl("button","Yes, Add VIP Access",{backgroundColor:"#0F766E",color:"#ffffff",borderRadius:"999px",padding:"12px 18px",margin:"20px 10px 0 0"},{actionType:"offer_accept",link:"#"}),
+            makeEl("button","No, Keep My Original Order",{backgroundColor:"#E5E7EB",color:"#240E35",borderRadius:"999px",padding:"12px 18px",margin:"20px 0 0"},{actionType:"offer_decline",link:"#"})
+        ]),
+        makePanelColumn([
+            makePricingCardEl({
+                plan:"VIP Upgrade",
+                price:"₱19",
+                period:"",
+                subtitle:"Extra support, premium resources, and a faster path to results",
+                features:["Priority Q and A","Bonus implementation guide","VIP-only template pack"],
+                badge:"One-Time Upgrade"
+            },makeBareCardStyle()),
+            makeTestimonialCardEl("The post-purchase upgrade worked because it felt like the natural next step, not a random extra.","Lia Ramos","Program Creator",makeBareCardStyle({margin:"18px 0 0"}))
+        ]),
+        {alignItems:"stretch"}
+    );
+    var support=makeCardGridSection({
+        title:"What makes a strong upsell page",
+        body:"Keep it specific, immediate, and clearly connected to the product they just bought.",
+        columns:[
+            makeFeatureCardColumn("bolt","Immediate win","Show how the upgrade helps them get results faster."),
+            makeFeatureCardColumn("star","Higher-touch value","Position the upsell as premium support or premium access."),
+            makeFeatureCardColumn("circle-check","Simple choice","Keep the decision focused with one accept and one decline path.")
+        ]
+    });
+    return buildTemplateLayout("#F3FFF8",[hero,support]);
+}
+function templateDownsellLiteLayout(){
+    var hero=makeSplitInfoSection(
+        makePanelColumn([
+            makeEl("heading","Not ready for the full upgrade?",{fontSize:"30px",color:"#240E35",fontWeight:"800",margin:"0 0 12px"},{}),
+            makeEl("text","This downsell page gives a simpler fallback offer after an upsell decline. Make it feel easier, lighter, and lower commitment.",{fontSize:"15px",color:"#64748b",lineHeight:"1.7",margin:"0 0 18px"},{}),
+            makeEl("text",buildChecklistHtml("Use the downsell to offer:",[
+                "A lower price point",
+                "A lighter version of the bonus",
+                "A reduced-commitment alternative"
+            ]),{fontSize:"15px",color:"#64748b",lineHeight:"1.7",margin:"0"},{}),
+            makeEl("button","Yes, Give Me the Lite Version",{backgroundColor:"#2563EB",color:"#ffffff",borderRadius:"999px",padding:"12px 18px",margin:"20px 10px 0 0"},{actionType:"offer_accept",link:"#"}),
+            makeEl("button","No Thanks, Finish My Order",{backgroundColor:"#E5E7EB",color:"#240E35",borderRadius:"999px",padding:"12px 18px",margin:"20px 0 0"},{actionType:"offer_decline",link:"#"})
+        ]),
+        makePanelColumn([
+            makePricingCardEl({
+                plan:"Lite Bonus Pack",
+                price:"₱9",
+                period:"",
+                subtitle:"A smaller add-on for buyers who want one practical extra",
+                features:["Quick-start checklist","Bonus worksheet","Mini resource pack"],
+                badge:"Lower Commitment"
+            },makeBareCardStyle()),
+            makeFaqCardEl([
+                {q:"Why include a downsell?",a:"It gives buyers a softer second option instead of ending the offer sequence immediately."},
+                {q:"What should change from the upsell?",a:"Usually the price, scope, or commitment level should feel easier to accept."}
+            ],makeBareCardStyle({margin:"18px 0 0"}))
+        ]),
+        {alignItems:"stretch"}
+    );
+    var guidance=makeCardGridSection({
+        title:"How to position the downsell",
+        body:"Keep it obviously related to the upsell, but easier to say yes to in the moment.",
+        columns:[
+            makeFeatureCardColumn("tag","Reduce the price","A lower price is the clearest signal that this is the easier option."),
+            makeFeatureCardColumn("layer-group","Trim the scope","Offer a slimmer version instead of the full premium upgrade."),
+            makeFeatureCardColumn("heart","Protect goodwill","Make the fallback feel helpful rather than pushy.")
+        ]
+    });
+    return buildTemplateLayout("#F5F9FF",[hero,guidance]);
+}
 function templateThankYouDownloadLayout(){
     var hero=makeCenteredCtaSection({
         kicker:"Download Ready",
@@ -2087,6 +2181,12 @@ const checkoutTemplates=[
     {id:"checkout_bundle",name:"Bundle Checkout",description:"Stacked-offer checkout for bundles and bonus-heavy offers.",tags:["Checkout","Bundle"],preview:"pricing",build:templateBundleCheckoutLayout},
     {id:"checkout_membership",name:"Membership Checkout",description:"Recurring-offer checkout layout for subscriptions and communities.",tags:["Checkout","Membership"],preview:"pricing",build:templateMembershipCheckoutLayout}
 ];
+const upsellTemplates=[
+    {id:"upsell_vip_upgrade",name:"VIP Upgrade",description:"Post-purchase upgrade page with a premium add-on offer and clear accept/decline actions.",tags:["Upsell","Offer"],preview:"pricing",build:templateUpsellVipUpgradeLayout}
+];
+const downsellTemplates=[
+    {id:"downsell_lite_offer",name:"Lite Offer",description:"Fallback post-purchase page for a lighter, lower-commitment offer after an upsell decline.",tags:["Downsell","Offer"],preview:"pricing",build:templateDownsellLiteLayout}
+];
 const thankYouTemplates=[
     {id:"thankyou_centered",name:"Classic Thank You",description:"Centered confirmation page with a clean next step.",tags:["Thank You","Starter"],preview:"banner",build:templateThankYouLayout},
     {id:"thankyou_download",name:"Download Delivery",description:"Thank-you page for guides, replays, and resource delivery.",tags:["Thank You","Download"],preview:"banner",build:templateThankYouDownloadLayout},
@@ -2106,14 +2206,13 @@ const builtInTemplatesByType={
     opt_in:optInTemplates,
     sales:salesTemplates,
     checkout:checkoutTemplates,
+    upsell:upsellTemplates,
+    downsell:downsellTemplates,
     thank_you:thankYouTemplates,
-    custom:customTemplates,
-    upsell:salesTemplates,
-    downsell:salesTemplates
+    custom:customTemplates
 };
 function normalizeTemplateType(type){
     var t=String(type||"custom").toLowerCase();
-    if(t==="upsell"||t==="downsell")return "sales";
     return builtInTemplatesByType[t]?t:"custom";
 }
 function findTemplateById(type,id){
@@ -2222,11 +2321,32 @@ function wireButtonElementForStep(el,currentStep,stepList){
     if(!el||typeof el!=="object")return;
     el.settings=(el.settings&&typeof el.settings==="object")?el.settings:{};
     var currentType=templateStepType(currentStep);
+    var currentAction=String(el.settings.actionType||"").trim().toLowerCase();
+    var labelText=String(el.content||"").replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().toLowerCase();
     if(currentType==="checkout"){
         el.settings.actionType="checkout";
         el.settings.actionStepSlug="";
         el.settings.link="#";
         return;
+    }
+    if(currentType==="upsell"||currentType==="downsell"){
+        if(currentAction==="offer_accept"||currentAction==="offer_decline"){
+            el.settings.actionStepSlug="";
+            el.settings.link="#";
+            return;
+        }
+        if(/(no thanks|skip|finish my order|keep my original order|decline)/.test(labelText)){
+            el.settings.actionType="offer_decline";
+            el.settings.actionStepSlug="";
+            el.settings.link="#";
+            return;
+        }
+        if(/(yes|add|upgrade|vip|lite version|give me|accept)/.test(labelText)){
+            el.settings.actionType="offer_accept";
+            el.settings.actionStepSlug="";
+            el.settings.link="#";
+            return;
+        }
     }
     var target=chooseTemplateTargetStep(stepList,currentStep,el.content);
     if(target&&String(target.id||"")!==String((currentStep&&currentStep.id)||"")){
@@ -2246,6 +2366,15 @@ function wirePricingElementForStep(el,currentStep,stepList){
     if(currentType==="checkout"){
         if(String(el.settings.ctaLabel||"").trim()==="")el.settings.ctaLabel="Pay Now";
         el.settings.ctaActionType="checkout";
+        el.settings.ctaActionStepSlug="";
+        el.settings.ctaLink="#";
+        return;
+    }
+    if(currentType==="upsell"||currentType==="downsell"){
+        if(String(el.settings.ctaLabel||"").trim()===""){
+            el.settings.ctaLabel=currentType==="downsell"?"Yes, Add This Offer":"Yes, Add This Upgrade";
+        }
+        el.settings.ctaActionType="offer_accept";
         el.settings.ctaActionStepSlug="";
         el.settings.ctaLink="#";
         return;
@@ -2901,6 +3030,15 @@ const funnelTemplatePacks=[
         preview:"cards",
         theme:{primary:"#0369A1",accent:"#10B981",heading:"#0F172A",body:"#475569",surface:"#ffffff",soft:"#ECFEFF",border:"#A5F3FC",canvasBg:"#F2FEFF"},
         templates:{landing:"landing_app_showcase",opt_in:"optin_waitlist_launch",sales:"sales_video_letter",checkout:"checkout_membership",thank_you:"thankyou_community",custom:"custom_hero_video"}
+    },
+    {
+        id:"pack_offer_ascension",
+        name:"Offer Ascension",
+        description:"Complete funnel system with checkout, premium upsell, lighter downsell, and a thank-you close for post-purchase monetization.",
+        tags:["All Pages","Upsell","Downsell"],
+        preview:"pricing",
+        theme:{primary:"#0F766E",accent:"#2563EB",heading:"#083344",body:"#52606D",surface:"#ffffff",soft:"#F0FDFA",border:"#BAE6FD",canvasBg:"#F6FFFE"},
+        templates:{landing:"landing_hero_launch",opt_in:"optin_lead_capture",sales:"sales_offer_stack",checkout:"checkout_bundle",upsell:"upsell_vip_upgrade",downsell:"downsell_lite_offer",thank_you:"thankyou_community",custom:"custom_pricing_faq"}
     }
 ];
 function currentTemplateType(){
@@ -2992,47 +3130,131 @@ function applyPageTemplate(tpl){
     if(saveMsg)saveMsg.textContent="Template applied and call to actions auto-connected. Not saved yet.";
 }
 var templateLibraryMode="page";
+const funnelPackStepOrder=["landing","opt_in","sales","checkout","upsell","downsell","thank_you"];
 function setTemplateLibraryMode(mode){
     templateLibraryMode=(String(mode||"").toLowerCase()==="funnel")?"funnel":"page";
     renderTemplateLibrary();
 }
+function funnelPackManagedTypes(pack){
+    var templates=(pack&&pack.templates&&typeof pack.templates==="object")?pack.templates:{};
+    return funnelPackStepOrder.filter(function(type){
+        return !!templates[type];
+    });
+}
+function createStepForPack(type){
+    var normalizedType=String(type||"custom").toLowerCase();
+    var title=defaultStepTitleForType(normalizedType);
+    var slug=uniqueStepSlug(slugifyPage(title));
+    return requestJson(stepStoreUrl,"POST",{
+        title:title,
+        slug:slug,
+        type:normalizedType
+    }).then(function(resp){
+        var created=applyStepUpdate((resp&&resp.step)||resp||{});
+        return created;
+    });
+}
+function desiredOrderIdsForPack(pack){
+    sortStepsByPosition();
+    var managedTypes=funnelPackManagedTypes(pack);
+    var managedSet={};
+    managedTypes.forEach(function(type){managedSet[type]=true;});
+    var ordered=[];
+    managedTypes.forEach(function(type){
+        steps
+            .filter(function(step){return String((step&&step.type)||"").toLowerCase()===type;})
+            .sort(function(a,b){return Number(a.position||0)-Number(b.position||0);})
+            .forEach(function(step){ordered.push(Number(step.id));});
+    });
+    steps
+        .filter(function(step){return !managedSet[String((step&&step.type)||"").toLowerCase()];})
+        .sort(function(a,b){return Number(a.position||0)-Number(b.position||0);})
+        .forEach(function(step){ordered.push(Number(step.id));});
+    return ordered;
+}
+function ensurePackStepsExist(pack){
+    var managedTypes=funnelPackManagedTypes(pack);
+    var sequence=Promise.resolve([]);
+    managedTypes.forEach(function(type){
+        sequence=sequence.then(function(createdTypes){
+            var exists=steps.some(function(step){
+                return String((step&&step.type)||"").toLowerCase()===type;
+            });
+            if(exists)return createdTypes;
+            return createStepForPack(type).then(function(){
+                createdTypes.push(type);
+                return createdTypes;
+            });
+        });
+    });
+    return sequence.then(function(createdTypes){
+        var desiredIds=desiredOrderIdsForPack(pack);
+        var currentIds=orderedStepIdsWithPositions();
+        var needsReorder=desiredIds.length===currentIds.length && desiredIds.some(function(id,idx){
+            return Number(id)!==Number(currentIds[idx]);
+        });
+        var reorderPromise=needsReorder ? persistStepOrder(desiredIds) : Promise.resolve();
+        return reorderPromise.then(function(){
+            renderStepOptions();
+            syncPageManagerList();
+            return createdTypes;
+        });
+    });
+}
 function applyFunnelTemplatePack(pack){
     if(!pack||!steps.length)return;
     var current=cur();
+    var managedTypes=funnelPackManagedTypes(pack);
+    var missingTypes=managedTypes.filter(function(type){
+        return !steps.some(function(step){
+            return String((step&&step.type)||"").toLowerCase()===type;
+        });
+    });
     var pageCount=steps.length;
     var msg='Apply the "'+String(pack.name||"funnel pack")+'" funnel pack to all '+pageCount+' pages? This will replace every page layout in the funnel.';
+    if(missingTypes.length){
+        msg+=' Missing pages will also be created: '+missingTypes.map(pageTypeLabel).join(", ")+'.';
+    }
     confirmTemplateApply(msg).then(function(ok){
         if(!ok)return;
         saveToHistory();
-        var currentStepId=current?+current.id:null;
-        var nextStateLayout=null;
-        steps.forEach(function(step){
-            if(!step)return;
-            var built=buildPackLayout(pack,step,steps);
-            step.layout_json=clone(built.layout);
-            step.background_color=(built.layout&&built.layout.__editor&&built.layout.__editor.canvasBg)?String(built.layout.__editor.canvasBg):"";
-            step.template=String(pack.id||"funnel_pack")+"__"+String((built.template&&built.template.id)||normalizeTemplateType(step.type));
-            if(normalizeTemplateType(step.type)==="checkout"){
-                var packCheckoutAmount=derivePrimaryPricingAmountFromLayout(built.layout);
-                if(packCheckoutAmount!==null&&packCheckoutAmount>0){
-                    step.price=packCheckoutAmount;
+        ensurePackStepsExist(pack).then(function(createdTypes){
+            var currentStepId=current?+current.id:null;
+            var nextStateLayout=null;
+            steps.forEach(function(step){
+                if(!step)return;
+                var built=buildPackLayout(pack,step,steps);
+                step.layout_json=clone(built.layout);
+                step.background_color=(built.layout&&built.layout.__editor&&built.layout.__editor.canvasBg)?String(built.layout.__editor.canvasBg):"";
+                step.template=String(pack.id||"funnel_pack")+"__"+String((built.template&&built.template.id)||normalizeTemplateType(step.type));
+                if(normalizeTemplateType(step.type)==="checkout"){
+                    var packCheckoutAmount=derivePrimaryPricingAmountFromLayout(built.layout);
+                    if(packCheckoutAmount!==null&&packCheckoutAmount>0){
+                        step.price=packCheckoutAmount;
+                    }
                 }
+                if(currentStepId!==null&&+step.id===currentStepId){
+                    nextStateLayout=clone(built.layout);
+                }
+            });
+            state.sel=null;
+            state.carouselSel=null;
+            state.editingEl=null;
+            state.linkPick=null;
+            if(nextStateLayout)state.layout=nextStateLayout;
+            applyCanvasBgPreference();
+            syncCanvasBgControls();
+            renderTemplateLibrary();
+            render();
+            queueAutoSave();
+            if(saveMsg){
+                saveMsg.textContent=createdTypes.length
+                    ? "Funnel pack applied and created missing pages: "+createdTypes.map(pageTypeLabel).join(", ")+". Not saved yet."
+                    : "Funnel pack applied to all pages with auto-connected call to actions. Not saved yet.";
             }
-            if(currentStepId!==null&&+step.id===currentStepId){
-                nextStateLayout=clone(built.layout);
-            }
+        }).catch(function(err){
+            showBuilderToast((err&&err.message)||"Failed to apply funnel pack.","error");
         });
-        state.sel=null;
-        state.carouselSel=null;
-        state.editingEl=null;
-        state.linkPick=null;
-        if(nextStateLayout)state.layout=nextStateLayout;
-        applyCanvasBgPreference();
-        syncCanvasBgControls();
-        renderTemplateLibrary();
-        render();
-        queueAutoSave();
-        if(saveMsg)saveMsg.textContent="Funnel pack applied to all pages with auto-connected call to actions. Not saved yet.";
     });
 }
 function renderTemplateLibrary(){
@@ -3322,6 +3544,8 @@ function pageTypeLabel(v){
     if(t==="opt_in")return "Opt-in";
     if(t==="thank_you")return "Thank You";
     if(t==="checkout")return "Checkout";
+    if(t==="upsell")return "Upsell";
+    if(t==="downsell")return "Downsell";
     if(t==="sales")return "Sales";
     if(t==="landing")return "Landing";
     if(t==="custom")return "Custom";
@@ -3436,6 +3660,8 @@ function defaultStepTitleForType(type){
     if(t==="opt_in")return "Opt-in";
     if(t==="thank_you")return "Thank You";
     if(t==="checkout")return "Checkout";
+    if(t==="upsell")return "Upsell";
+    if(t==="downsell")return "Downsell";
     if(t==="sales")return "Sales";
     if(t==="landing")return "Landing";
     return "Custom Page";
@@ -3582,11 +3808,13 @@ function syncRenameDraftFromSelected(){
     var s=cur();
     if(!s){
         if(pageMgrRenameTitle)pageMgrRenameTitle.value="";
+        if(pageMgrRenameType)pageMgrRenameType.value="landing";
         if(pageMgrRenameSlug)pageMgrRenameSlug.value="";
         if(pageMgrRenameTags)pageMgrRenameTags.value="";
         return;
     }
     if(pageMgrRenameTitle)pageMgrRenameTitle.value=String(s.title||"");
+    if(pageMgrRenameType)pageMgrRenameType.value=normalizeTemplateType(s.type);
     if(pageMgrRenameSlug)pageMgrRenameSlug.value=String(s.slug||"");
     if(pageMgrRenameTags)pageMgrRenameTags.value=normalizeTagArray(s.step_tags).join(", ");
 }
@@ -3601,7 +3829,7 @@ function syncPageManagerList(){
         item.setAttribute("aria-selected",String(state.sid)===String(s.id)?"true":"false");
         item.setAttribute("data-id",String(s.id));
         item.setAttribute("draggable","true");
-        item.innerHTML='<span>'+String(s.title||("Step "+String(s.id))).replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span><span class="page-mgr-item-handle"><i class="fas fa-grip-vertical"></i></span>';
+        item.innerHTML='<div class="page-mgr-item-copy"><span class="page-mgr-item-title">'+String(s.title||("Step "+String(s.id))).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span><span class="page-mgr-item-meta">'+pageTypeLabel(s.type).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span></div><span class="page-mgr-item-handle"><i class="fas fa-grip-vertical"></i></span>';
         item.addEventListener("click",function(){
             var id=Number(item.getAttribute("data-id")||0);
             if(!id)return;
@@ -3774,6 +4002,7 @@ function renamePageFromManager(){
     var s=cur();
     if(!s){showBuilderToast("No page selected.","error");return;}
     var nextTitle=String((pageMgrRenameTitle&&pageMgrRenameTitle.value)||"").trim();
+    var nextType=normalizeTemplateType((pageMgrRenameType&&pageMgrRenameType.value)||s.type||"custom");
     if(nextTitle===""){
         showBuilderToast("Page title is required.","error");
         if(pageMgrRenameTitle)pageMgrRenameTitle.focus();
@@ -3794,16 +4023,16 @@ function renamePageFromManager(){
         if(!window.confirm(msg))return;
     }
     var nextTags=normalizeTagArray((pageMgrRenameTags&&pageMgrRenameTags.value)||"");
-    var payload=buildStepPayload(s,{title:nextTitle,slug:nextSlug,step_tags:nextTags});
+    var payload=buildStepPayload(s,{title:nextTitle,slug:nextSlug,type:nextType,step_tags:nextTags});
     requestJson(stepUrlFromTpl(stepUpdateTpl,s.id),"PUT",payload).then(function(resp){
         var updated=applyStepUpdate((resp&&resp.step)||payload);
         state.sid=updated.id;
         renderStepOptions();
         syncPageManagerList();
         syncRenameDraftFromSelected();
-        showBuilderToast("Page renamed.","success");
+        showBuilderToast("Page updated.","success");
     }).catch(function(err){
-        showBuilderToast((err&&err.message)||"Failed to rename page.","error");
+        showBuilderToast((err&&err.message)||"Failed to update page.","error");
     });
 }
 function deletePageFromManager(){
@@ -10809,7 +11038,9 @@ function renderSettings(){
         var padDef=[18,18,18,18],marDef=[0,0,0,0];
         function renderPricingEditor(){
             var pad=parseSpacing(t.style&&t.style.padding,padDef),mar=parseSpacing(t.style&&t.style.margin,marDef);
-            var isCheckoutPricingEditor=templateStepType(cur())==="checkout";
+            var currentPricingStepType=templateStepType(cur());
+            var isCheckoutPricingEditor=currentPricingStepType==="checkout";
+            var isOfferPricingEditor=currentPricingStepType==="upsell"||currentPricingStepType==="downsell";
             var feats=t.settings.features||[];
             var featCards=feats.map(function(f,idx){
                 var val=String(f||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -10825,7 +11056,9 @@ function renderSettings(){
             var priceCtaLabelField=document.getElementById("priceCtaLabel");
             var priceCtaLinkField=document.getElementById("priceCtaLink");
             if(priceCtaLabelField&&priceCtaLinkField){
-                var isCheckoutPricingStep=templateStepType(cur())==="checkout";
+                var pricingStepType=templateStepType(cur());
+                var isCheckoutPricingStep=pricingStepType==="checkout";
+                var isOfferPricingStep=pricingStepType==="upsell"||pricingStepType==="downsell";
                 var pricingStepOptions=steps.filter(function(s){return String(s.id)!==String(state.sid);}).map(function(s){
                     var label=String(s.title||s.type||"Step").trim();
                     var safeLabel=label.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -10836,10 +11069,14 @@ function renderSettings(){
                 if(pricingStepOptions==="")pricingStepOptions='<option value="">No other pages found</option>';
                 var pricingActionOptions=isCheckoutPricingStep
                     ? '<option value="checkout">Checkout submit</option>'
-                    : '<option value="next_step">Smart next page</option><option value="step">Specific step</option><option value="link">Custom URL</option>';
+                    : (isOfferPricingStep
+                    ? '<option value="offer_accept">Accept offer</option><option value="offer_decline">Decline offer</option><option value="link">Custom URL</option>'
+                    : '<option value="next_step">Smart next page</option><option value="step">Specific step</option><option value="link">Custom URL</option>');
                 var pricingActionMeta=isCheckoutPricingStep
                     ? 'Checkout-step pricing buttons always submit payment to PayMongo.'
-                    : 'On sales pages, pricing buttons automatically carry the selected plan to checkout.';
+                    : (isOfferPricingStep
+                    ? 'On upsell and downsell pages, pricing buttons should usually record an offer decision instead of acting like checkout.'
+                    : 'On sales pages, pricing buttons automatically carry the selected plan to checkout.');
                 priceCtaLabelField.insertAdjacentHTML("afterend",'<label>Button action</label><select id="priceCtaAction">'+pricingActionOptions+'</select><div id="priceCtaStepWrap" style="display:none;"><label>Target page</label><select id="priceCtaStep"'+(pricingStepDisabled?' disabled':'')+'>'+pricingStepOptions+'</select></div><div class="meta" id="priceCtaMeta" style="margin:6px 0 0;">'+pricingActionMeta+'</div>');
             }
             bind("pricePlan",(t.settings&&t.settings.plan)||"",v=>{t.settings=t.settings||{};t.settings.plan=v;renderCanvas();},{undo:true});
@@ -10905,17 +11142,26 @@ function renderSettings(){
             };
             bind("priceCtaLabel",(t.settings&&t.settings.ctaLabel)||"",v=>{t.settings=t.settings||{};t.settings.ctaLabel=v;renderCanvas();},{undo:true});
             t.settings=t.settings||{};
-            var isCheckoutPricingStep=templateStepType(cur())==="checkout";
-            var allowedPricingActions=isCheckoutPricingStep?["checkout"]:["next_step","step","link"];
+            var pricingStepType=templateStepType(cur());
+            var isCheckoutPricingStep=pricingStepType==="checkout";
+            var isOfferPricingStep=pricingStepType==="upsell"||pricingStepType==="downsell";
+            var allowedPricingActions=isCheckoutPricingStep?["checkout"]:(isOfferPricingStep?["offer_accept","offer_decline","link"]:["next_step","step","link"]);
             var curPricingAction=String(t.settings.ctaActionType||"").trim().toLowerCase();
             if(allowedPricingActions.indexOf(curPricingAction)<0){
                 var legacyPricingLink=String(t.settings.ctaLink||"").trim();
-                curPricingAction=(legacyPricingLink!==""&&legacyPricingLink!=="#")?"link":"next_step";
+                curPricingAction=(legacyPricingLink!==""&&legacyPricingLink!=="#")?"link":(isOfferPricingStep?"offer_accept":"next_step");
             }
             if(isCheckoutPricingStep){
                 curPricingAction="checkout";
                 if(String(t.settings.ctaLabel||"").trim()==="")t.settings.ctaLabel="Pay Now";
                 t.settings.ctaLink="#";
+                t.settings.ctaActionStepSlug="";
+            }else if(isOfferPricingStep){
+                if(String(t.settings.ctaLabel||"").trim()==="")t.settings.ctaLabel="Yes, Add This Offer";
+                if(curPricingAction!=="link"){
+                    curPricingAction="offer_accept";
+                    t.settings.ctaLink="#";
+                }
                 t.settings.ctaActionStepSlug="";
             }else if(curPricingAction==="checkout"){
                 var smartTarget=choosePricingTargetStep(steps,cur(),String(t.settings.ctaLabel||"").trim()||t.settings.plan);
@@ -10948,11 +11194,17 @@ function renderSettings(){
                 if(priceCtaMeta){
                     priceCtaMeta.textContent=isCheckoutPricingStep
                         ? "Checkout-step pricing buttons always submit payment to PayMongo."
+                        : (isOfferPricingStep
+                        ? (action==="link"
+                            ? "Use a custom URL only when you really want to leave the normal offer flow."
+                            : (action==="offer_decline"
+                                ? "This pricing button will submit the offer decline flow for the current upsell or downsell page."
+                                : "This pricing button will submit the offer accept flow for the current upsell or downsell page."))
                         : (action==="step"
                         ? "This pricing button will open the chosen page and carry the selected plan and price."
                         : (action==="link"
                         ? "Use a custom URL only when you really want to leave the normal funnel flow."
-                        : "Smart next page will send buyers to the best next step, usually checkout, and carry the selected pricing."));
+                        : "Smart next page will send buyers to the best next step, usually checkout, and carry the selected pricing.")));
                 }
             }
             if(priceCtaAction){
@@ -10963,6 +11215,7 @@ function renderSettings(){
                     if(t.settings.ctaActionType!=="step")t.settings.ctaActionStepSlug="";
                     if(t.settings.ctaActionType!=="link")t.settings.ctaLink="#";
                     if(isCheckoutPricingStep&&String(t.settings.ctaLabel||"").trim()==="")t.settings.ctaLabel="Pay Now";
+                    if(isOfferPricingStep&&t.settings.ctaActionType!=="link")t.settings.ctaActionStepSlug="";
                     syncPriceCtaControls();
                     renderCanvas();
                 });
