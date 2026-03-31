@@ -182,7 +182,7 @@
                         <tr>
                             <td>{{ ucfirst($status) }}</td>
                             <td>{{ (int) ($row->count ?? 0) }}</td>
-                            <td>â‚±{{ number_format((float) ($row->total ?? 0), 2) }}</td>
+                            <td>{{ number_format((float) ($row->total ?? 0), 2) }}</td>
                         </tr>
                     @endforeach
                 </tbody>
