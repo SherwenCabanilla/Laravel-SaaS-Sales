@@ -310,6 +310,12 @@ class FunnelTrackingService
                 ['label' => 'Paid', 'count' => $paidCount],
             ],
             'daily_series' => $dailySeries,
+            'offer_counts' => [
+                'upsell_accepted' => $upsellAccepted,
+                'upsell_declined' => $upsellDeclined,
+                'downsell_accepted' => $downsellAccepted,
+                'downsell_declined' => $downsellDeclined,
+            ],
             'step_visits' => $stepVisits,
             'drop_off' => $dropOff,
             'step_event_breakdown' => $events

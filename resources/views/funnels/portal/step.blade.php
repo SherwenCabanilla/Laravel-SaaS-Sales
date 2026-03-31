@@ -465,13 +465,26 @@
             return ['kind' => 'link', 'href' => ($link !== '' ? $link : '#')];
         };
         $resolvePricingCtaAction = function (array $settings) use ($choosePricingTarget, $resolveButtonAction, $activeStepsBySlug, $step) {
-            if (strtolower(trim((string) ($step->type ?? ''))) === 'checkout') {
+            $stepType = strtolower(trim((string) ($step->type ?? '')));
+            if ($stepType === 'checkout') {
                 return $resolveButtonAction(['actionType' => 'checkout']);
             }
             $actionType = strtolower(trim((string) ($settings['ctaActionType'] ?? '')));
             $link = trim((string) ($settings['ctaLink'] ?? '#'));
             if ($actionType === '') {
                 $actionType = ($link !== '' && $link !== '#') ? 'link' : 'next_step';
+            }
+
+            if (in_array($stepType, ['upsell', 'downsell'], true)) {
+                if ($actionType === 'link' && $link !== '' && $link !== '#') {
+                    return ['kind' => 'link', 'href' => $link];
+                }
+
+                if (in_array($actionType, ['offer_accept', 'offer_decline'], true)) {
+                    return $resolveButtonAction(['actionType' => $actionType]);
+                }
+
+                return $resolveButtonAction(['actionType' => 'offer_accept']);
             }
 
             if ($actionType === 'link') {

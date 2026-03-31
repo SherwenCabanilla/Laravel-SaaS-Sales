@@ -23,19 +23,34 @@
         .analytics-kpi-value { margin-top:10px; font-size:30px; font-weight:900; color: var(--theme-primary, #240E35); }
         .analytics-kpi-sub { margin-top:8px; color: var(--theme-muted, #6B7280); font-size:13px; }
         .analytics-grid { display:grid; grid-template-columns:2fr 1fr; gap:18px; }
+        .analytics-grid.analytics-grid--summary { grid-template-columns:minmax(0, 1.7fr) minmax(320px, .95fr) minmax(300px, .85fr); align-items:stretch; }
         .analytics-card { background:#fff; border:1px solid var(--theme-border, #E6E1EF); border-radius:18px; padding:18px; box-shadow:0 10px 30px rgba(15,23,42,.04); }
         .analytics-card h3 { margin:0 0 14px; color: var(--theme-primary, #240E35); }
         .analytics-chart-wrap { position:relative; min-height:280px; }
+        .analytics-chart-wrap canvas { width:100% !important; height:100% !important; display:block; }
+        .analytics-card.analytics-card--step-visits { width:100%; }
+        .analytics-card.analytics-card--step-visits .analytics-chart-wrap { min-height: 260px; }
+        .analytics-card.analytics-card--offer-rates { width:100%; }
+        .analytics-card.analytics-card--offer-rates .analytics-chart-wrap { min-height: 260px; max-height: 260px; }
+        .analytics-card.analytics-card--offer-counts { width:100%; }
+        .analytics-chart-empty { min-height:280px; display:grid; place-items:center; text-align:center; padding:20px; border-radius:14px; background: var(--theme-surface-softer, #F7F7FB); color: var(--theme-muted, #6B7280); }
         .analytics-table-wrap { overflow:auto; }
         .analytics-table { width:100%; border-collapse:collapse; min-width:640px; }
         .analytics-table th, .analytics-table td { padding:12px 10px; border-bottom:1px solid var(--theme-border, #E6E1EF); text-align:left; vertical-align:top; }
         .analytics-table th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color: var(--theme-muted, #6B7280); }
         .analytics-pill { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; background: var(--theme-surface-soft, #F3EEF7); color: var(--theme-primary, #240E35); font-size:12px; font-weight:800; }
+        .analytics-mini-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .analytics-mini-stat { border:1px solid var(--theme-border, #E6E1EF); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#fcfbfe); }
+        .analytics-mini-stat span { display:block; font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color: var(--theme-muted, #6B7280); }
+        .analytics-mini-stat strong { display:block; margin-top:8px; font-size:24px; color: var(--theme-primary, #240E35); }
         .analytics-events { display:grid; gap:12px; }
         .analytics-event { border:1px solid var(--theme-border, #E6E1EF); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#fcfbfe); }
         .analytics-event-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
         .analytics-event-meta { color: var(--theme-muted, #6B7280); font-size:13px; line-height:1.5; }
         .analytics-empty { padding:18px; border-radius:14px; background: var(--theme-surface-softer, #F7F7FB); color: var(--theme-muted, #6B7280); }
+        @media (max-width: 1200px) {
+            .analytics-grid.analytics-grid--summary { grid-template-columns:1fr; }
+        }
         @media (max-width: 960px) {
             .analytics-grid { grid-template-columns:1fr; }
         }
@@ -46,6 +61,7 @@
     @php
         $totals = $analytics['totals'] ?? [];
         $rates = $analytics['rates'] ?? [];
+        $offerCounts = $analytics['offer_counts'] ?? [];
         $stepVisits = collect($analytics['step_visits'] ?? []);
         $dropOff = collect($analytics['drop_off'] ?? []);
         $eventBreakdown = collect($analytics['step_event_breakdown'] ?? []);
@@ -66,6 +82,11 @@
             (float) ($rates['downsell_acceptance_rate'] ?? 0),
             (float) ($rates['abandoned_checkout_rate'] ?? 0),
         ];
+        $hasOfferData = ((int) ($offerCounts['upsell_accepted'] ?? 0) > 0)
+            || ((int) ($offerCounts['upsell_declined'] ?? 0) > 0)
+            || ((int) ($offerCounts['downsell_accepted'] ?? 0) > 0)
+            || ((int) ($offerCounts['downsell_declined'] ?? 0) > 0)
+            || ((float) ($rates['abandoned_checkout_rate'] ?? 0) > 0);
     @endphp
 
     <div class="analytics-shell">
@@ -161,18 +182,48 @@
             </div>
         </div>
 
-        <div class="analytics-grid">
-            <div class="analytics-card">
+        <div class="analytics-grid analytics-grid--summary">
+            <div class="analytics-card analytics-card--step-visits">
                 <h3>Step Visits</h3>
                 <div class="analytics-chart-wrap">
                     <canvas id="stepVisitsChart"></canvas>
                 </div>
             </div>
-
-            <div class="analytics-card">
+            <div class="analytics-card analytics-card--offer-rates">
                 <h3>Offer Rates</h3>
-                <div class="analytics-chart-wrap">
-                    <canvas id="offerRatesChart"></canvas>
+                @if($hasOfferData)
+                    <div class="analytics-chart-wrap">
+                        <canvas id="offerRatesChart"></canvas>
+                    </div>
+                @else
+                    <div class="analytics-chart-empty">
+                        <div>
+                            <strong style="display:block; margin-bottom:8px; color:var(--theme-primary, #240E35);">No offer data yet</strong>
+                            Complete checkout in the public funnel and click the upsell or downsell accept/decline buttons to populate this section.
+                        </div>
+                    </div>
+                @endif
+            </div>
+
+            <div class="analytics-card analytics-card--offer-counts">
+                <h3>Offer Counts</h3>
+                <div class="analytics-mini-grid">
+                    <div class="analytics-mini-stat">
+                        <span>Upsell Accepted</span>
+                        <strong>{{ number_format((int) ($offerCounts['upsell_accepted'] ?? 0)) }}</strong>
+                    </div>
+                    <div class="analytics-mini-stat">
+                        <span>Upsell Declined</span>
+                        <strong>{{ number_format((int) ($offerCounts['upsell_declined'] ?? 0)) }}</strong>
+                    </div>
+                    <div class="analytics-mini-stat">
+                        <span>Downsell Accepted</span>
+                        <strong>{{ number_format((int) ($offerCounts['downsell_accepted'] ?? 0)) }}</strong>
+                    </div>
+                    <div class="analytics-mini-stat">
+                        <span>Downsell Declined</span>
+                        <strong>{{ number_format((int) ($offerCounts['downsell_declined'] ?? 0)) }}</strong>
+                    </div>
                 </div>
             </div>
         </div>
@@ -267,6 +318,8 @@
                                 </div>
                                 <div class="analytics-event-meta">
                                     Step: {{ $event->step->title ?? 'N/A' }}<br>
+                                    Step Type: {{ ucwords(str_replace('_', ' ', data_get($event->meta, 'step_type', $event->step->type ?? 'n/a'))) }}<br>
+                                    Step Slug: {{ data_get($event->meta, 'step_slug', $event->step->slug ?? 'N/A') }}<br>
                                     Session: {{ $event->session_identifier ?? 'N/A' }}<br>
                                     Lead: {{ $event->lead->email ?? ($event->lead->name ?? 'N/A') }}<br>
                                     Payment: {{ $event->payment ? ('PHP ' . number_format((float) $event->payment->amount, 2) . ' / ' . $event->payment->status) : 'N/A' }}
@@ -370,6 +423,16 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = Number(context.raw || 0);
+                                    return context.label + ': ' + value.toFixed(2) + '%';
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
