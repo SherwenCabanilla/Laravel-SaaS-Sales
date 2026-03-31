@@ -437,15 +437,15 @@
                                     <span class="analytics-pill">{{ $event->event_name }}</span>
                                     <strong>{{ optional($event->occurred_at)->format('M j, Y g:i A') }}</strong>
                                 </div>
-                            <div class="analytics-event-meta">
-                                Step: {{ $event->step->title ?? 'N/A' }}<br>
-                                Step Type: {{ ucwords(str_replace('_', ' ', data_get($event->meta, 'step_type', $event->step->type ?? 'n/a'))) }}<br>
-                                Step Slug: {{ data_get($event->meta, 'step_slug', $event->step->slug ?? 'N/A') }}<br>
-                                Session: {{ $event->session_identifier ?? 'N/A' }}<br>
-                                Lead: {{ $event->lead->email ?? ($event->lead->name ?? 'N/A') }}<br>
-                                Payment: {{ $event->payment ? ('PHP ' . number_format((float) $event->payment->amount, 2) . ' / ' . $event->payment->status) : 'N/A' }}
+                                <div class="analytics-event-meta">
+                                    Step: {{ $event->step->title ?? 'N/A' }}<br>
+                                    Step Type: {{ ucwords(str_replace('_', ' ', data_get($event->meta, 'step_type', $event->step->type ?? 'n/a'))) }}<br>
+                                    Step Slug: {{ data_get($event->meta, 'step_slug', $event->step->slug ?? 'N/A') }}<br>
+                                    Session: {{ $event->session_identifier ?? 'N/A' }}<br>
+                                    Lead: {{ $event->lead->email ?? ($event->lead->name ?? 'N/A') }}<br>
+                                    Payment: {{ $event->payment ? ('PHP ' . number_format((float) $event->payment->amount, 2) . ' / ' . $event->payment->status) : 'N/A' }}
+                                </div>
                             </div>
-                        </div>
                         @endforeach
                     </div>
 
