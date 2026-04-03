@@ -20,8 +20,12 @@ class AdminFunnelTemplateController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
+        $showLegacy = $request->boolean('legacy');
 
         $templates = FunnelTemplate::query()
+            ->when(!$showLegacy, function ($query) {
+                $query->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED);
+            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('name', 'like', "%{$search}%")
@@ -38,17 +42,21 @@ class AdminFunnelTemplateController extends Controller
             return view('admin.funnel-templates._rows', compact('templates'))->render();
         }
 
-        return view('admin.funnel-templates.index', compact('templates', 'search'));
+        return view('admin.funnel-templates.index', compact('templates', 'search', 'showLegacy'));
     }
 
     public function create()
     {
-        return view('admin.funnel-templates.create');
+        return view('admin.funnel-templates.create', [
+            'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
+        ]);
     }
 
     public function import()
     {
-        return view('admin.funnel-templates.import');
+        return view('admin.funnel-templates.import', [
+            'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
+        ]);
     }
 
     public function store(Request $request, FunnelTemplateService $templateService)
@@ -56,6 +64,7 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
+            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
             'template_tags' => 'nullable|string|max:500',
         ]);
 
@@ -73,6 +82,7 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|string|max:120',
             'description' => 'nullable|string|max:2000',
+            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
             'template_tags' => 'nullable|string|max:500',
             'import_json' => 'required|string',
             'publish_now' => 'nullable|boolean',
@@ -88,6 +98,7 @@ class AdminFunnelTemplateController extends Controller
             $template = $templateService->importTemplateFromJson($decoded, auth()->user(), [
                 'name' => trim((string) ($validated['name'] ?? '')) !== '' ? $validated['name'] : null,
                 'description' => array_key_exists('description', $validated) ? $validated['description'] : null,
+                'template_type' => $validated['template_type'],
                 'template_tags' => $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
                 'publish' => (bool) $request->boolean('publish_now'),
             ]);
@@ -147,6 +158,7 @@ class AdminFunnelTemplateController extends Controller
     {
         return FunnelTemplate::query()
             ->where('status', 'published')
+            ->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED)
             ->with(['steps' => fn ($query) => $query->orderBy('position')])
             ->latest('published_at')
             ->latest('id')
@@ -233,6 +245,7 @@ class AdminFunnelTemplateController extends Controller
         }
 
         return array_values(array_filter(array_merge(
+            [$template->templateTypeLabel()],
             [$stepCount . ' Pages'],
             $fallbackStepTypeTags,
             [strtoupper((string) $template->status)]
@@ -244,6 +257,7 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
+            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::TEMPLATE_TYPES))],
             'status' => ['nullable', Rule::in(array_keys(FunnelTemplate::STATUSES))],
             'template_tags' => ['nullable'],
         ]);
@@ -256,6 +270,7 @@ class AdminFunnelTemplateController extends Controller
                 'name' => $validated['name'],
                 'slug' => $templateService->generateUniqueTemplateSlug($validated['name'], $funnelTemplate->id),
                 'description' => $validated['description'] ?? null,
+                'template_type' => $validated['template_type'] ?? $funnelTemplate->template_type,
                 'template_tags' => $templateTags,
                 'status' => $validated['status'] ?? $funnelTemplate->status,
             ]);
@@ -357,6 +372,7 @@ class AdminFunnelTemplateController extends Controller
             'checkout_pricing_period' => 'nullable|string|max:60',
             'checkout_pricing_subtitle' => 'nullable|string|max:300',
             'checkout_pricing_badge' => 'nullable|string|max:80',
+            'checkout_pricing_image' => 'nullable|string|max:2000',
             'checkout_pricing_features' => 'nullable|string|max:5000',
         ]);
 
@@ -384,6 +400,7 @@ class AdminFunnelTemplateController extends Controller
             'checkout_pricing_period' => 'nullable|string|max:60',
             'checkout_pricing_subtitle' => 'nullable|string|max:300',
             'checkout_pricing_badge' => 'nullable|string|max:80',
+            'checkout_pricing_image' => 'nullable|string|max:2000',
             'checkout_pricing_features' => 'nullable|string|max:4000',
         ]);
 
@@ -770,6 +787,7 @@ class AdminFunnelTemplateController extends Controller
         $period = mb_substr(trim((string) ($payload['checkout_pricing_period'] ?? '')), 0, 60);
         $subtitle = mb_substr(trim((string) ($payload['checkout_pricing_subtitle'] ?? '')), 0, 300);
         $badge = mb_substr(trim((string) ($payload['checkout_pricing_badge'] ?? '')), 0, 80);
+        $image = mb_substr(trim((string) ($payload['checkout_pricing_image'] ?? '')), 0, 2000);
         $features = [];
         $rawFeatures = trim((string) ($payload['checkout_pricing_features'] ?? ''));
         if ($rawFeatures !== '') {
@@ -796,6 +814,7 @@ class AdminFunnelTemplateController extends Controller
             && $period === ''
             && $subtitle === ''
             && $badge === ''
+            && $image === ''
             && $features === []
         ) {
             return null;
@@ -810,6 +829,7 @@ class AdminFunnelTemplateController extends Controller
             'period' => $period,
             'subtitle' => $subtitle,
             'badge' => $badge,
+            'image' => $image,
             'features' => $features,
         ];
     }
@@ -825,6 +845,7 @@ class AdminFunnelTemplateController extends Controller
             'checkout_pricing_period' => $request->query('offer_period', ''),
             'checkout_pricing_subtitle' => $request->query('offer_subtitle', ''),
             'checkout_pricing_badge' => $request->query('offer_badge', ''),
+            'checkout_pricing_image' => $request->query('offer_image', ''),
             'checkout_pricing_features' => $request->query('offer_features', ''),
         ]);
     }

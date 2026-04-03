@@ -13,6 +13,9 @@
             <a href="{{ route('admin.funnel-templates.import') }}" class="btn-create" style="background:#fff; color:var(--theme-primary, #240E35); border:1px solid var(--theme-border, #E6E1EF);"><i class="fas fa-file-import"></i> Import JSON Template</a>
         </div>
         <form method="GET" action="{{ route('admin.funnel-templates.index') }}">
+            @if(!empty($showLegacy))
+                <input type="hidden" name="legacy" value="1">
+            @endif
             <input
                 type="text"
                 name="search"
@@ -26,10 +29,20 @@
         <div style="margin-bottom: 12px; color:#64748b; font-size:13px;">
             Super admins can build, import, and publish templates here. Published templates appear in builder mode for reusable application.
         </div>
+        <div style="margin-bottom: 14px; color:#64748b; font-size:13px;">
+            @if(!empty($showLegacy))
+                Showing uncategorized legacy templates too.
+                <a href="{{ route('admin.funnel-templates.index', array_filter(['search' => $search ?? null])) }}" style="font-weight:700;">Hide legacy templates</a>
+            @else
+                Legacy templates without a purpose are hidden from this list and from the builder libraries.
+                <a href="{{ route('admin.funnel-templates.index', array_filter(['search' => $search ?? null, 'legacy' => 1])) }}" style="font-weight:700;">Show legacy templates</a>
+            @endif
+        </div>
         <table>
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Purpose</th>
                     <th>Status</th>
                     <th>Pages</th>
                     <th>Slug</th>

@@ -30,6 +30,23 @@
             </div>
 
             <div style="margin-bottom: 16px;">
+                <label for="purpose" style="display:block; margin-bottom:8px; font-weight:700;">Funnel Purpose</label>
+                <select id="purpose" name="purpose" required
+                    style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
+                    <option value="" disabled {{ old('purpose') ? '' : 'selected' }}>Select funnel purpose</option>
+                    @foreach(($purposeOptions ?? []) as $value => $label)
+                        <option value="{{ $value }}" {{ old('purpose') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <div style="margin-top:6px; color:#64748b; font-size:12px;">
+                    This sets the starter flow. Physical product funnels start more like order funnels, while service funnels keep the lead-first flow.
+                </div>
+                @error('purpose')
+                    <span style="color:red; font-size:12px;">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div style="margin-bottom: 16px;">
                 <label for="default_tags" style="display:block; margin-bottom:8px; font-weight:700;">Funnel Tags</label>
                 <input id="default_tags" name="default_tags" type="text" value="{{ old('default_tags') }}"
                     placeholder="webinar, q2-campaign, lead-magnet"
@@ -40,13 +57,12 @@
             </div>
 
             <div style="margin:18px 0; padding:14px 16px; border-radius:12px; background:#fbf9fd; border:1px solid #ece2f5; color:#475569; font-size:13px; line-height:1.55;">
-                New funnels now start from the default scratch flow:
-                <strong>Landing</strong> ->
-                <strong>Opt-in</strong> ->
-                <strong>Sales</strong> ->
-                <strong>Checkout</strong> ->
-                <strong>Thank You</strong>.
-                Shared templates are available only inside the builder templates panel.
+                Starter flow by purpose:
+                <br><strong>Service / Lead</strong>: Landing -> Opt-in -> Sales -> Checkout -> Thank You
+                <br><strong>Digital Product</strong>: Sales -> Checkout -> Thank You
+                <br><strong>Physical Product</strong>: Sales -> Checkout -> Thank You
+                <br><strong>Hybrid</strong>: Landing -> Sales -> Checkout -> Thank You
+                <br><br>Shared templates are available only inside the builder templates panel.
             </div>
 
             <div style="display:flex; gap:10px; margin-top:18px;">

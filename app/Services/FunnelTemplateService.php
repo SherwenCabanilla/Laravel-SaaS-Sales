@@ -14,22 +14,18 @@ class FunnelTemplateService
     public function createStarterTemplate(array $attributes, User $user): FunnelTemplate
     {
         return DB::transaction(function () use ($attributes, $user) {
+            $templateType = FunnelTemplate::normalizeTemplateType($attributes['template_type'] ?? 'service');
             $template = FunnelTemplate::create([
                 'created_by' => $user->id,
                 'name' => $attributes['name'],
                 'slug' => $this->generateUniqueTemplateSlug($attributes['name']),
                 'description' => $attributes['description'] ?? null,
+                'template_type' => $templateType,
                 'template_tags' => $attributes['template_tags'] ?? [],
                 'status' => 'draft',
             ]);
 
-            $starterSteps = [
-                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Welcome to our template funnel.', 'cta_label' => 'Continue'],
-                ['title' => 'Opt-in', 'slug' => 'opt-in', 'type' => 'opt_in', 'content' => 'Fill out the form to continue.', 'cta_label' => 'Submit'],
-                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present your offer details here.', 'cta_label' => 'Go to Checkout'],
-                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your order.', 'cta_label' => 'Pay Now', 'price' => 1000],
-                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase.'],
-            ];
+            $starterSteps = $this->starterTemplateStepsForType($templateType);
 
             foreach ($starterSteps as $index => $step) {
                 $template->steps()->create([
@@ -49,6 +45,35 @@ class FunnelTemplateService
 
             return $template->fresh('steps');
         });
+    }
+
+    private function starterTemplateStepsForType(string $templateType): array
+    {
+        return match (FunnelTemplate::normalizeTemplateType($templateType)) {
+            'digital_product' => [
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present the digital product offer and why it is worth buying.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect buyer info and complete payment for the digital product.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank the buyer and explain how access or delivery works.'],
+            ],
+            'physical_product' => [
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Show the product, its media, key benefits, pricing, and the reason to buy now.', 'cta_label' => 'Buy Now'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect customer, shipping, and payment details for the physical product order.', 'cta_label' => 'Place Order', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Confirm the order and tell the buyer when shipping or tracking details will be sent.'],
+            ],
+            'hybrid' => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the offer and guide buyers to the main sales page.', 'cta_label' => 'Continue'],
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present the core offer details here.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete the order with the final buyer details and payment.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank the buyer and explain the next step clearly.'],
+            ],
+            default => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Welcome to our template funnel.', 'cta_label' => 'Continue'],
+                ['title' => 'Opt-in', 'slug' => 'opt-in', 'type' => 'opt_in', 'content' => 'Fill out the form to continue.', 'cta_label' => 'Submit'],
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present your offer details here.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your order.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase.'],
+            ],
+        };
     }
 
     public function createFunnelFromTemplate(FunnelTemplate $template, User $user, array $overrides = []): Funnel
@@ -117,6 +142,7 @@ class FunnelTemplateService
                 'name' => $name !== '' ? $name : 'Imported Template',
                 'slug' => $this->generateUniqueTemplateSlug($name !== '' ? $name : 'Imported Template'),
                 'description' => is_string($description) ? trim($description) : $description,
+                'template_type' => $overrides['template_type'] ?? ($payload['template_type'] ?? 'service'),
                 'template_tags' => is_array($templateTags) ? $templateTags : [],
                 'status' => $publish ? 'published' : 'draft',
                 'published_at' => $publish ? now() : null,

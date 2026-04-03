@@ -53,7 +53,9 @@ class FunnelController extends Controller
             return redirect()->route('funnels.index')->with('error', $e->getMessage());
         }
 
-        return view('funnels.create');
+        return view('funnels.create', [
+            'purposeOptions' => Funnel::PURPOSES,
+        ]);
     }
 
     public function store(Request $request)
@@ -61,6 +63,7 @@ class FunnelController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
+            'purpose' => ['required', Rule::in(array_keys(Funnel::PURPOSES))],
             'default_tags' => 'nullable|string|max:500',
         ]);
 
@@ -75,18 +78,12 @@ class FunnelController extends Controller
                 'name' => $validated['name'],
                 'slug' => $this->generateUniqueFunnelSlug($validated['name'], $user->tenant_id),
                 'description' => $validated['description'] ?? null,
+                'purpose' => $validated['purpose'],
                 'default_tags' => $this->normalizeTagsString($validated['default_tags'] ?? null),
                 'status' => 'draft',
             ]);
 
-            // Starter flow: Landing -> Opt-in -> Sales -> Checkout -> Thank You
-            $starterSteps = [
-                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Welcome to our funnel.', 'cta_label' => 'Continue'],
-                ['title' => 'Opt-in', 'slug' => 'opt-in', 'type' => 'opt_in', 'content' => 'Fill out the form to continue.', 'cta_label' => 'Submit'],
-                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present your offer details here.', 'cta_label' => 'Go to Checkout'],
-                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your order.', 'cta_label' => 'Pay Now', 'price' => 1000],
-                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase.', 'cta_label' => null],
-            ];
+            $starterSteps = $this->starterStepsForPurpose($validated['purpose']);
 
             foreach ($starterSteps as $index => $step) {
                 $createdStep = FunnelStep::create([
@@ -110,6 +107,35 @@ class FunnelController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'Added Failed');
         }
+    }
+
+    private function starterStepsForPurpose(string $purpose): array
+    {
+        return match (Funnel::normalizePurpose($purpose)) {
+            'digital_product' => [
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present your digital product offer here.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your digital order.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase. Deliver access details here.', 'cta_label' => null],
+            ],
+            'physical_product' => [
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Show the product, price, benefits, and buying reason here.', 'cta_label' => 'Buy Now'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect customer, shipping, and payment details here.', 'cta_label' => 'Place Order', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Confirm the order and tell the buyer what happens next.', 'cta_label' => null],
+            ],
+            'hybrid' => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the offer and guide buyers into the right next step.', 'cta_label' => 'Continue'],
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present the main offer details here.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your order here.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase.', 'cta_label' => null],
+            ],
+            default => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Welcome to our funnel.', 'cta_label' => 'Continue'],
+                ['title' => 'Opt-in', 'slug' => 'opt-in', 'type' => 'opt_in', 'content' => 'Fill out the form to continue.', 'cta_label' => 'Submit'],
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present your offer details here.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your order.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase.', 'cta_label' => null],
+            ],
+        };
     }
 
     public function edit(Funnel $funnel)
@@ -150,6 +176,7 @@ class FunnelController extends Controller
     {
         return FunnelTemplate::query()
             ->where('status', 'published')
+            ->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED)
             ->with(['steps' => fn ($query) => $query->orderBy('position')])
             ->latest('published_at')
             ->latest('id')
@@ -224,6 +251,7 @@ class FunnelController extends Controller
         }
 
         return array_values(array_filter(array_merge(
+            [$template->templateTypeLabel()],
             [$stepCount . ' Pages'],
             $fallbackStepTypeTags,
             [strtoupper((string) $template->status)]

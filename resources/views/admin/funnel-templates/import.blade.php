@@ -30,6 +30,19 @@
                         <span style="color:red; font-size:12px;">{{ $message }}</span>
                     @enderror
                 </div>
+                <div>
+                    <label for="template_type" style="display:block; margin-bottom:8px; font-weight:700;">Template Purpose</label>
+                    <select id="template_type" name="template_type" required
+                        style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
+                        <option value="" disabled {{ old('template_type') ? '' : 'selected' }}>Select template purpose</option>
+                        @foreach(($templateTypeOptions ?? []) as $value => $label)
+                            <option value="{{ $value }}" {{ old('template_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('template_type')
+                        <span style="color:red; font-size:12px;">{{ $message }}</span>
+                    @enderror
+                </div>
             </div>
 
             <div style="margin-bottom: 16px;">

@@ -157,6 +157,7 @@ class FunnelPortalController extends Controller
             'checkout_pricing_period' => 'nullable|string|max:60',
             'checkout_pricing_subtitle' => 'nullable|string|max:300',
             'checkout_pricing_badge' => 'nullable|string|max:80',
+            'checkout_pricing_image' => 'nullable|string|max:2000',
             'checkout_pricing_features' => 'nullable|string|max:5000',
             'website' => 'nullable|string|size:0',
         ]);
@@ -409,6 +410,7 @@ class FunnelPortalController extends Controller
             'checkout_pricing_period' => 'nullable|string|max:60',
             'checkout_pricing_subtitle' => 'nullable|string|max:300',
             'checkout_pricing_badge' => 'nullable|string|max:80',
+            'checkout_pricing_image' => 'nullable|string|max:2000',
             'checkout_pricing_features' => 'nullable|string|max:4000',
         ]);
 
@@ -815,6 +817,7 @@ class FunnelPortalController extends Controller
         $period = mb_substr(trim((string) ($payload['checkout_pricing_period'] ?? '')), 0, 60);
         $subtitle = mb_substr(trim((string) ($payload['checkout_pricing_subtitle'] ?? '')), 0, 300);
         $badge = mb_substr(trim((string) ($payload['checkout_pricing_badge'] ?? '')), 0, 80);
+        $image = mb_substr(trim((string) ($payload['checkout_pricing_image'] ?? '')), 0, 2000);
         $features = [];
         $rawFeatures = trim((string) ($payload['checkout_pricing_features'] ?? ''));
         if ($rawFeatures !== '') {
@@ -841,6 +844,7 @@ class FunnelPortalController extends Controller
             && $period === ''
             && $subtitle === ''
             && $badge === ''
+            && $image === ''
             && $features === []
         ) {
             return null;
@@ -855,6 +859,7 @@ class FunnelPortalController extends Controller
             'period' => $period,
             'subtitle' => $subtitle,
             'badge' => $badge,
+            'image' => $image,
             'features' => $features,
         ];
     }

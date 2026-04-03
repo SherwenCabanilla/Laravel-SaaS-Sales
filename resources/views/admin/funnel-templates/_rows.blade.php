@@ -1,6 +1,7 @@
 @forelse($templates as $template)
     <tr>
         <td>{{ $template->name }}</td>
+        <td>{{ $template->templateTypeLabel() }}</td>
         <td>{{ ucfirst($template->status) }}</td>
         <td>{{ $template->steps_count }}</td>
         <td>{{ $template->slug }}</td>
@@ -12,6 +13,6 @@
     </tr>
 @empty
     <tr>
-        <td colspan="5" style="text-align:center; color:#64748b;">No funnel templates found.</td>
+        <td colspan="6" style="text-align:center; color:#64748b;">No funnel templates found.</td>
     </tr>
 @endforelse

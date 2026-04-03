@@ -376,6 +376,31 @@
 .fb-faq-q{font-weight:800;color:#240E35}
 .fb-faq-a{color:#475569;font-size:13px;margin-top:4px;white-space:pre-wrap}
 .fb-pricing{display:grid;gap:10px}
+.fb-product-offer{display:grid;gap:4px}
+.fb-product-offer .fb-pricing-badge{padding:2px 6px;font-size:9px}
+.fb-product-offer .fb-pricing-title{font-size:13px;line-height:1.25}
+.fb-product-offer .fb-pricing-price{font-size:20px;line-height:1}
+.fb-product-offer .fb-pricing-period{font-size:10px}
+.fb-product-offer .fb-pricing-subtitle{font-size:10px;line-height:1.3}
+.fb-product-offer .fb-pricing-features{gap:4px}
+.fb-product-offer .fb-pricing-features li{font-size:10px;gap:4px}
+.fb-product-offer .fb-product-actions{display:grid;gap:6px}
+.fb-product-offer .fb-product-utility{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:6px}
+.fb-product-offer .fb-pricing-cta{width:100%;padding:7px 8px;font-size:11px}
+.fb-product-offer .fb-product-secondary{width:100%;padding:6px 8px;font-size:10px;border-radius:999px;border:1px solid #d7cdea;background:#fff;color:#240E35;font-weight:700;text-align:center}
+.fb-product-offer .fb-product-cart{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid #d7cdea;background:#fff;color:#240E35;font-size:12px;font-weight:700}
+.fb-product-media{position:relative;border:1px solid #E6E1EF;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#ffffff,#F8FAFC);min-height:88px}
+.fb-product-media-stage{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;min-height:88px;background:#fff}
+.fb-product-media-stage img,.fb-product-media-stage video{width:100%;height:100%;display:block;object-fit:cover;background:#fff}
+.fb-product-media-placeholder{width:100%;height:100%;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#64748b;text-align:center;padding:8px;font-size:10px;cursor:pointer}
+.fb-product-media-placeholder i{font-size:16px}
+.fb-product-media-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:1px solid rgba(255,255,255,.72);border-radius:999px;background:rgba(15,23,42,.6);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+.fb-product-media-nav.is-left{left:10px}
+.fb-product-media-nav.is-right{right:10px}
+.fb-product-media-nav[disabled]{opacity:.45;cursor:default}
+.fb-product-media-dots{display:flex;align-items:center;justify-content:center;gap:6px}
+.fb-product-media-dot{width:8px;height:8px;border-radius:999px;background:#CBD5E1}
+.fb-product-media-dot.is-active{width:22px;background:#240E35}
 .fb-pricing-badge{align-self:flex-start;background:#E7D8F0;color:#2E1244;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
 .fb-pricing-title{font-size:18px;font-weight:900;color:#240E35}
 .fb-pricing-price{font-size:30px;font-weight:900;color:#16a34a}
@@ -384,6 +409,27 @@
 .fb-pricing-features{list-style:none;padding:0;margin:0;display:grid;gap:6px}
 .fb-pricing-features li{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#334155}
 .fb-pricing-cta{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:8px;font-weight:700;text-decoration:none;border:0;cursor:pointer}
+.fb-physical-checkout{display:grid;gap:12px;padding:16px}
+.fb-physical-checkout .fb-pricing-badge{background:#eaf2ff;color:#1d4ed8}
+.fb-physical-checkout-head{display:grid;gap:4px}
+.fb-physical-checkout-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
+.fb-physical-checkout-product{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border:1px solid #e6eaf2;border-radius:16px;background:linear-gradient(180deg,#ffffff,#faf8fd)}
+.fb-physical-checkout-thumb{width:64px;height:64px;border-radius:16px;border:1px solid #dbe3f0;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.fb-physical-checkout-thumb i{font-size:22px;color:#94a3b8}
+.fb-physical-checkout-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.fb-physical-checkout-meta{display:grid;gap:4px;min-width:0}
+.fb-physical-checkout-meta .fb-pricing-title{font-size:16px;line-height:1.2}
+.fb-physical-checkout-meta .fb-pricing-subtitle{font-size:11px;line-height:1.35}
+.fb-physical-checkout-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.fb-physical-checkout-price .fb-pricing-price{font-size:24px}
+.fb-physical-checkout-price .fb-pricing-period{margin-left:0}
+.fb-physical-checkout-rows{display:grid;gap:8px;padding:10px 0;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7}
+.fb-physical-checkout-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#475569}
+.fb-physical-checkout-row strong{color:#0f172a;font-size:13px}
+.fb-physical-checkout-row--total strong:last-child{font-size:18px;color:#16a34a}
+.fb-physical-checkout .fb-pricing-features{gap:5px}
+.fb-physical-checkout .fb-pricing-features li{font-size:11px}
+.fb-physical-checkout .fb-pricing-cta{width:100%;padding:10px 14px;border-radius:12px}
 .fb-countdown{display:grid;gap:8px}
 .fb-countdown-label{font-size:12px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.08em}
 .fb-countdown-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
@@ -559,6 +605,17 @@
                     placeholder="Template description"
                     style="min-width:320px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
                 >
+                <select
+                    name="template_type"
+                    style="min-width:190px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;background:#fff;"
+                    title="Template Purpose"
+                >
+                    @foreach(\App\Models\FunnelTemplate::TEMPLATE_TYPES as $value => $label)
+                        <option value="{{ $value }}" {{ old('template_type', $funnel->template_type) === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
             @else
                 <input type="hidden" name="description" value="{{ $funnel->description }}">
             @endif
@@ -598,58 +655,56 @@
         <div class="fb-left-panel" id="fbLeftPanelComponents">
             <div class="fb-card fb-lib">
                 <h3 class="fb-h">Components</h3>
-                <div class="fb-lib-group">
+                <p class="meta" id="fbPurposeMeta" style="margin:0 0 10px;">
+                    Component library adjusts to this funnel purpose.
+                </p>
+                <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Layout & Structure</div>
-                    <button draggable="true" data-c="section"><i class="fas fa-square"></i>Section</button>
-                    <button draggable="true" data-c="row"><i class="fas fa-grip-lines"></i>Row</button>
-                    <button draggable="true" data-c="column"><i class="fas fa-columns"></i>Column</button>
-                    <button draggable="true" data-c="spacer"><i class="fas fa-arrows-up-down"></i>Spacer</button>
+                    <button draggable="true" data-c="section" data-purpose="all"><i class="fas fa-square"></i>Section</button>
+                    <button draggable="true" data-c="row" data-purpose="all"><i class="fas fa-grip-lines"></i>Row</button>
+                    <button draggable="true" data-c="column" data-purpose="all"><i class="fas fa-columns"></i>Column</button>
+                    <button draggable="true" data-c="spacer" data-purpose="all"><i class="fas fa-arrows-up-down"></i>Spacer</button>
                 </div>
-                <div class="fb-lib-group">
+                <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Basic Content</div>
-                    <button draggable="true" data-c="heading"><i class="fas fa-heading"></i>Heading</button>
-                    <button draggable="true" data-c="text"><i class="fas fa-font"></i>Text</button>
-                    <button draggable="true" data-c="button"><i class="fas fa-square-plus"></i>Button</button>
-                    <button draggable="true" data-c="icon"><i class="fas fa-icons"></i>Icon</button>
+                    <button draggable="true" data-c="heading" data-purpose="all"><i class="fas fa-heading"></i>Heading</button>
+                    <button draggable="true" data-c="text" data-purpose="all"><i class="fas fa-font"></i>Text</button>
+                    <button draggable="true" data-c="button" data-purpose="all"><i class="fas fa-square-plus"></i>Button</button>
+                    <button draggable="true" data-c="icon" data-purpose="all"><i class="fas fa-icons"></i>Icon</button>
                 </div>
-                <div class="fb-lib-group">
+                <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Media & Visuals</div>
-                    <button draggable="true" data-c="image"><i class="fas fa-image"></i>Image</button>
-                    <button draggable="true" data-c="video"><i class="fas fa-video"></i>Video</button>
-                    <button draggable="true" data-c="carousel"><i class="fas fa-images"></i>Carousel</button>
+                    <button draggable="true" data-c="image" data-purpose="all"><i class="fas fa-image"></i>Image</button>
+                    <button draggable="true" data-c="video" data-purpose="all"><i class="fas fa-video"></i>Video</button>
+                    <button draggable="true" data-c="carousel" data-purpose="all"><i class="fas fa-images"></i>Carousel</button>
                 </div>
-                <div class="fb-lib-group">
+                <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Interaction & Navigation</div>
-                    <button draggable="true" data-c="menu"><i class="fas fa-bars"></i>Menu</button>
-                    <button draggable="true" data-c="form"><i class="fas fa-file-lines"></i>Form</button>
+                    <button draggable="true" data-c="menu" data-purpose="all"><i class="fas fa-bars"></i>Menu</button>
+                    <button draggable="true" data-c="form" data-purpose="service,digital_product,physical_product,hybrid"><i class="fas fa-file-lines"></i>Form</button>
                 </div>
-                <div class="fb-lib-group">
+                <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Advanced Blocks</div>
-                    <button draggable="true" data-c="testimonial"><i class="fas fa-quote-right"></i>Testimonial</button>
-                    <button draggable="true" data-c="faq"><i class="fas fa-circle-question"></i>FAQ</button>
-                    <button draggable="true" data-c="pricing"><i class="fas fa-tags"></i>Pricing</button>
-                    <button draggable="true" data-c="checkout_summary"><i class="fas fa-receipt"></i>Checkout Summary</button>
-                    <button draggable="true" data-c="countdown"><i class="fas fa-stopwatch"></i>Countdown</button>
+                    <button draggable="true" data-c="testimonial" data-purpose="service,digital_product,hybrid"><i class="fas fa-quote-right"></i>Testimonial</button>
+                    <button draggable="true" data-c="faq" data-purpose="service,digital_product,hybrid"><i class="fas fa-circle-question"></i>FAQ</button>
+                    <button draggable="true" data-c="pricing" data-purpose="service,digital_product,hybrid"><i class="fas fa-tags"></i>Pricing</button>
+                    <button draggable="true" data-c="product_offer" data-purpose="physical_product,hybrid"><i class="fas fa-box-open"></i>Product Offer</button>
+                    <button draggable="true" data-c="checkout_summary" data-purpose="service,digital_product,hybrid"><i class="fas fa-receipt"></i>Checkout Summary</button>
+                    <button draggable="true" data-c="physical_checkout_summary" data-purpose="physical_product,hybrid"><i class="fas fa-basket-shopping"></i>Physical Checkout Summary</button>
+                    <button draggable="true" data-c="countdown" data-purpose="service,digital_product,hybrid"><i class="fas fa-stopwatch"></i>Countdown</button>
                 </div>
             </div>
         </div>
         <div class="fb-left-panel hidden" id="fbLeftPanelTemplates">
             <div class="fb-card settings">
                 <h3 class="fb-h" id="fbTemplateHeading">Templates</h3>
-                <p class="meta" id="fbTemplateMeta" style="margin:0 0 10px;">Replace the current page with a starter layout.</p>
+                <p class="meta" id="fbTemplateMeta" style="margin:0 0 10px;">Apply a saved super-admin template across this funnel.</p>
                 <div class="fb-template-status">
-                    <span class="fb-template-pill" id="fbTemplateTypePill">Current Page</span>
-                    <span class="fb-template-pill" id="fbTemplateCountPill">0 layouts</span>
+                    <span class="fb-template-pill" id="fbTemplateTypePill">Super Admin</span>
+                    <span class="fb-template-pill" id="fbTemplateCountPill">0 templates</span>
                 </div>
-                <div class="fb-template-mode" role="tablist" aria-label="Template scope">
-                    <button type="button" class="fb-template-mode-btn active" id="fbTemplateModePage">Single Page</button>
-                    <button type="button" class="fb-template-mode-btn" id="fbTemplateModeFunnel">All Pages</button>
-                </div>
-                <p class="fb-template-current" id="fbTemplateCurrentPage">Choose a page to see its starter layouts.</p>
-                <div id="fbTemplatePagePane" class="fb-template-pane">
-                    <div id="fbTemplateGrid" class="fb-template-grid"></div>
-                </div>
-                <div id="fbTemplateFunnelPane" class="fb-template-pane hidden">
+                <p class="fb-template-current" id="fbTemplateCurrentPage">Choose a saved super-admin template to apply it to all pages in this funnel.</p>
+                <div id="fbTemplateFunnelPane" class="fb-template-pane">
                     <div id="fbFunnelTemplateGrid" class="fb-template-grid"></div>
                 </div>
             </div>
@@ -851,6 +906,8 @@ const stepDeleteTpl=@json($builderStepDeleteUrlTemplate ?? route('funnels.steps.
 const stepReorderUrl=@json($builderStepReorderUrl ?? route('funnels.steps.reorder',$funnel));
 const csrf="{{ csrf_token() }}";
 const funnelSlug=@json($funnel->slug);
+const builderPurposeRaw=@json(($funnel->purpose ?? $funnel->template_type ?? 'service'));
+const builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
 const funnelStepUrlTpl=@json($builderPublicStepUrlTemplate ?? route('funnels.portal.step',['funnelSlug'=>$funnel->slug,'stepSlug'=>'__STEP__']));
 const steps=@json($builderSteps);
 const sharedTemplatesUrl=@json($builderSharedTemplatesUrl ?? null);
@@ -929,6 +986,7 @@ const iconCatalog=[
 ];
 
 const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameType=document.getElementById("pageMgrRenameType"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+const fbPurposeMeta=document.getElementById("fbPurposeMeta");
 let _autoSaveTimer=null;
 let _autoSaveInFlight=false;
 let _autoSavePending=false;
@@ -993,7 +1051,37 @@ function renderStepOptions(){
     if(!hasCurrent && steps.length)state.sid=steps[0].id;
     stepSel.value=String(state.sid||"");
 }
+function applyPurposeComponentVisibility(){
+    var labels={
+        service:"Service Funnel",
+        digital_product:"Digital Product Funnel",
+        physical_product:"Physical Product Funnel",
+        hybrid:"Hybrid Funnel"
+    };
+    if(fbPurposeMeta){
+        var purposeLabel=labels[builderPurpose]||"Service Funnel";
+        if(builderPurpose==="physical_product"){
+            fbPurposeMeta.textContent=purposeLabel+" components are focused on product selling and checkout-related blocks.";
+        }else if(builderPurpose==="service"){
+            fbPurposeMeta.textContent=purposeLabel+" components are focused on offers, forms, proof, and service-style selling.";
+        }else{
+            fbPurposeMeta.textContent="Component library is filtered for "+purposeLabel+".";
+        }
+    }
+    document.querySelectorAll("[data-c][data-purpose]").forEach(function(btn){
+        var allowed=String(btn.getAttribute("data-purpose")||"all").split(",").map(function(v){return String(v||"").trim().toLowerCase();}).filter(Boolean);
+        var visible=allowed.indexOf("all")>=0||allowed.indexOf(builderPurpose)>=0;
+        btn.style.display=visible?"":"none";
+    });
+    document.querySelectorAll("[data-component-group]").forEach(function(group){
+        var visibleButtons=Array.from(group.querySelectorAll("[data-c]")).filter(function(btn){
+            return btn.style.display!=="none";
+        });
+        group.style.display=visibleButtons.length?"":"none";
+    });
+}
 renderStepOptions();
+applyPurposeComponentVisibility();
 if(canvasBgColor){
     canvasBgColor.addEventListener("input",()=>{
         if(!state.layout)return;
@@ -1103,6 +1191,28 @@ function makeCheckoutSummaryEl(opts,style){
         badge:opts.badge||"Selected Plan",
         features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Unlimited steps","Custom domains","Email support"],
         ctaLabel:opts.ctaLabel||"Pay Now",
+        ctaBgColor:opts.ctaBgColor||"#240E35",
+        ctaTextColor:opts.ctaTextColor||"#ffffff"
+    });
+}
+function makePhysicalCheckoutSummaryEl(opts,style){
+    opts=opts||{};
+    return makeEl("physical_checkout_summary","",Object.assign({
+        width:"100%",
+        padding:"22px",
+        backgroundColor:"#ffffff",
+        border:"1px solid #E6E1EF",
+        borderRadius:"20px",
+        boxShadow:"0 12px 24px rgba(15,23,42,.08)"
+    },style||{}),{
+        heading:opts.heading||"Review Your Order",
+        plan:opts.plan||"Selected Product",
+        price:opts.price||"Selected total",
+        period:opts.period||"",
+        subtitle:opts.subtitle||"Selected products, cart items, and delivery details update here before payment.",
+        badge:opts.badge||"Order Summary",
+        features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are completed below"],
+        ctaLabel:opts.ctaLabel||"Place Order",
         ctaBgColor:opts.ctaBgColor||"#240E35",
         ctaTextColor:opts.ctaTextColor||"#ffffff"
     });
@@ -3222,10 +3332,10 @@ function applyPageTemplate(tpl){
     queueAutoSave();
     if(saveMsg)saveMsg.textContent="Template applied and call to actions auto-connected. Not saved yet.";
 }
-var templateLibraryMode="page";
+var templateLibraryMode="shared";
 const funnelPackStepOrder=["landing","opt_in","sales","checkout","upsell","downsell","thank_you"];
 function setTemplateLibraryMode(mode){
-    templateLibraryMode=(String(mode||"").toLowerCase()==="funnel")?"funnel":"page";
+    templateLibraryMode="shared";
     renderTemplateLibrary();
 }
 function funnelPackManagedTypes(pack){
@@ -3585,13 +3695,12 @@ function renderTemplateLibrary(){
     var typePill=document.getElementById("fbTemplateTypePill");
     var countPill=document.getElementById("fbTemplateCountPill");
     var currentPageEl=document.getElementById("fbTemplateCurrentPage");
-    if(!grid)return;
     var step=cur();
     var pageType=currentTemplateType();
     var templates=currentPageTemplates();
     var pageLabel=pageTypeLabel(pageType);
-    var mode=(templateLibraryMode==="funnel")?"funnel":"page";
-    var allFunnelTemplates=(funnelTemplatePacks||[]).concat(sharedFunnelTemplates||[]);
+    var mode="shared";
+    var allFunnelTemplates=(sharedFunnelTemplates||[]);
     if(pageModeBtn){
         pageModeBtn.classList.toggle("active",mode==="page");
         pageModeBtn.setAttribute("aria-pressed",mode==="page"?"true":"false");
@@ -3603,64 +3712,16 @@ function renderTemplateLibrary(){
         funnelModeBtn.onclick=function(){setTemplateLibraryMode("funnel");};
     }
     if(pagePane)pagePane.classList.toggle("hidden",mode!=="page");
-    if(funnelPane)funnelPane.classList.toggle("hidden",mode!=="funnel");
-    if(mode==="funnel"){
-        if(titleEl)titleEl.textContent="Funnel Packs";
-        if(metaEl)metaEl.textContent="Showing "+allFunnelTemplates.length+" coordinated template systems and saved templates. Applying one replaces the layouts across all pages and keeps everything in this builder.";
-        if(typePill)typePill.textContent="All Pages";
-        if(countPill)countPill.textContent=String(allFunnelTemplates.length)+" templates";
-        if(currentPageEl)currentPageEl.textContent="This will restyle "+steps.length+" page"+(steps.length===1?"":"s")+" in the current funnel with one consistent system and ready-to-use step links.";
-    }else{
-        if(titleEl)titleEl.textContent=pageLabel+" Templates";
-        if(metaEl)metaEl.textContent="Showing "+templates.length+" ready-to-use "+pageLabel.toLowerCase()+" layouts. Applying one replaces the current page.";
-        if(typePill)typePill.textContent=pageLabel+" Page";
-        if(countPill)countPill.textContent=String(templates.length)+" layouts";
-        if(currentPageEl)currentPageEl.textContent=step?"Current page: "+String(step.title||pageLabel):"Choose a page to see its starter layouts.";
+    if(funnelPane)funnelPane.classList.toggle("hidden",mode==="page");
+    if(titleEl)titleEl.textContent="Super Admin Templates";
+    if(metaEl)metaEl.textContent="Showing "+allFunnelTemplates.length+" saved super-admin template"+(allFunnelTemplates.length===1?"":"s")+". Applying one replaces the layouts across all pages in this funnel.";
+    if(typePill)typePill.textContent="Super Admin";
+    if(countPill)countPill.textContent=String(allFunnelTemplates.length)+" templates";
+    if(currentPageEl)currentPageEl.textContent="Choose one saved template to update all "+steps.length+" page"+(steps.length===1?"":"s")+" in this funnel.";
+    if(grid){
+        grid.innerHTML="";
     }
-    grid.innerHTML=(templates||[]).map(function(t){
-        var tags=(t.tags||[]).map(function(tag){return '<span class="fb-template-tag">'+String(tag)+'</span>';}).join("");
-        return '<div class="fb-template-card">'
-            +'<div class="fb-template-preview">'+templatePreviewHtml(t.preview)+'</div>'
-            +'<div>'
-            +'<p class="fb-template-title">'+String(t.name||"Template")+'</p>'
-            +'<p class="fb-template-desc">'+String(t.description||"")+'</p>'
-            +'</div>'
-            +'<div class="fb-template-actions">'
-            +'<div class="fb-template-tags">'+tags+'</div>'
-            +'<button type="button" class="fb-btn primary" data-template-id="'+String(t.id||"")+'">Apply</button>'
-            +'</div>'
-            +'</div>';
-    }).join("");
-    grid.querySelectorAll("[data-template-id]").forEach(function(btn){
-        btn.addEventListener("click",function(){
-            var id=String(btn.getAttribute("data-template-id")||"");
-            var tpl=templates.find(function(t){return t.id===id;});
-            if(!tpl||typeof tpl.build!=="function")return;
-            var s=cur();
-            if(!s){alert("No page selected.");return;}
-            var label=String(s.title||"this page");
-            var msg='Apply the "'+String(tpl.name||"template")+'" template to '+label+'? This will replace the current layout.';
-            confirmTemplateApply(msg).then(function(ok){
-                if(!ok)return;
-                applyPageTemplate(tpl);
-            });
-        });
-    });
     if(funnelGrid){
-        var packCards=(funnelTemplatePacks||[]).map(function(pack){
-            var tags=(pack.tags||[]).map(function(tag){return '<span class="fb-template-tag">'+String(tag)+'</span>';}).join("");
-            return '<div class="fb-template-card">'
-                +'<div class="fb-template-preview">'+templatePreviewHtml(pack.preview)+'</div>'
-                +'<div>'
-                +'<p class="fb-template-title">'+String(pack.name||"Funnel Pack")+'</p>'
-                +'<p class="fb-template-desc">'+String(pack.description||"")+'</p>'
-                +'</div>'
-                +'<div class="fb-template-actions">'
-                +'<div class="fb-template-tags">'+tags+'</div>'
-                +'<button type="button" class="fb-btn primary" data-funnel-pack-id="'+String(pack.id||"")+'">Apply To All Pages</button>'
-                +'</div>'
-                +'</div>';
-        }).join("");
         var sharedCards=(sharedFunnelTemplates||[]).map(function(template){
             var tags=(template.tags||[]).map(function(tag){return '<span class="fb-template-tag">'+String(tag)+'</span>';}).join("");
             var editBtn=template.update_url
@@ -3682,15 +3743,7 @@ function renderTemplateLibrary(){
                 +'</div>'
                 +'</div>';
         }).join("");
-        funnelGrid.innerHTML=packCards+sharedCards;
-        funnelGrid.querySelectorAll("[data-funnel-pack-id]").forEach(function(btn){
-            btn.addEventListener("click",function(){
-                var id=String(btn.getAttribute("data-funnel-pack-id")||"");
-                var pack=(funnelTemplatePacks||[]).find(function(item){return String(item.id||"")===id;});
-                if(!pack)return;
-                applyFunnelTemplatePack(pack);
-            });
-        });
+        funnelGrid.innerHTML=sharedCards;
         funnelGrid.querySelectorAll("[data-shared-template-id]").forEach(function(btn){
             btn.addEventListener("click",function(){
                 if(btn.disabled)return;
@@ -5152,6 +5205,30 @@ function normalizeFeatureList(raw){
     }
     return out;
 }
+function normalizeProductOfferMediaList(raw){
+    var list=Array.isArray(raw)?raw:[];
+    var out=list.map(function(item,idx){
+        if(typeof item==="string"){
+            return {type:"image",src:String(item||"").trim(),alt:"Media "+(idx+1),poster:""};
+        }
+        item=(item&&typeof item==="object")?item:{};
+        var type=String(item.type||"image").trim().toLowerCase();
+        if(type!=="video")type="image";
+        return {
+            type:type,
+            src:String(item.src||"").trim(),
+            alt:String(item.alt||item.label||("Media "+(idx+1))).trim(),
+            poster:String(item.poster||"").trim()
+        };
+    });
+    if(!out.length){
+        out=[
+            {type:"image",src:"",alt:"Main product image",poster:""},
+            {type:"image",src:"",alt:"Detail image",poster:""}
+        ];
+    }
+    return out;
+}
 function formatDateTimeLocal(v){
     var raw=String(v||"").trim();
     if(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(raw))return raw.slice(0,16);
@@ -6388,7 +6465,7 @@ function titleCase(v){
 }
 function isAdvancedScaleComponent(t){
     var type=String(t||"").toLowerCase();
-    return type==="testimonial"||type==="faq"||type==="pricing"||type==="checkout_summary"||type==="countdown"||type==="form";
+    return type==="testimonial"||type==="faq"||type==="pricing"||type==="product_offer"||type==="checkout_summary"||type==="physical_checkout_summary"||type==="countdown"||type==="form";
 }
 function parsePxVal(v){
     var n=Number(String(v||"0").replace("px","").trim());
@@ -6477,6 +6554,61 @@ function applyAdvancedScaleToNode(node,item,scale){
         if(cta){
             cta.style.fontSize=Math.round(16*s)+"px";
             cta.style.padding=Math.round(8*s)+"px "+Math.round(12*s)+"px";
+        }
+    }
+    if(type==="product_offer"){
+        var productCard=node.querySelector(".fb-product-offer");
+        var productMedia=node.querySelector(".fb-product-media");
+        var productMediaStage=node.querySelector(".fb-product-media-stage");
+        var productPlaceholder=node.querySelector(".fb-product-media-placeholder");
+        var productPlaceholderIcon=node.querySelector(".fb-product-media-placeholder i");
+        var productNavs=node.querySelectorAll(".fb-product-media-nav");
+        var productDots=node.querySelector(".fb-product-media-dots");
+        var productDotItems=node.querySelectorAll(".fb-product-media-dot");
+        var productBadge=node.querySelector(".fb-pricing-badge");
+        var productTitle=node.querySelector(".fb-pricing-title");
+        var productPrice=node.querySelector(".fb-pricing-price");
+        var productPeriods=node.querySelectorAll(".fb-pricing-period");
+        var productSubtitle=node.querySelector(".fb-pricing-subtitle");
+        var productFeatures=node.querySelector(".fb-pricing-features");
+        var productFeatureItems=node.querySelectorAll(".fb-pricing-features li");
+        var productCta=node.querySelector(".fb-pricing-cta");
+        var mediaMin=Math.max(64,Math.round(88*s));
+        if(productCard)productCard.style.gap=Math.round(4*s)+"px";
+        if(productMedia)productMedia.style.minHeight=mediaMin+"px";
+        if(productMediaStage)productMediaStage.style.minHeight=mediaMin+"px";
+        if(productPlaceholder){
+            productPlaceholder.style.minHeight=mediaMin+"px";
+            productPlaceholder.style.gap=Math.max(3,Math.round(4*s))+"px";
+            productPlaceholder.style.padding=Math.max(6,Math.round(8*s))+"px";
+            productPlaceholder.style.fontSize=Math.max(9,Math.round(10*s))+"px";
+        }
+        if(productPlaceholderIcon)productPlaceholderIcon.style.fontSize=Math.max(14,Math.round(16*s))+"px";
+        productNavs.forEach(function(el){
+            var navSize=Math.max(16,Math.round(22*s));
+            el.style.width=navSize+"px";
+            el.style.height=navSize+"px";
+            el.style.fontSize=Math.max(8,Math.round(9*s))+"px";
+        });
+        if(productDots)productDots.style.gap=Math.max(3,Math.round(4*s))+"px";
+        productDotItems.forEach(function(el){
+            var isActive=el.classList.contains("is-active");
+            el.style.width=(isActive?Math.max(8,Math.round(12*s)):Math.max(3,Math.round(5*s)))+"px";
+            el.style.height=Math.max(3,Math.round(5*s))+"px";
+        });
+        if(productBadge){
+            productBadge.style.fontSize=Math.round(9*s)+"px";
+            productBadge.style.padding=Math.round(2*s)+"px "+Math.round(6*s)+"px";
+        }
+        if(productTitle)productTitle.style.fontSize=Math.round(13*s)+"px";
+        if(productPrice)productPrice.style.fontSize=Math.round(20*s)+"px";
+        productPeriods.forEach(function(el){el.style.fontSize=Math.round(10*s)+"px";});
+        if(productSubtitle)productSubtitle.style.fontSize=Math.round(10*s)+"px";
+        if(productFeatures)productFeatures.style.gap=Math.round(4*s)+"px";
+        productFeatureItems.forEach(function(el){el.style.fontSize=Math.round(10*s)+"px";});
+        if(productCta){
+            productCta.style.fontSize=Math.round(11*s)+"px";
+            productCta.style.padding=Math.round(7*s)+"px "+Math.round(8*s)+"px";
         }
     }
     if(type==="countdown"){
@@ -6896,7 +7028,7 @@ function createDefaultElement(type){
     var _cd=new Date(Date.now()+7*24*60*60*1000);
     var _pad=n=>String(n).padStart(2,"0");
     var countdownEndVal=_cd.getFullYear()+"-"+_pad(_cd.getMonth()+1)+"-"+_pad(_cd.getDate())+"T"+_pad(_cd.getHours())+":"+_pad(_cd.getMinutes());
-    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
+    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},product_offer:{content:"",style:{width:"160px",padding:"8px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Starter Bundle",price:"₱299",regularPrice:"₱499",period:"",subtitle:"",description:"Add a fuller product description here for your quick-view modal.",features:[],ctaLabel:"Buy",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Best Seller",quickViewEnabled:true,quickViewLabel:"Details",cartEnabled:true,activeMedia:0,media:[{type:"image",src:"",alt:"Main product image",poster:""}]}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},physical_checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Review Your Order",plan:"Selected Product",price:"Selected total",period:"",subtitle:"Selected products, cart items, and delivery details update here before payment.",features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are completed below"],ctaLabel:"Place Order",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Order Summary"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
     if(!d)return null;
     return {id:uid("el"),type:type,content:d.content,style:clone(d.style),settings:clone(d.settings)};
 }
@@ -8617,62 +8749,315 @@ function renderElement(item,ctx){
         }
         w.appendChild(pricing);
     }
-    else if(item.type==="checkout_summary"){
+    else if(item.type==="product_offer"){
         item.settings=item.settings||{};
         item.settings.features=normalizeFeatureList(item.settings.features);
-        var summaryHeading=String(item.settings.heading||"Order Summary");
-        var summaryPlan=String(item.settings.plan||"Starter");
+        item.settings.media=normalizeProductOfferMediaList(item.settings.media);
+        var activeStepForProduct=cur();
+        var productStepType=normalizeTemplateType((activeStepForProduct&&activeStepForProduct.type)||"custom");
+        var productName=String(item.settings.plan||"Product");
+        var productSale=normalizeTemplateCurrencyValue(item.settings.price||"");
+        var productRegular=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
+        var productPrice=(productSale!==""?productSale:(productRegular!==""?productRegular:"₱0"));
+        var productPeriod=String(item.settings.period||"");
+        var productSubtitle=String(item.settings.subtitle||"");
+        var productBadge=String(item.settings.badge||"");
+        var productDescription=String(item.settings.description||"").trim();
+        var productButtonRaw=(typeof item.settings.ctaLabel==="string")?String(item.settings.ctaLabel).trim():"";
+        var productQuickViewEnabled=item.settings.quickViewEnabled!==false;
+        var productQuickViewLabel=String(item.settings.quickViewLabel||"Details").trim()||"Details";
+        var productCartEnabled=item.settings.cartEnabled!==false;
+        var productButton=productStepType==="checkout"
+            ?"Pay Now"
+            :(productButtonRaw!==""?productButtonRaw:(productStepType==="sales"&&productName!==""?("Buy "+productName):"Buy Now"));
+        var productBg=String(item.settings.ctaBgColor||"#240E35");
+        var productText=String(item.settings.ctaTextColor||"#ffffff");
+        var productColor=(item.style&&item.style.color)?String(item.style.color):"";
+        var mediaList=item.settings.media||[];
+        var activeMedia=Number(item.settings.activeMedia)||0;
+        if(activeMedia<0)activeMedia=0;
+        if(activeMedia>=mediaList.length)activeMedia=mediaList.length-1;
+        if(activeMedia<0)activeMedia=0;
+        item.settings.activeMedia=activeMedia;
+        var productCard=document.createElement("div");
+        productCard.className="fb-pricing fb-product-offer";
+        var mediaWrap=document.createElement("div");
+        mediaWrap.className="fb-product-media";
+        var mediaStage=document.createElement("div");
+        mediaStage.className="fb-product-media-stage";
+        var activeMediaItem=mediaList[activeMedia]||null;
+        if(activeMediaItem&&String(activeMediaItem.src||"").trim()!==""){
+            if(String(activeMediaItem.type||"image")==="video"){
+                var mediaVideo=document.createElement("video");
+                mediaVideo.src=String(activeMediaItem.src||"");
+                mediaVideo.controls=true;
+                mediaVideo.preload="metadata";
+                mediaVideo.playsInline=true;
+                if(String(activeMediaItem.poster||"").trim()!=="")mediaVideo.poster=String(activeMediaItem.poster||"").trim();
+                mediaStage.appendChild(mediaVideo);
+            }else{
+                var mediaImage=document.createElement("img");
+                mediaImage.src=String(activeMediaItem.src||"");
+                mediaImage.alt=String(activeMediaItem.alt||productName||"Product media");
+                mediaStage.appendChild(mediaImage);
+            }
+        }else{
+            var productPlaceholder=document.createElement("div");
+            productPlaceholder.className="fb-product-media-placeholder";
+            productPlaceholder.innerHTML='<i class="fas fa-images"></i><div>Click to upload product image</div>';
+            productPlaceholder.title="Upload product image from your PC";
+            productPlaceholder.addEventListener("click",function(e){
+                e.preventDefault();
+                e.stopPropagation();
+                promptImageUploadForProductOffer(item,activeMedia);
+            });
+            mediaStage.appendChild(productPlaceholder);
+        }
+        mediaWrap.appendChild(mediaStage);
+        if(mediaList.length>1){
+            var productPrev=document.createElement("button");
+            productPrev.type="button";
+            productPrev.className="fb-product-media-nav is-left";
+            productPrev.innerHTML='<i class="fas fa-chevron-left"></i>';
+            productPrev.onclick=function(e){
+                e.preventDefault();e.stopPropagation();
+                saveToHistory();
+                item.settings.activeMedia=(Number(item.settings.activeMedia)||0)-1;
+                if(item.settings.activeMedia<0)item.settings.activeMedia=mediaList.length-1;
+                renderCanvas();
+            };
+            var productNext=document.createElement("button");
+            productNext.type="button";
+            productNext.className="fb-product-media-nav is-right";
+            productNext.innerHTML='<i class="fas fa-chevron-right"></i>';
+            productNext.onclick=function(e){
+                e.preventDefault();e.stopPropagation();
+                saveToHistory();
+                item.settings.activeMedia=((Number(item.settings.activeMedia)||0)+1)%mediaList.length;
+                renderCanvas();
+            };
+            mediaWrap.appendChild(productPrev);
+            mediaWrap.appendChild(productNext);
+        }
+        productCard.appendChild(mediaWrap);
+        if(mediaList.length>1){
+            var mediaDots=document.createElement("div");
+            mediaDots.className="fb-product-media-dots";
+            mediaList.forEach(function(_media,idx){
+                var dot=document.createElement("span");
+                dot.className="fb-product-media-dot"+(idx===activeMedia?" is-active":"");
+                mediaDots.appendChild(dot);
+            });
+            productCard.appendChild(mediaDots);
+        }
+        if(productBadge){
+            var productBd=document.createElement("div");
+            productBd.className="fb-pricing-badge";
+            productBd.textContent=productBadge;
+            productCard.appendChild(productBd);
+        }
+        var productTitle=document.createElement("div");
+        productTitle.className="fb-pricing-title";
+        productTitle.textContent=productName;
+        if(productColor)productTitle.style.color=productColor;
+        productCard.appendChild(productTitle);
+        var productPriceRow=document.createElement("div");
+        var productPriceEl=document.createElement("span");
+        productPriceEl.className="fb-pricing-price";
+        productPriceEl.textContent=productPrice;
+        if(productColor)productPriceEl.style.color=productColor;
+        productPriceRow.appendChild(productPriceEl);
+        if(productRegular&&productRegular!==productPrice){
+            var productRegularEl=document.createElement("span");
+            productRegularEl.className="fb-pricing-period";
+            productRegularEl.textContent=productRegular;
+            productRegularEl.style.textDecoration="line-through";
+            productRegularEl.style.marginLeft="8px";
+            if(productColor){productRegularEl.style.color=productColor;productRegularEl.style.opacity="0.55";}
+            productPriceRow.appendChild(productRegularEl);
+        }
+        if(productPeriod){
+            var productPeriodEl=document.createElement("span");
+            productPeriodEl.className="fb-pricing-period";
+            productPeriodEl.textContent=productPeriod;
+            if(productColor){productPeriodEl.style.color=productColor;productPeriodEl.style.opacity="0.7";}
+            productPriceRow.appendChild(productPeriodEl);
+        }
+        productCard.appendChild(productPriceRow);
+        if(productSubtitle){
+            var productSub=document.createElement("div");
+            productSub.className="fb-pricing-subtitle";
+            productSub.textContent=productSubtitle;
+            if(productColor){productSub.style.color=productColor;productSub.style.opacity="0.7";}
+            productCard.appendChild(productSub);
+        }
+        var productList=document.createElement("ul");
+        productList.className="fb-pricing-features";
+        item.settings.features.forEach(function(f){
+            var li=document.createElement("li");
+            li.textContent=String(f||"Feature");
+            if(productColor)li.style.color=productColor;
+            productList.appendChild(li);
+        });
+        productCard.appendChild(productList);
+        var productActions=document.createElement("div");
+        productActions.className="fb-product-actions";
+        if(productButton!==""){
+            var productCta=document.createElement("button");
+            productCta.type="button";
+            productCta.className="fb-pricing-cta";
+            productCta.textContent=productButton;
+            productCta.style.background=productBg;
+            productCta.style.color=productText;
+            productActions.appendChild(productCta);
+        }
+        if(productQuickViewEnabled||productCartEnabled){
+            var productUtility=document.createElement("div");
+            productUtility.className="fb-product-utility";
+            if(productQuickViewEnabled){
+                var productMore=document.createElement("button");
+                productMore.type="button";
+                productMore.className="fb-product-secondary";
+                productMore.textContent=productQuickViewLabel;
+                productMore.title=productDescription!==""?productDescription:"Open product details modal in preview or published mode";
+                productUtility.appendChild(productMore);
+            }
+            if(productCartEnabled){
+                var productCart=document.createElement("button");
+                productCart.type="button";
+                productCart.className="fb-product-cart";
+                productCart.innerHTML='<i class="fas fa-cart-shopping"></i>';
+                productCart.title="Add to cart";
+                productUtility.appendChild(productCart);
+            }
+            productActions.appendChild(productUtility);
+        }
+        if(productActions.children.length)productCard.appendChild(productActions);
+        w.appendChild(productCard);
+    }
+    else if(item.type==="checkout_summary"||item.type==="physical_checkout_summary"){
+        item.settings=item.settings||{};
+        item.settings.features=normalizeFeatureList(item.settings.features);
+        var isPhysicalCheckoutSummary=item.type==="physical_checkout_summary";
+        var summaryHeading=String(item.settings.heading||(isPhysicalCheckoutSummary?"Review Your Order":"Order Summary"));
+        var summaryPlan=String(item.settings.plan||(isPhysicalCheckoutSummary?"Selected Product":"Starter"));
         var summaryPrice=normalizeTemplateCurrencyValue(item.settings.price||"");
         var summaryRegular=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
         var summaryPeriod=String(item.settings.period||"");
         var summarySubtitle=String(item.settings.subtitle||"");
         var summaryBadge=String(item.settings.badge||"");
-        var summaryButton=String(item.settings.ctaLabel||"Pay Now").trim()||"Pay Now";
+        var summaryButton=String(item.settings.ctaLabel||(isPhysicalCheckoutSummary?"Place Order":"Pay Now")).trim()||(isPhysicalCheckoutSummary?"Place Order":"Pay Now");
         var summaryBg=String(item.settings.ctaBgColor||"#240E35");
         var summaryText=String(item.settings.ctaTextColor||"#ffffff");
         var customSummaryColor=(item.style&&item.style.color)?String(item.style.color):"";
+        var priceText=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"₱0");
         var card=document.createElement("div");
-        card.className="fb-pricing";
+        card.className=isPhysicalCheckoutSummary?"fb-pricing fb-physical-checkout":"fb-pricing";
         if(summaryBadge){
             var sBadge=document.createElement("div");
             sBadge.className="fb-pricing-badge";
             sBadge.textContent=summaryBadge;
             card.appendChild(sBadge);
         }
-        var sHeading=document.createElement("div");
-        sHeading.className="fb-pricing-subtitle";
-        sHeading.textContent=summaryHeading;
-        sHeading.style.fontSize="11px";
-        sHeading.style.fontWeight="800";
-        sHeading.style.letterSpacing="0.08em";
-        sHeading.style.textTransform="uppercase";
-        if(customSummaryColor){sHeading.style.color=customSummaryColor;sHeading.style.opacity="0.7";}
-        card.appendChild(sHeading);
-        var sTitle=document.createElement("div");
-        sTitle.className="fb-pricing-title";
-        sTitle.textContent=summaryPlan;
-        if(customSummaryColor)sTitle.style.color=customSummaryColor;
-        card.appendChild(sTitle);
-        var sPriceRow=document.createElement("div");
-        var sPrice=document.createElement("span");
-        sPrice.className="fb-pricing-price";
-        sPrice.textContent=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"₱0");
-        if(customSummaryColor)sPrice.style.color=customSummaryColor;
-        sPriceRow.appendChild(sPrice);
-        if(summaryPeriod){
-            var sPeriod=document.createElement("span");
-            sPeriod.className="fb-pricing-period";
-            sPeriod.textContent=summaryPeriod;
-            if(customSummaryColor){sPeriod.style.color=customSummaryColor;sPeriod.style.opacity="0.7";}
-            sPriceRow.appendChild(sPeriod);
-        }
-        card.appendChild(sPriceRow);
-        if(summarySubtitle){
-            var sSubtitle=document.createElement("div");
-            sSubtitle.className="fb-pricing-subtitle";
-            sSubtitle.textContent=summarySubtitle;
-            if(customSummaryColor){sSubtitle.style.color=customSummaryColor;sSubtitle.style.opacity="0.7";}
-            card.appendChild(sSubtitle);
+        if(isPhysicalCheckoutSummary){
+            var head=document.createElement("div");
+            head.className="fb-physical-checkout-head";
+            var sHeading=document.createElement("div");
+            sHeading.className="fb-physical-checkout-label";
+            sHeading.textContent=summaryHeading;
+            if(customSummaryColor){sHeading.style.color=customSummaryColor;sHeading.style.opacity="0.7";}
+            head.appendChild(sHeading);
+            card.appendChild(head);
+
+            var product=document.createElement("div");
+            product.className="fb-physical-checkout-product";
+            var thumb=document.createElement("div");
+            thumb.className="fb-physical-checkout-thumb";
+            thumb.innerHTML='<i class="fas fa-box-open"></i>';
+            product.appendChild(thumb);
+            var meta=document.createElement("div");
+            meta.className="fb-physical-checkout-meta";
+            var sTitle=document.createElement("div");
+            sTitle.className="fb-pricing-title";
+            sTitle.textContent=summaryPlan;
+            if(customSummaryColor)sTitle.style.color=customSummaryColor;
+            meta.appendChild(sTitle);
+            if(summarySubtitle){
+                var sSubtitle=document.createElement("div");
+                sSubtitle.className="fb-pricing-subtitle";
+                sSubtitle.textContent=summarySubtitle;
+                if(customSummaryColor){sSubtitle.style.color=customSummaryColor;sSubtitle.style.opacity="0.7";}
+                meta.appendChild(sSubtitle);
+            }
+            var priceWrap=document.createElement("div");
+            priceWrap.className="fb-physical-checkout-price";
+            var sPrice=document.createElement("span");
+            sPrice.className="fb-pricing-price";
+            sPrice.textContent=priceText;
+            if(customSummaryColor)sPrice.style.color=customSummaryColor;
+            priceWrap.appendChild(sPrice);
+            if(summaryPeriod){
+                var sPeriod=document.createElement("span");
+                sPeriod.className="fb-pricing-period";
+                sPeriod.textContent=summaryPeriod;
+                if(customSummaryColor){sPeriod.style.color=customSummaryColor;sPeriod.style.opacity="0.7";}
+                priceWrap.appendChild(sPeriod);
+            }
+            meta.appendChild(priceWrap);
+            product.appendChild(meta);
+            card.appendChild(product);
+
+            var rows=document.createElement("div");
+            rows.className="fb-physical-checkout-rows";
+            var row1=document.createElement("div");
+            row1.className="fb-physical-checkout-row";
+            row1.innerHTML='<span>Items subtotal</span><strong>'+priceText+'</strong>';
+            var row2=document.createElement("div");
+            row2.className="fb-physical-checkout-row";
+            row2.innerHTML='<span>Shipping</span><strong>Calculated later</strong>';
+            var row3=document.createElement("div");
+            row3.className="fb-physical-checkout-row fb-physical-checkout-row--total";
+            row3.innerHTML='<strong>Order total</strong><strong>'+priceText+'</strong>';
+            rows.appendChild(row1);
+            rows.appendChild(row2);
+            rows.appendChild(row3);
+            card.appendChild(rows);
+        }else{
+            var sHeading=document.createElement("div");
+            sHeading.className="fb-pricing-subtitle";
+            sHeading.textContent=summaryHeading;
+            sHeading.style.fontSize="11px";
+            sHeading.style.fontWeight="800";
+            sHeading.style.letterSpacing="0.08em";
+            sHeading.style.textTransform="uppercase";
+            if(customSummaryColor){sHeading.style.color=customSummaryColor;sHeading.style.opacity="0.7";}
+            card.appendChild(sHeading);
+            var sTitle=document.createElement("div");
+            sTitle.className="fb-pricing-title";
+            sTitle.textContent=summaryPlan;
+            if(customSummaryColor)sTitle.style.color=customSummaryColor;
+            card.appendChild(sTitle);
+            var sPriceRow=document.createElement("div");
+            var sPrice=document.createElement("span");
+            sPrice.className="fb-pricing-price";
+            sPrice.textContent=priceText;
+            if(customSummaryColor)sPrice.style.color=customSummaryColor;
+            sPriceRow.appendChild(sPrice);
+            if(summaryPeriod){
+                var sPeriod=document.createElement("span");
+                sPeriod.className="fb-pricing-period";
+                sPeriod.textContent=summaryPeriod;
+                if(customSummaryColor){sPeriod.style.color=customSummaryColor;sPeriod.style.opacity="0.7";}
+                sPriceRow.appendChild(sPeriod);
+            }
+            card.appendChild(sPriceRow);
+            if(summarySubtitle){
+                var sSubtitle=document.createElement("div");
+                sSubtitle.className="fb-pricing-subtitle";
+                sSubtitle.textContent=summarySubtitle;
+                if(customSummaryColor){sSubtitle.style.color=customSummaryColor;sSubtitle.style.opacity="0.7";}
+                card.appendChild(sSubtitle);
+            }
         }
         var sList=document.createElement("ul");
         sList.className="fb-pricing-features";
@@ -10346,6 +10731,56 @@ function promptImageUploadForElement(item,hostEl){
     input.click();
 }
 
+function ensureProductOfferMediaList(item){
+    item.settings=item.settings||{};
+    item.settings.media=normalizeProductOfferMediaList(item.settings.media);
+    return item.settings.media;
+}
+
+function applyUploadedImageToProductOffer(item,url,mediaIndex){
+    if(!item)return;
+    item.settings=item.settings||{};
+    var media=ensureProductOfferMediaList(item);
+    var idx=Number(mediaIndex);
+    if(isNaN(idx)||idx<0)idx=Number(item.settings.activeMedia)||0;
+    if(idx<0)idx=0;
+    if(idx>=media.length){
+        media.push({type:"image",src:"",alt:"Product image",poster:""});
+        idx=media.length-1;
+    }
+    media[idx]=Object.assign({}, media[idx]||{}, {
+        type:"image",
+        src:url,
+        alt:String((media[idx]&&media[idx].alt)||item.settings.plan||"Product image"),
+        poster:""
+    });
+    item.settings.media=media;
+    item.settings.activeMedia=idx;
+    renderCanvas();
+}
+
+function promptImageUploadForProductOffer(item,mediaIndex){
+    if(!item)return;
+    var input=document.createElement("input");
+    input.type="file";
+    input.accept="image/*";
+    input.style.display="none";
+    document.body.appendChild(input);
+    input.addEventListener("change",function(){
+        var file=input.files&&input.files[0]?input.files[0]:null;
+        if(!file){
+            if(input.parentNode)input.parentNode.removeChild(input);
+            return;
+        }
+        saveToHistory();
+        uploadImage(file,function(url){
+            applyUploadedImageToProductOffer(item,url,mediaIndex);
+        },"Product image upload",null,item.id);
+        if(input.parentNode)input.parentNode.removeChild(input);
+    },{once:true});
+    input.click();
+}
+
 function openImagePlaceholderMenu(item,hostEl,menuEl){
     if(!item||!hostEl||!menuEl)return;
     var hostRect=hostEl.getBoundingClientRect();
@@ -11926,6 +12361,133 @@ function renderSettings(){
             bindRadiusHelpButton("faqRadiusHelp");
         }
         renderFaqEditor();
+    } else if(selKind==="el"&&t.type==="product_offer"){
+        t.settings=t.settings||{};
+        t.settings.features=normalizeFeatureList(t.settings.features);
+        t.settings.media=normalizeProductOfferMediaList(t.settings.media);
+        var popadDef=[18,18,18,18],pomarDef=[0,0,0,0];
+        function renderProductOfferEditor(){
+            var pad=parseSpacing(t.style&&t.style.padding,popadDef),mar=parseSpacing(t.style&&t.style.margin,pomarDef);
+            var currentProductStepType=templateStepType(cur());
+            var isCheckoutProductEditor=currentProductStepType==="checkout";
+            var isOfferProductEditor=currentProductStepType==="upsell"||currentProductStepType==="downsell";
+            var mediaList=t.settings.media||[];
+            var features=t.settings.features||[];
+            var mediaCards=mediaList.map(function(m,idx){
+                m=(m&&typeof m==="object")?m:{};
+                var mediaType=String(m.type||"image")==="video"?"video":"image";
+                var mediaSrc=escapeSidebarHtml(String(m.src||""));
+                var mediaAlt=escapeSidebarHtml(String(m.alt||""));
+                var mediaPoster=escapeSidebarHtml(String(m.poster||""));
+                return '<div class="menu-item-card" data-idx="'+idx+'"><div class="menu-item-head"><strong>Media '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="poMediaMoveUp" data-idx="'+idx+'" title="Move up"><i class="fas fa-arrow-up"></i></button><button type="button" class="poMediaMoveDown" data-idx="'+idx+'" title="Move down"><i class="fas fa-arrow-down"></i></button><button type="button" class="poMediaDelete menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button></div></div><label>Type</label><select class="poMediaType" data-idx="'+idx+'"><option value="image"'+(mediaType==="image"?' selected':'')+'>Image</option><option value="video"'+(mediaType==="video"?' selected':'')+'>Video</option></select><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><button type="button" class="fb-btn poMediaUploadBtn" data-idx="'+idx+'" style="font-size:12px;padding:8px 10px;">Upload from PC</button><button type="button" class="fb-btn poMediaLibraryBtn" data-idx="'+idx+'" style="font-size:12px;padding:8px 10px;">Choose from Library</button></div><label>Media URL</label><input class="poMediaSrc" data-idx="'+idx+'" value="'+mediaSrc+'" placeholder="https://..."><label>Label / Alt text</label><input class="poMediaAlt" data-idx="'+idx+'" value="'+mediaAlt+'" placeholder="Main product image"><label>Poster image URL (video optional)</label><input class="poMediaPoster" data-idx="'+idx+'" value="'+mediaPoster+'" placeholder="https://..."></div>';
+            }).join("");
+            var featureCards=features.map(function(f,idx){
+                var val=escapeSidebarHtml(String(f||""));
+                return '<div class="menu-item-card" data-idx="'+idx+'"><div class="menu-item-head"><strong>Feature '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="poMoveUp" data-idx="'+idx+'" title="Move up"><i class="fas fa-arrow-up"></i></button><button type="button" class="poMoveDown" data-idx="'+idx+'" title="Move down"><i class="fas fa-arrow-down"></i></button><button type="button" class="poDelete menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button></div></div><label>Text</label><input class="poFeature" data-idx="'+idx+'" value="'+val+'"></div>';
+            }).join("");
+            var productContentMeta=isCheckoutProductEditor?'<div class="meta" style="margin:0 0 10px;">These values act as fallback product details on checkout. If the buyer selected a product earlier, checkout can replace them with the selected offer details.</div>':'<div class="meta" style="margin:0 0 10px;">Best for physical products, bundles, and marketplace-style offers with multiple photos or a demo video.</div>';
+            var productActionSection=isCheckoutProductEditor
+                ? '<div class="menu-split"></div><div class="menu-section-title">Payment Action</div><div class="meta" style="margin:0 0 10px;">Checkout-step product buttons automatically submit payment.</div><label>Payment button label</label><input id="poCtaLabel"><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">'
+                : '<div class="menu-split"></div><div class="menu-section-title">Call to Actions</div><label>Button label</label><input id="poCtaLabel"><label>Button link</label><input id="poCtaLink" placeholder="https://..."><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">';
+            settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="₱299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="₱499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
+            bind("poPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings.plan=v;renderCanvas();},{undo:true});
+            bindCurrency("poPrice",(t.settings&&t.settings.price)||"",v=>{t.settings.price=v;renderCanvas();},{undo:true});
+            bindCurrency("poRegular",(t.settings&&t.settings.regularPrice)||"",v=>{t.settings.regularPrice=v;renderCanvas();},{undo:true});
+            bind("poPeriod",(t.settings&&t.settings.period)||"",v=>{t.settings.period=v;renderCanvas();},{undo:true});
+            bind("poSubtitle",(t.settings&&t.settings.subtitle)||"",v=>{t.settings.subtitle=v;renderCanvas();},{undo:true});
+            bind("poBadge",(t.settings&&t.settings.badge)||"",v=>{t.settings.badge=v;renderCanvas();},{undo:true});
+            bind("poDescription",(t.settings&&t.settings.description)||"",v=>{t.settings.description=v;renderCanvas();},{undo:true});
+            bind("poCtaLabel",(t.settings&&t.settings.ctaLabel)||"Buy Now",v=>{t.settings.ctaLabel=v;renderCanvas();},{undo:true});
+            bind("poCtaBg",(t.settings&&t.settings.ctaBgColor)||"#240E35",v=>{t.settings.ctaBgColor=v;renderCanvas();},{undo:true});
+            bind("poCtaText",(t.settings&&t.settings.ctaTextColor)||"#ffffff",v=>{t.settings.ctaTextColor=v;renderCanvas();},{undo:true});
+            var poQuickViewEnabled=document.getElementById("poQuickViewEnabled");
+            var poQuickViewLabel=document.getElementById("poQuickViewLabel");
+            var poCartEnabled=document.getElementById("poCartEnabled");
+            if(poQuickViewEnabled){
+                poQuickViewEnabled.checked=t.settings.quickViewEnabled!==false;
+                poQuickViewEnabled.addEventListener("change",function(){
+                    saveToHistory();
+                    t.settings.quickViewEnabled=!!poQuickViewEnabled.checked;
+                    renderCanvas();
+                });
+            }
+            if(poCartEnabled){
+                poCartEnabled.checked=t.settings.cartEnabled!==false;
+                poCartEnabled.addEventListener("change",function(){
+                    saveToHistory();
+                    t.settings.cartEnabled=!!poCartEnabled.checked;
+                    renderCanvas();
+                });
+            }
+            bind("poQuickViewLabel",(t.settings&&t.settings.quickViewLabel)||"Details",v=>{t.settings.quickViewLabel=v;renderCanvas();},{undo:true});
+            bind("poTextColor",(t.style&&t.style.color)||"#240E35",v=>sty().color=v,{undo:true});
+            bind("poBg",(t.style&&t.style.backgroundColor)||"#ffffff",v=>sty().backgroundColor=v,{undo:true});
+            bind("poBorder",(t.style&&t.style.border)||"1px solid #E6E1EF",v=>sty().border=v,{undo:true});
+            bindPx("poRadius",(t.style&&t.style.borderRadius)||"18px",v=>sty().borderRadius=v,{undo:true});
+            bind("poShadow",(t.style&&t.style.boxShadow)||"0 12px 24px rgba(15,23,42,.08)",v=>sty().boxShadow=v,{undo:true});
+            settings.querySelectorAll(".poMediaType").forEach(function(inp){inp.addEventListener("change",function(){var idx=Number(inp.getAttribute("data-idx"));if(isNaN(idx)||!t.settings.media[idx])return;saveToHistory();t.settings.media[idx].type=String(inp.value||"image")==="video"?"video":"image";renderCanvas();});});
+            settings.querySelectorAll(".poMediaUploadBtn").forEach(function(btn){
+                btn.addEventListener("click",function(){
+                    var idx=Number(btn.getAttribute("data-idx"));
+                    if(isNaN(idx)||!t.settings.media[idx])return;
+                    promptImageUploadForProductOffer(t,idx);
+                });
+            });
+            settings.querySelectorAll(".poMediaLibraryBtn").forEach(function(btn){
+                btn.addEventListener("click",function(){
+                    var idx=Number(btn.getAttribute("data-idx"));
+                    if(isNaN(idx)||!t.settings.media[idx])return;
+                    openAssetLibraryModal({
+                        kind:"image",
+                        title:"Product Image Asset Library",
+                        subtitle:"Reuse stored images or upload a new one.",
+                        onSelect:function(url){
+                            saveToHistory();
+                            applyUploadedImageToProductOffer(t,url,idx);
+                        }
+                    });
+                });
+            });
+            settings.querySelectorAll(".poMediaSrc").forEach(function(inp){inp.addEventListener("input",function(){var idx=Number(inp.getAttribute("data-idx"));if(isNaN(idx)||!t.settings.media[idx])return;saveToHistory();t.settings.media[idx].src=String(inp.value||"").trim();renderCanvas();});});
+            settings.querySelectorAll(".poMediaAlt").forEach(function(inp){inp.addEventListener("input",function(){var idx=Number(inp.getAttribute("data-idx"));if(isNaN(idx)||!t.settings.media[idx])return;saveToHistory();t.settings.media[idx].alt=String(inp.value||"").trim();renderCanvas();});});
+            settings.querySelectorAll(".poMediaPoster").forEach(function(inp){inp.addEventListener("input",function(){var idx=Number(inp.getAttribute("data-idx"));if(isNaN(idx)||!t.settings.media[idx])return;saveToHistory();t.settings.media[idx].poster=String(inp.value||"").trim();renderCanvas();});});
+            settings.querySelectorAll(".poMediaDelete").forEach(function(btn){btn.addEventListener("click",function(){var idx=Number(btn.getAttribute("data-idx"));if(isNaN(idx)||t.settings.media.length<=1)return;saveToHistory();t.settings.media.splice(idx,1);t.settings.media=normalizeProductOfferMediaList(t.settings.media);renderProductOfferEditor();renderCanvas();});});
+            settings.querySelectorAll(".poMediaMoveUp").forEach(function(btn){btn.addEventListener("click",function(){var idx=Number(btn.getAttribute("data-idx"));if(isNaN(idx)||idx<=0)return;saveToHistory();var tmp=t.settings.media[idx-1];t.settings.media[idx-1]=t.settings.media[idx];t.settings.media[idx]=tmp;renderProductOfferEditor();renderCanvas();});});
+            settings.querySelectorAll(".poMediaMoveDown").forEach(function(btn){btn.addEventListener("click",function(){var idx=Number(btn.getAttribute("data-idx"));if(isNaN(idx)||idx>=t.settings.media.length-1)return;saveToHistory();var tmp=t.settings.media[idx+1];t.settings.media[idx+1]=t.settings.media[idx];t.settings.media[idx]=tmp;renderProductOfferEditor();renderCanvas();});});
+            var addPoMedia=document.getElementById("addPoMedia"); if(addPoMedia)addPoMedia.onclick=function(){saveToHistory();t.settings.media.push({type:"image",src:"",alt:"Media "+(t.settings.media.length+1),poster:""});renderProductOfferEditor();renderCanvas();};
+            settings.querySelectorAll(".poFeature").forEach(function(inp){inp.addEventListener("input",function(){var idx=Number(inp.getAttribute("data-idx"));if(isNaN(idx)||!t.settings.features[idx])return;saveToHistory();t.settings.features[idx]=String(inp.value||"").trim()||("Feature "+(idx+1));renderCanvas();});});
+            settings.querySelectorAll(".poDelete").forEach(function(btn){btn.addEventListener("click",function(){var idx=Number(btn.getAttribute("data-idx"));if(isNaN(idx)||t.settings.features.length<=1)return;saveToHistory();t.settings.features.splice(idx,1);t.settings.features=normalizeFeatureList(t.settings.features);renderProductOfferEditor();renderCanvas();});});
+            settings.querySelectorAll(".poMoveUp").forEach(function(btn){btn.addEventListener("click",function(){var idx=Number(btn.getAttribute("data-idx"));if(isNaN(idx)||idx<=0)return;saveToHistory();var tmp=t.settings.features[idx-1];t.settings.features[idx-1]=t.settings.features[idx];t.settings.features[idx]=tmp;renderProductOfferEditor();renderCanvas();});});
+            settings.querySelectorAll(".poMoveDown").forEach(function(btn){btn.addEventListener("click",function(){var idx=Number(btn.getAttribute("data-idx"));if(isNaN(idx)||idx>=t.settings.features.length-1)return;saveToHistory();var tmp=t.settings.features[idx+1];t.settings.features[idx+1]=t.settings.features[idx];t.settings.features[idx]=tmp;renderProductOfferEditor();renderCanvas();});});
+            var addPoFeature=document.getElementById("addPoFeature"); if(addPoFeature)addPoFeature.onclick=function(){saveToHistory();t.settings.features.push("Feature "+(t.settings.features.length+1));renderProductOfferEditor();renderCanvas();};
+            var allowedActions=isCheckoutProductEditor?["checkout"]:(isOfferProductEditor?["offer_accept","offer_decline","link"]:["next_step","step","link"]);
+            var productAction=String(t.settings.ctaActionType||"").trim().toLowerCase();
+            if(allowedActions.indexOf(productAction)<0)productAction=isOfferProductEditor?"offer_accept":"next_step";
+            if(isCheckoutProductEditor){productAction="checkout";t.settings.ctaLink="#";t.settings.ctaActionStepSlug="";}
+            else if(isOfferProductEditor&&productAction!=="link"){productAction="offer_accept";t.settings.ctaLink="#";t.settings.ctaActionStepSlug="";}
+            t.settings.ctaActionType=productAction;
+            var poCtaLabelField=document.getElementById("poCtaLabel"),poCtaLinkField=document.getElementById("poCtaLink");
+            if(poCtaLabelField&&poCtaLinkField){
+                var productStepOptions=steps.filter(function(s){return String(s.id)!==String(state.sid);}).map(function(s){var label=escapeSidebarHtml(String(s.title||s.type||"Step"));var safeType=escapeSidebarHtml(String(s.type||""));return '<option value="'+String(s.slug||"").replace(/"/g,'&quot;')+'">'+label+' ('+safeType+')</option>';}).join("")||'<option value="">No other pages found</option>';
+                var productActionOptions=isCheckoutProductEditor?'<option value="checkout">Checkout submit</option>':(isOfferProductEditor?'<option value="offer_accept">Accept offer</option><option value="offer_decline">Decline offer</option><option value="link">Custom URL</option>':'<option value="next_step">Smart next page</option><option value="step">Specific step</option><option value="link">Custom URL</option>');
+                poCtaLabelField.insertAdjacentHTML("afterend",'<label>Button action</label><select id="poCtaAction">'+productActionOptions+'</select><div id="poCtaStepWrap" style="display:none;"><label>Target page</label><select id="poCtaStep">'+productStepOptions+'</select></div><div class="meta" id="poCtaMeta" style="margin:6px 0 0;"></div>');
+                var poCtaAction=document.getElementById("poCtaAction"),poCtaStep=document.getElementById("poCtaStep"),poCtaStepWrap=document.getElementById("poCtaStepWrap"),poCtaMeta=document.getElementById("poCtaMeta"),poCtaLinkLabel=poCtaLinkField.previousElementSibling;
+                function syncPo(){
+                    var action=String(t.settings.ctaActionType||"next_step");
+                    poCtaAction.value=action;
+                    poCtaStepWrap.style.display=action==="step"?"block":"none";
+                    poCtaLinkField.style.display=action==="link"?"block":"none";
+                    if(poCtaLinkLabel)poCtaLinkLabel.style.display=action==="link"?"block":"none";
+                    poCtaMeta.textContent=isCheckoutProductEditor?'Checkout product buttons submit payment directly.':(isOfferProductEditor?(action==="offer_decline"?'This button submits the decline path for the current offer page.':(action==="link"?'Use a custom URL only if you want to leave the offer flow.':'This button submits the accept path for the current offer page.')):(action==="step"?'This button opens the selected next page and carries the product price.':(action==="link"?'Use a custom URL only if you want to leave the normal funnel flow.':'Smart next page usually carries buyers to checkout with this product price.')));
+                }
+                poCtaAction.addEventListener("change",function(){saveToHistory();t.settings.ctaActionType=String(poCtaAction.value||"next_step");if(t.settings.ctaActionType!=="step")t.settings.ctaActionStepSlug="";if(t.settings.ctaActionType!=="link")t.settings.ctaLink="#";syncPo();renderCanvas();});
+                poCtaStep.addEventListener("change",function(){saveToHistory();t.settings.ctaActionStepSlug=String(poCtaStep.value||"");var targetStep=steps.find(function(s){return String(s.slug||"")===String(poCtaStep.value||"");});t.settings.ctaLink=targetStep?buildFunnelStepHref(targetStep):"#";renderCanvas();});
+                bind("poCtaLink",(t.settings&&t.settings.ctaLink)||"#",v=>{t.settings.ctaLink=v;renderCanvas();},{undo:true});
+                syncPo();
+            }
+            mountSpacingControls();
+        }
+        renderProductOfferEditor();
     } else if(selKind==="el"&&t.type==="pricing"){
         t.settings=t.settings||{};
         t.settings.features=normalizeFeatureList(t.settings.features);
@@ -12137,25 +12699,26 @@ function renderSettings(){
             bindRadiusHelpButton("priceRadiusHelp");
         }
         renderPricingEditor();
-    } else if(selKind==="el"&&t.type==="checkout_summary"){
+    } else if(selKind==="el"&&(t.type==="checkout_summary"||t.type==="physical_checkout_summary")){
         t.settings=t.settings||{};
         t.settings.features=normalizeFeatureList(t.settings.features);
         var cspadDef=[22,22,22,22],csmarDef=[0,0,0,0];
+        var isPhysicalSummary=t.type==="physical_checkout_summary";
         function renderCheckoutSummaryEditor(){
             var pad=parseSpacing(t.style&&t.style.padding,cspadDef),mar=parseSpacing(t.style&&t.style.margin,csmarDef);
             var feats=(t.settings.features||[]).map(function(f,idx){
                 var val=String(f||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
                 return '<div class="menu-item-card" data-idx="'+idx+'"><div class="menu-item-head"><strong>Summary item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="csMoveUp" data-idx="'+idx+'" title="Move up"><i class="fas fa-arrow-up"></i></button><button type="button" class="csMoveDown" data-idx="'+idx+'" title="Move down"><i class="fas fa-arrow-down"></i></button><button type="button" class="csDelete menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button></div></div><label>Text</label><input class="csFeature" data-idx="'+idx+'" value="'+val+'"></div>';
             }).join("");
-            settings.innerHTML='<div class="menu-section-title">Checkout Summary</div><div class="meta" style="margin:0 0 10px;">Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.</div><label>Eyebrow</label><input id="csHeading"><label>Fallback plan name</label><input id="csPlan"><label>Fallback price</label><input id="csPrice" placeholder="₱29"><label>Fallback regular price</label><input id="csRegular" placeholder="₱49"><label>Period</label><input id="csPeriod" placeholder="/month"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="Selected Plan"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
-            bind("csHeading",(t.settings&&t.settings.heading)||"Order Summary",v=>{t.settings=t.settings||{};t.settings.heading=v;renderCanvas();},{undo:true});
+            settings.innerHTML='<div class="menu-section-title">'+(isPhysicalSummary?'Physical Checkout Summary':'Checkout Summary')+'</div><div class="meta" style="margin:0 0 10px;">'+(isPhysicalSummary?'Best used on physical-product checkout pages. Selected product images, cart items, and totals will replace these fallback values on the live page.':'Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.')+'</div><label>Eyebrow</label><input id="csHeading"><label>'+(isPhysicalSummary?'Fallback product name':'Fallback plan name')+'</label><input id="csPlan"><label>'+(isPhysicalSummary?'Fallback total':'Fallback price')+'</label><input id="csPrice" placeholder="₱29"><label>Fallback regular price</label><input id="csRegular" placeholder="₱49"><label>Period</label><input id="csPeriod" placeholder="'+(isPhysicalSummary?'':'/month')+'"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="'+(isPhysicalSummary?'Order Summary':'Selected Plan')+'"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
+            bind("csHeading",(t.settings&&t.settings.heading)||(isPhysicalSummary?"Review Your Order":"Order Summary"),v=>{t.settings=t.settings||{};t.settings.heading=v;renderCanvas();},{undo:true});
             bind("csPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings=t.settings||{};t.settings.plan=v;renderCanvas();},{undo:true});
             bindCurrency("csPrice",(t.settings&&t.settings.price)||"",v=>{t.settings=t.settings||{};t.settings.price=v;renderCanvas();},{undo:true});
             bindCurrency("csRegular",(t.settings&&t.settings.regularPrice)||"",v=>{t.settings=t.settings||{};t.settings.regularPrice=v;renderCanvas();},{undo:true});
             bind("csPeriod",(t.settings&&t.settings.period)||"",v=>{t.settings=t.settings||{};t.settings.period=v;renderCanvas();},{undo:true});
             bind("csSubtitle",(t.settings&&t.settings.subtitle)||"",v=>{t.settings=t.settings||{};t.settings.subtitle=v;renderCanvas();},{undo:true});
             bind("csBadge",(t.settings&&t.settings.badge)||"",v=>{t.settings=t.settings||{};t.settings.badge=v;renderCanvas();},{undo:true});
-            bind("csCtaLabel",(t.settings&&t.settings.ctaLabel)||"Pay Now",v=>{t.settings=t.settings||{};t.settings.ctaLabel=v;renderCanvas();},{undo:true});
+            bind("csCtaLabel",(t.settings&&t.settings.ctaLabel)||(isPhysicalSummary?"Place Order":"Pay Now"),v=>{t.settings=t.settings||{};t.settings.ctaLabel=v;renderCanvas();},{undo:true});
             bind("csCtaBg",(t.settings&&t.settings.ctaBgColor)||"#240E35",v=>{t.settings=t.settings||{};t.settings.ctaBgColor=v;renderCanvas();},{undo:true});
             bind("csCtaText",(t.settings&&t.settings.ctaTextColor)||"#ffffff",v=>{t.settings=t.settings||{};t.settings.ctaTextColor=v;renderCanvas();},{undo:true});
             bind("csTextColor",(t.style&&t.style.color)||"#240E35",v=>sty().color=v,{undo:true});
@@ -12628,7 +13191,9 @@ const sidebarComponentMeta={
     testimonial:{desc:"Social proof card with quote and author details."},
     faq:{desc:"Question-and-answer block for objections and clarity."},
     pricing:{desc:"Offer card with plan, price, features, and button."},
+    product_offer:{desc:"Marketplace-style product card with mixed media, price, and buy button."},
     checkout_summary:{desc:"Compact checkout confirmation with selected plan and pay button."},
+    physical_checkout_summary:{desc:"Physical-product checkout summary with cart-aware order details and payment CTA."},
     countdown:{desc:"Urgency timer for expiring offers or launches."}
 };
 function sidebarPreviewMarkup(type){
@@ -12665,6 +13230,8 @@ function sidebarPreviewMarkup(type){
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line md'></span></span><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line lg'></span></span></span></span>";
         case "pricing":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Popular</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>₱49</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
+        case "product_offer":
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-media'></span><span class='fb-comp-preview-pill'>Best Seller</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>₱299</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
         case "checkout_summary":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Selected</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±29</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Pay Now</span></span></span>";
         case "countdown":
@@ -13014,3 +13581,7 @@ loadStep(state.sid);
 })();
 </script>
 @endsection
+
+
+
+
