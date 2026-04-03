@@ -243,15 +243,14 @@ class FunnelPortalController extends Controller
         $funnel = Funnel::with('steps')->where('slug', $funnelSlug)->where('status', 'published')->firstOrFail();
         $steps = $funnel->steps->where('is_active', true)->sortBy('position')->values();
         $step = $steps->firstWhere('slug', $stepSlug);
-        abort_if(! $step || $step->type !== 'checkout', 404);
+        abort_if(! $step || ! in_array($step->type, ['checkout', 'upsell', 'downsell'], true), 404);
 
         $record = Payment::query()->findOrFail($payment);
         abort_unless($record->provider === 'paymongo', 403);
         abort_unless((int) $record->tenant_id === (int) $funnel->tenant_id, 403);
 
         if ($record->status === 'paid') {
-            $tracking->trackPaymentPaid($record, ['source' => 'paymongo_return_cached']);
-            return $this->redirectAfterPaidCheckout($funnel, $steps, $step);
+            return $this->completeConfirmedPayment($tracking, $record, $funnel, $steps, $step, 'paymongo_return_cached');
         }
 
         $sessionId = $record->provider_reference;
@@ -288,9 +287,7 @@ class FunnelPortalController extends Controller
                 'payment_method' => $method ?? $record->payment_method,
                 'payment_date' => now()->toDateString(),
             ]);
-            $tracking->trackPaymentPaid($record->fresh(), ['source' => 'paymongo_return']);
-
-            return $this->redirectAfterPaidCheckout($funnel, $steps, $step);
+            return $this->completeConfirmedPayment($tracking, $record->fresh(), $funnel, $steps, $step, 'paymongo_return');
         }
 
         return redirect()
@@ -416,7 +413,16 @@ class FunnelPortalController extends Controller
         ]);
 
         $requestSelection = $this->pricingSelectionFromCheckoutRequest($validated);
-        $selectedPricing = $this->mergePricingSelections($this->currentSelectedPricing($funnel->id), $requestSelection);
+        $currentStepPricing = $this->primaryPricingSelectionFromLayout($step);
+        $requestTargetsCurrentStep = is_array($requestSelection)
+            && strtolower(trim((string) ($requestSelection['sourceStepSlug'] ?? ''))) === strtolower(trim((string) ($step->slug ?? '')));
+        if ($requestTargetsCurrentStep) {
+            $selectedPricing = $this->mergePricingSelections($currentStepPricing, $requestSelection);
+        } elseif (is_array($currentStepPricing)) {
+            $selectedPricing = $currentStepPricing;
+        } else {
+            $selectedPricing = $this->mergePricingSelections($this->currentSelectedPricing($funnel->id), $requestSelection);
+        }
         $offerAmount = $this->amountFromSelectedPricing($selectedPricing)
             ?? ((float) ($step->price ?? 0) > 0 ? (float) $step->price : null)
             ?? $this->primaryPricingAmountFromLayout($step)
@@ -434,7 +440,41 @@ class FunnelPortalController extends Controller
         ], 90);
 
         $payment = null;
-        if (! $recentDecision && $accept && $offerAmount > 0) {
+        if ($accept && $offerAmount > 0) {
+            $sessionIdentifier = $tracking->sessionIdentifier($request);
+            $recentPayment = Payment::query()
+                ->where('tenant_id', $funnel->tenant_id)
+                ->where('funnel_id', $funnel->id)
+                ->where('funnel_step_id', $step->id)
+                ->where('session_identifier', $sessionIdentifier)
+                ->where('amount', $offerAmount)
+                ->where('created_at', '>=', now()->subMinutes(10))
+                ->latest('id')
+                ->first();
+
+            if ($recentPayment) {
+                if ($recentPayment->status === 'paid') {
+                    return $this->completeConfirmedPayment($tracking, $recentPayment, $funnel, $steps, $step, 'offer_repeat_guard');
+                }
+
+                return redirect()
+                    ->route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug])
+                    ->with('error', 'Offer checkout is already in progress for this session. Please finish the current payment before trying again.');
+            }
+
+            if (app(PayMongoCheckoutService::class)->isConfigured()) {
+                return $this->checkoutWithPayMongo(
+                    app(PayMongoCheckoutService::class),
+                    $tracking,
+                    $request,
+                    $funnel,
+                    $steps,
+                    $step,
+                    $offerAmount,
+                    $selectedPricing
+                );
+            }
+
             $payment = Payment::create([
                 'tenant_id' => $funnel->tenant_id,
                 'funnel_id' => $funnel->id,
@@ -443,9 +483,9 @@ class FunnelPortalController extends Controller
                 'amount' => $offerAmount,
                 'status' => 'paid',
                 'payment_date' => now()->toDateString(),
-                'session_identifier' => $tracking->sessionIdentifier($request),
+                'session_identifier' => $sessionIdentifier,
             ]);
-            $tracking->trackPaymentPaid($payment, ['source' => 'offer_accept']);
+            $tracking->trackPaymentPaid($payment, ['source' => 'offer_accept_direct']);
         }
 
         if (! $recentDecision) {
@@ -461,6 +501,63 @@ class FunnelPortalController extends Controller
             ]);
         }
 
+        return $this->redirectAfterOfferDecision($funnel, $steps, $step, $accept);
+    }
+
+    private function completeConfirmedPayment(
+        FunnelTrackingService $tracking,
+        Payment $payment,
+        Funnel $funnel,
+        $steps,
+        FunnelStep $step,
+        string $source
+    ): \Illuminate\Http\RedirectResponse {
+        $tracking->trackPaymentPaid($payment, ['source' => $source]);
+
+        if (in_array($step->type, ['upsell', 'downsell'], true)) {
+            $this->trackAcceptedOfferIfMissing($tracking, $funnel, $step, $payment);
+
+            return $this->redirectAfterOfferDecision($funnel, $steps, $step, true);
+        }
+
+        return $this->redirectAfterPaidCheckout($funnel, $steps, $step);
+    }
+
+    private function trackAcceptedOfferIfMissing(
+        FunnelTrackingService $tracking,
+        Funnel $funnel,
+        FunnelStep $step,
+        Payment $payment
+    ): void {
+        $eventName = $step->type === 'upsell'
+            ? FunnelTrackingService::EVENT_UPSELL_ACCEPTED
+            : FunnelTrackingService::EVENT_DOWNSELL_ACCEPTED;
+
+        $exists = $tracking->hasRecentEvent([
+            'tenant_id' => $funnel->tenant_id,
+            'funnel_id' => $funnel->id,
+            'funnel_step_id' => $step->id,
+            'payment_id' => $payment->id,
+            'event_name' => $eventName,
+        ], 86400);
+
+        if ($exists) {
+            return;
+        }
+
+        $lead = null;
+        if ($payment->lead_id) {
+            $lead = Lead::query()->find($payment->lead_id);
+        }
+
+        $tracking->trackOfferDecision($funnel, $step, 'accept', $lead, $payment, null, [
+            'amount' => (float) $payment->amount,
+            'source' => 'confirmed_payment',
+        ]);
+    }
+
+    private function redirectAfterOfferDecision(Funnel $funnel, $steps, FunnelStep $step, bool $accept): \Illuminate\Http\RedirectResponse
+    {
         $ordered = $steps->values();
         $currentIndex = $ordered->search(fn ($item) => (int) $item->id === (int) $step->id);
         $target = null;
@@ -798,6 +895,14 @@ class FunnelPortalController extends Controller
 
     private function primaryPricingAmountFromLayout(FunnelStep $step): ?float
     {
+        $selection = $this->primaryPricingSelectionFromLayout($step);
+        if (is_array($selection)) {
+            $amount = $this->amountFromSelectedPricing($selection);
+            if ($amount !== null && $amount > 0) {
+                return $amount;
+            }
+        }
+
         $layout = $step->layout_json;
         if (! is_array($layout)) {
             return null;
@@ -856,6 +961,85 @@ class FunnelPortalController extends Controller
         $rootAmount = $findInSections(is_array($layout['root'] ?? null) ? $layout['root'] : []);
         if ($rootAmount !== null) {
             return $rootAmount;
+        }
+
+        return $findInSections(is_array($layout['sections'] ?? null) ? $layout['sections'] : []);
+    }
+
+    private function primaryPricingSelectionFromLayout(FunnelStep $step): ?array
+    {
+        $layout = $step->layout_json;
+        if (! is_array($layout)) {
+            return null;
+        }
+
+        $findInElements = function (array $elements) use (&$findInElements, $step): ?array {
+            foreach ($elements as $element) {
+                if (! is_array($element)) {
+                    continue;
+                }
+                if (strtolower(trim((string) ($element['type'] ?? ''))) === 'pricing') {
+                    $settings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
+                    $features = [];
+                    foreach ((is_array($settings['features'] ?? null) ? $settings['features'] : []) as $feature) {
+                        if (! is_scalar($feature)) {
+                            continue;
+                        }
+                        $featureText = mb_substr(trim((string) $feature), 0, 200);
+                        if ($featureText !== '') {
+                            $features[] = $featureText;
+                        }
+                    }
+
+                    return [
+                        'pricingId' => trim((string) ($element['id'] ?? '')),
+                        'sourceStepSlug' => (string) ($step->slug ?? ''),
+                        'plan' => mb_substr(trim((string) ($settings['plan'] ?? '')), 0, 200),
+                        'price' => $this->normalizeMoneyDisplay($settings['price'] ?? ''),
+                        'regularPrice' => $this->normalizeMoneyDisplay($settings['regularPrice'] ?? ''),
+                        'period' => mb_substr(trim((string) ($settings['period'] ?? '')), 0, 60),
+                        'subtitle' => mb_substr(trim((string) ($settings['subtitle'] ?? '')), 0, 300),
+                        'badge' => mb_substr(trim((string) ($settings['badge'] ?? '')), 0, 80),
+                        'features' => $features,
+                    ];
+                }
+                $slides = is_array(data_get($element, 'settings.slides')) ? data_get($element, 'settings.slides') : [];
+                foreach ($slides as $slide) {
+                    $nested = $findInElements(is_array($slide['elements'] ?? null) ? $slide['elements'] : []);
+                    if ($nested !== null) {
+                        return $nested;
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        $findInSections = function (array $sections) use ($findInElements): ?array {
+            foreach ($sections as $section) {
+                if (! is_array($section)) {
+                    continue;
+                }
+                $sectionSelection = $findInElements(is_array($section['elements'] ?? null) ? $section['elements'] : []);
+                if ($sectionSelection !== null) {
+                    return $sectionSelection;
+                }
+                foreach ((is_array($section['rows'] ?? null) ? $section['rows'] : []) as $row) {
+                    foreach ((is_array($row['columns'] ?? null) ? $row['columns'] : []) as $column) {
+                        $columnSelection = $findInElements(is_array($column['elements'] ?? null) ? $column['elements'] : []);
+                        if ($columnSelection !== null) {
+                            return $columnSelection;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        };
+
+        $rootSelection = $findInSections(is_array($layout['root'] ?? null) ? $layout['root'] : []);
+        if ($rootSelection !== null) {
+            return $rootSelection;
         }
 
         return $findInSections(is_array($layout['sections'] ?? null) ? $layout['sections'] : []);

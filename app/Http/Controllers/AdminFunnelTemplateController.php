@@ -129,6 +129,7 @@ class AdminFunnelTemplateController extends Controller
             'builderAssetDeleteUrl' => route('admin.funnel-templates.builder.assets.destroy', $funnelTemplate),
             'builderUploadUrl' => route('admin.funnel-templates.builder.image.upload', $funnelTemplate),
             'builderPreviewUrlTemplate' => route('admin.funnel-templates.preview', ['funnel_template' => $funnelTemplate, 'step' => '__STEP__']),
+            'builderTestUrlTemplate' => route('admin.funnel-templates.test', ['funnel_template' => $funnelTemplate, 'step' => '__STEP__']),
             'builderStepVersionUrlTemplate' => route('admin.funnel-templates.steps.versions.store', ['funnel_template' => $funnelTemplate, 'step' => '__STEP__']),
             'builderStepStoreUrl' => route('admin.funnel-templates.steps.store', $funnelTemplate),
             'builderStepUpdateUrlTemplate' => route('admin.funnel-templates.steps.update', ['funnel_template' => $funnelTemplate, 'step' => '__STEP__']),
@@ -309,6 +310,89 @@ class AdminFunnelTemplateController extends Controller
             'isPreview' => true,
             'selectedPricing' => null,
         ]);
+    }
+
+    public function test(Request $request, FunnelTemplate $funnelTemplate, ?FunnelTemplateStep $step = null)
+    {
+        [$steps, $resolvedStep] = $this->resolveTemplateTestStepContext($funnelTemplate, $step);
+        $selectedPricing = $this->syncTemplateTestSelectedPricing(
+            $request,
+            $funnelTemplate,
+            (int) $steps->first()->id === (int) $resolvedStep->id
+        );
+
+        return view('funnels.portal.step', [
+            'funnel' => $funnelTemplate,
+            'step' => $resolvedStep,
+            'nextStep' => $this->nextStep($steps, $resolvedStep->id),
+            'allSteps' => $steps,
+            'isFirstStep' => (int) $steps->first()->id === (int) $resolvedStep->id,
+            'isPreview' => false,
+            'isTemplateTest' => true,
+            'selectedPricing' => $selectedPricing,
+        ]);
+    }
+
+    public function testOptIn(Request $request, FunnelTemplate $funnelTemplate, FunnelTemplateStep $step)
+    {
+        [$steps, $resolvedStep] = $this->resolveTemplateTestStepContext($funnelTemplate, $step, 'opt_in');
+        $request->validate([
+            'website' => 'nullable|string|size:0',
+        ]);
+
+        return $this->redirectAfterTemplateTestStep($funnelTemplate, $steps, $resolvedStep);
+    }
+
+    public function testCheckout(Request $request, FunnelTemplate $funnelTemplate, FunnelTemplateStep $step)
+    {
+        [$steps, $resolvedStep] = $this->resolveTemplateTestStepContext($funnelTemplate, $step, 'checkout');
+        $request->validate([
+            'amount' => 'nullable',
+            'website' => 'nullable|string|size:0',
+            'checkout_pricing_id' => 'nullable|string|max:120',
+            'checkout_pricing_source_step' => 'nullable|string|max:120',
+            'checkout_pricing_plan' => 'nullable|string|max:200',
+            'checkout_pricing_price' => 'nullable|string|max:120',
+            'checkout_pricing_regular_price' => 'nullable|string|max:120',
+            'checkout_pricing_period' => 'nullable|string|max:60',
+            'checkout_pricing_subtitle' => 'nullable|string|max:300',
+            'checkout_pricing_badge' => 'nullable|string|max:80',
+            'checkout_pricing_features' => 'nullable|string|max:5000',
+        ]);
+
+        $selection = $this->templateTestPricingSelectionFromCheckoutPayload($request->all());
+        if (is_array($selection)) {
+            session()->put($this->templateTestSelectedPricingSessionKey($funnelTemplate->id), $selection);
+        }
+
+        return $this->redirectAfterTemplateTestStep($funnelTemplate, $steps, $resolvedStep);
+    }
+
+    public function testOffer(Request $request, FunnelTemplate $funnelTemplate, FunnelTemplateStep $step)
+    {
+        [$steps, $resolvedStep] = $this->resolveTemplateTestStepContext($funnelTemplate, $step);
+        abort_unless(in_array($resolvedStep->type, ['upsell', 'downsell'], true), 422, 'Invalid template offer step.');
+
+        $validated = $request->validate([
+            'decision' => ['required', Rule::in(['accept', 'decline'])],
+            'website' => 'nullable|string|size:0',
+            'checkout_pricing_id' => 'nullable|string|max:120',
+            'checkout_pricing_source_step' => 'nullable|string|max:120',
+            'checkout_pricing_plan' => 'nullable|string|max:200',
+            'checkout_pricing_price' => 'nullable|string|max:120',
+            'checkout_pricing_regular_price' => 'nullable|string|max:120',
+            'checkout_pricing_period' => 'nullable|string|max:60',
+            'checkout_pricing_subtitle' => 'nullable|string|max:300',
+            'checkout_pricing_badge' => 'nullable|string|max:80',
+            'checkout_pricing_features' => 'nullable|string|max:4000',
+        ]);
+
+        $selection = $this->templateTestPricingSelectionFromCheckoutPayload($validated);
+        if (is_array($selection)) {
+            session()->put($this->templateTestSelectedPricingSessionKey($funnelTemplate->id), $selection);
+        }
+
+        return $this->redirectAfterTemplateTestOfferDecision($funnelTemplate, $steps, $resolvedStep, $validated['decision'] === 'accept');
     }
 
     public function saveLayout(Request $request, FunnelTemplate $funnelTemplate)
@@ -642,6 +726,161 @@ class AdminFunnelTemplateController extends Controller
         }
 
         return $ordered->get($index + 1);
+    }
+
+    private function resolveTemplateTestStepContext(
+        FunnelTemplate $funnelTemplate,
+        ?FunnelTemplateStep $step = null,
+        ?string $expectedType = null
+    ): array {
+        $steps = $funnelTemplate->steps()->where('is_active', true)->orderBy('position')->get()->values();
+        abort_if($steps->isEmpty(), 404);
+        if ($step && (int) $step->funnel_template_id !== (int) $funnelTemplate->id) {
+            abort(404);
+        }
+
+        $resolvedStep = $step ?: $steps->first();
+        abort_if(! $resolvedStep, 404);
+
+        if ($expectedType !== null) {
+            abort_unless($resolvedStep->type === $expectedType, 422, 'Invalid template step type.');
+        }
+
+        return [$steps, $resolvedStep];
+    }
+
+    private function templateTestSelectedPricingSessionKey(int $templateId): string
+    {
+        return "template_test_selected_pricing_{$templateId}";
+    }
+
+    private function currentTemplateTestSelectedPricing(int $templateId): ?array
+    {
+        $selection = session()->get($this->templateTestSelectedPricingSessionKey($templateId));
+        return is_array($selection) ? $selection : null;
+    }
+
+    private function templateTestPricingSelectionFromCheckoutPayload(array $payload): ?array
+    {
+        $pricingId = trim((string) ($payload['checkout_pricing_id'] ?? ''));
+        $sourceStepSlug = strtolower(trim((string) ($payload['checkout_pricing_source_step'] ?? '')));
+        $plan = mb_substr(trim((string) ($payload['checkout_pricing_plan'] ?? '')), 0, 200);
+        $price = mb_substr(trim((string) ($payload['checkout_pricing_price'] ?? '')), 0, 120);
+        $regularPrice = mb_substr(trim((string) ($payload['checkout_pricing_regular_price'] ?? '')), 0, 120);
+        $period = mb_substr(trim((string) ($payload['checkout_pricing_period'] ?? '')), 0, 60);
+        $subtitle = mb_substr(trim((string) ($payload['checkout_pricing_subtitle'] ?? '')), 0, 300);
+        $badge = mb_substr(trim((string) ($payload['checkout_pricing_badge'] ?? '')), 0, 80);
+        $features = [];
+        $rawFeatures = trim((string) ($payload['checkout_pricing_features'] ?? ''));
+        if ($rawFeatures !== '') {
+            $decoded = json_decode($rawFeatures, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $feature) {
+                    if (! is_scalar($feature)) {
+                        continue;
+                    }
+                    $featureText = mb_substr(trim((string) $feature), 0, 200);
+                    if ($featureText !== '') {
+                        $features[] = $featureText;
+                    }
+                }
+            }
+        }
+
+        if (
+            $pricingId === ''
+            && $sourceStepSlug === ''
+            && $plan === ''
+            && $price === ''
+            && $regularPrice === ''
+            && $period === ''
+            && $subtitle === ''
+            && $badge === ''
+            && $features === []
+        ) {
+            return null;
+        }
+
+        return [
+            'pricingId' => $pricingId,
+            'sourceStepSlug' => $sourceStepSlug,
+            'plan' => $plan,
+            'price' => $price,
+            'regularPrice' => $regularPrice,
+            'period' => $period,
+            'subtitle' => $subtitle,
+            'badge' => $badge,
+            'features' => $features,
+        ];
+    }
+
+    private function templateTestPricingSelectionFromQuery(Request $request): ?array
+    {
+        return $this->templateTestPricingSelectionFromCheckoutPayload([
+            'checkout_pricing_id' => $request->query('offer_pricing', ''),
+            'checkout_pricing_source_step' => $request->query('offer_step', ''),
+            'checkout_pricing_plan' => $request->query('offer_plan', ''),
+            'checkout_pricing_price' => $request->query('offer_price', ''),
+            'checkout_pricing_regular_price' => $request->query('offer_regular_price', ''),
+            'checkout_pricing_period' => $request->query('offer_period', ''),
+            'checkout_pricing_subtitle' => $request->query('offer_subtitle', ''),
+            'checkout_pricing_badge' => $request->query('offer_badge', ''),
+            'checkout_pricing_features' => $request->query('offer_features', ''),
+        ]);
+    }
+
+    private function syncTemplateTestSelectedPricing(Request $request, FunnelTemplate $template, bool $isFirstStep): ?array
+    {
+        $selection = $this->templateTestPricingSelectionFromQuery($request);
+        if (is_array($selection)) {
+            session()->put($this->templateTestSelectedPricingSessionKey($template->id), $selection);
+            return $selection;
+        }
+
+        if ($isFirstStep) {
+            session()->forget($this->templateTestSelectedPricingSessionKey($template->id));
+            return null;
+        }
+
+        return $this->currentTemplateTestSelectedPricing($template->id);
+    }
+
+    private function redirectAfterTemplateTestStep(FunnelTemplate $template, $steps, FunnelTemplateStep $step)
+    {
+        $next = $this->nextStep($steps, $step->id);
+        if (! $next) {
+            return redirect()->route('admin.funnel-templates.test', ['funnel_template' => $template, 'step' => $step]);
+        }
+
+        return redirect()->route('admin.funnel-templates.test', ['funnel_template' => $template, 'step' => $next]);
+    }
+
+    private function redirectAfterTemplateTestOfferDecision(
+        FunnelTemplate $template,
+        $steps,
+        FunnelTemplateStep $step,
+        bool $accept
+    ) {
+        $ordered = collect($steps)->values();
+        $currentIndex = $ordered->search(fn ($item) => (int) $item->id === (int) $step->id);
+        $target = null;
+
+        if ($currentIndex !== false) {
+            $immediateNext = $ordered->get($currentIndex + 1);
+            if ($step->type === 'upsell' && ! $accept && $immediateNext && $immediateNext->type === 'downsell') {
+                $target = $immediateNext;
+            } elseif ($step->type === 'upsell' && $accept && $immediateNext && $immediateNext->type === 'downsell') {
+                $target = $ordered->get($currentIndex + 2);
+            } else {
+                $target = $immediateNext;
+            }
+        }
+
+        if (! $target) {
+            $target = $ordered->last();
+        }
+
+        return redirect()->route('admin.funnel-templates.test', ['funnel_template' => $template, 'step' => $target]);
     }
 
     private function builderAssetKindFromPath(string $path): ?string

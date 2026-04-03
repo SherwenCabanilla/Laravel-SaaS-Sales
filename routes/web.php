@@ -85,6 +85,10 @@ Route::middleware(['auth', 'tenant.subscription', 'role:super-admin'])->group(fu
     Route::post('/admin/funnel-templates/{funnel_template}/publish', [AdminFunnelTemplateController::class, 'publish'])->name('admin.funnel-templates.publish');
     Route::post('/admin/funnel-templates/{funnel_template}/unpublish', [AdminFunnelTemplateController::class, 'unpublish'])->name('admin.funnel-templates.unpublish');
     Route::get('/admin/funnel-templates/{funnel_template}/preview/{step?}', [AdminFunnelTemplateController::class, 'preview'])->name('admin.funnel-templates.preview');
+    Route::get('/admin/funnel-templates/{funnel_template}/test/{step?}', [AdminFunnelTemplateController::class, 'test'])->name('admin.funnel-templates.test');
+    Route::post('/admin/funnel-templates/{funnel_template}/test/{step}/opt-in', [AdminFunnelTemplateController::class, 'testOptIn'])->name('admin.funnel-templates.test.optin');
+    Route::post('/admin/funnel-templates/{funnel_template}/test/{step}/checkout', [AdminFunnelTemplateController::class, 'testCheckout'])->name('admin.funnel-templates.test.checkout');
+    Route::post('/admin/funnel-templates/{funnel_template}/test/{step}/offer', [AdminFunnelTemplateController::class, 'testOffer'])->name('admin.funnel-templates.test.offer');
     Route::post('/admin/funnel-templates/{funnel_template}/builder/layout', [AdminFunnelTemplateController::class, 'saveLayout'])->name('admin.funnel-templates.builder.layout.save');
     Route::get('/admin/funnel-templates/{funnel_template}/builder/assets', [AdminFunnelTemplateController::class, 'builderAssets'])->name('admin.funnel-templates.builder.assets.index');
     Route::post('/admin/funnel-templates/{funnel_template}/builder/assets/delete', [AdminFunnelTemplateController::class, 'destroyBuilderAssets'])->name('admin.funnel-templates.builder.assets.destroy');

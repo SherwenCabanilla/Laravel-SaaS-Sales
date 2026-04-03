@@ -428,6 +428,7 @@
         $hasBuilderLayout = count($renderSections) > 0;
         $activeSteps = collect($allSteps ?? [])->values()->filter(fn ($s) => isset($s->id, $s->slug));
         $activeStepsBySlug = $activeSteps->keyBy(fn ($s) => strtolower(trim((string) $s->slug)));
+        $isTemplateTest = (bool) ($isTemplateTest ?? false);
         $normalizeStepType = function (?string $type): string {
             $type = strtolower(trim((string) $type));
             if (in_array($type, ['upsell', 'downsell'], true)) {
@@ -510,7 +511,30 @@
             }
             return $optInStep ?: $salesStep ?: $checkoutStep ?: $thankYouStep ?: $homeStep ?: $nextStep ?: $activeSteps->first(fn ($candidate) => (int) $candidate->id !== (int) $step->id);
         };
-        $resolveButtonAction = function (array $settings) use ($funnel, $step, $nextStep, $isPreview, $activeStepsBySlug) {
+        $isAdminTemplatePreview = request()->routeIs('admin.funnel-templates.preview');
+        $stepRoute = function ($targetStep) use ($funnel, $isPreview, $isTemplateTest, $isAdminTemplatePreview) {
+            if ($isPreview) {
+                if ($isAdminTemplatePreview || $isTemplateTest) {
+                    return route('admin.funnel-templates.preview', ['funnel_template' => $funnel, 'step' => $targetStep]);
+                }
+                return route('funnels.preview', ['funnel' => $funnel, 'step' => $targetStep]);
+            }
+            if ($isTemplateTest) {
+                return route('admin.funnel-templates.test', ['funnel_template' => $funnel, 'step' => $targetStep]);
+            }
+            return route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $targetStep->slug]);
+        };
+        $checkoutActionUrl = $isTemplateTest
+            ? route('admin.funnel-templates.test.checkout', ['funnel_template' => $funnel, 'step' => $step])
+            : route('funnels.portal.checkout', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]);
+        $offerActionUrl = $isTemplateTest
+            ? route('admin.funnel-templates.test.offer', ['funnel_template' => $funnel, 'step' => $step])
+            : route('funnels.portal.offer', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]);
+        $optInActionUrl = $isTemplateTest
+            ? route('admin.funnel-templates.test.optin', ['funnel_template' => $funnel, 'step' => $step])
+            : route('funnels.portal.optin', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]);
+        $restartStepUrl = $stepRoute($activeSteps->first());
+        $resolveButtonAction = function (array $settings) use ($step, $nextStep, $isPreview, $activeStepsBySlug, $stepRoute, $checkoutActionUrl, $offerActionUrl) {
             $link = trim((string) ($settings['link'] ?? '#'));
             $actionType = strtolower(trim((string) ($settings['actionType'] ?? '')));
             if ($actionType === '') {
@@ -521,10 +545,7 @@
                 if (!$nextStep) {
                     return ['kind' => 'link', 'href' => '#'];
                 }
-                if ($isPreview) {
-                    return ['kind' => 'link', 'href' => route('funnels.preview', ['funnel' => $funnel, 'step' => $nextStep->id])];
-                }
-                return ['kind' => 'link', 'href' => route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $nextStep->slug])];
+                return ['kind' => 'link', 'href' => $stepRoute($nextStep)];
             }
 
             if ($actionType === 'step') {
@@ -533,10 +554,7 @@
                 if (!$target) {
                     return ['kind' => 'link', 'href' => '#'];
                 }
-                if ($isPreview) {
-                    return ['kind' => 'link', 'href' => route('funnels.preview', ['funnel' => $funnel, 'step' => $target->id])];
-                }
-                return ['kind' => 'link', 'href' => route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $target->slug])];
+                return ['kind' => 'link', 'href' => $stepRoute($target)];
             }
 
             if ($actionType === 'checkout') {
@@ -548,7 +566,7 @@
                 }
                 return [
                     'kind' => 'post',
-                    'action' => route('funnels.portal.checkout', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]),
+                    'action' => $checkoutActionUrl,
                     'fields' => ['amount' => (float) ($step->price ?? 0)],
                 ];
             }
@@ -562,7 +580,7 @@
                 }
                 return [
                     'kind' => 'post',
-                    'action' => route('funnels.portal.offer', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]),
+                    'action' => $offerActionUrl,
                     'fields' => ['decision' => $actionType === 'offer_accept' ? 'accept' : 'decline'],
                 ];
             }
@@ -891,11 +909,11 @@
                         if (count($sectionElements) > 0) {
                             array_unshift($rows, [
                                 'id' => 'sec_el_row_' . md5((string) ($section['id'] ?? uniqid('', true))),
-                                'style' => ['gap' => '8px'],
+                                'style' => ['gap' => '0', 'padding' => '0', 'backgroundColor' => 'transparent'],
                                 'settings' => ['contentWidth' => 'full'],
                                 'columns' => [[
                                     'id' => 'sec_el_col_' . md5((string) ($section['id'] ?? uniqid('', true))),
-                                    'style' => ['flex' => '1 1 240px'],
+                                    'style' => ['flex' => '1 1 auto', 'backgroundColor' => 'transparent', 'minHeight' => '0', 'padding' => '0'],
                                     'settings' => [],
                                     'elements' => $sectionElements,
                                 ]],
@@ -1752,6 +1770,126 @@
                                                             @endif
                                                         @endif
                                                     </div>
+                                                @elseif($type === 'checkout_summary')
+                                                    @php
+                                                        $summaryHeading = trim((string) ($settings['heading'] ?? 'Order Summary'));
+                                                        $plan = trim((string) ($settings['plan'] ?? 'Starter'));
+                                                        $priceVal = trim((string) ($settings['price'] ?? '₱0'));
+                                                        $regularPrice = trim((string) ($settings['regularPrice'] ?? ''));
+                                                        $period = trim((string) ($settings['period'] ?? ''));
+                                                        $subtitle = trim((string) ($settings['subtitle'] ?? ''));
+                                                        $badge = trim((string) ($settings['badge'] ?? 'Selected Plan'));
+                                                        $features = is_array($settings['features'] ?? null) ? $settings['features'] : [];
+                                                        $selectedCheckoutPricing = ($currentStepType === 'checkout' && is_array($selectedPricing ?? null)) ? $selectedPricing : null;
+                                                        if (is_array($selectedCheckoutPricing)) {
+                                                            $selectedPlan = trim((string) ($selectedCheckoutPricing['plan'] ?? ''));
+                                                            $selectedPrice = trim((string) ($selectedCheckoutPricing['price'] ?? ''));
+                                                            $selectedRegularPrice = trim((string) ($selectedCheckoutPricing['regularPrice'] ?? ''));
+                                                            $selectedPeriod = trim((string) ($selectedCheckoutPricing['period'] ?? ''));
+                                                            $selectedSubtitle = trim((string) ($selectedCheckoutPricing['subtitle'] ?? ''));
+                                                            $selectedBadge = trim((string) ($selectedCheckoutPricing['badge'] ?? ''));
+                                                            $selectedFeatures = is_array($selectedCheckoutPricing['features'] ?? null) ? $selectedCheckoutPricing['features'] : [];
+                                                            if ($selectedPlan !== '') $plan = $selectedPlan;
+                                                            if ($selectedPrice !== '') $priceVal = $selectedPrice;
+                                                            if ($selectedRegularPrice !== '') $regularPrice = $selectedRegularPrice;
+                                                            if ($selectedPeriod !== '') $period = $selectedPeriod;
+                                                            if ($selectedSubtitle !== '') $subtitle = $selectedSubtitle;
+                                                            if ($selectedBadge !== '') $badge = $selectedBadge;
+                                                            if (count($selectedFeatures) > 0) $features = $selectedFeatures;
+                                                        }
+                                                        if (count($features) === 0) {
+                                                            $features = ['Unlimited steps', 'Custom domains', 'Email support'];
+                                                        }
+                                                        $summaryTextColor = trim((string) ($rawStyle['color'] ?? ''));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $summaryTextColor)) $summaryTextColor = '';
+                                                        $ctaLabel = trim((string) ($settings['ctaLabel'] ?? 'Pay Now'));
+                                                        if ($ctaLabel === '') $ctaLabel = 'Pay Now';
+                                                        $ctaBg = trim((string) ($settings['ctaBgColor'] ?? '#240E35'));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $ctaBg)) $ctaBg = '#240E35';
+                                                        $ctaText = trim((string) ($settings['ctaTextColor'] ?? '#ffffff'));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $ctaText)) $ctaText = '#ffffff';
+                                                        $summaryAmountSource = $priceVal !== '' ? $priceVal : $regularPrice;
+                                                        $summaryAmount = 0.0;
+                                                        if ($summaryAmountSource !== '') {
+                                                            $summaryAmountClean = preg_replace('/[^0-9,.\-]/', '', $summaryAmountSource);
+                                                            if (is_string($summaryAmountClean) && $summaryAmountClean !== '') {
+                                                                $summaryAmount = (float) str_replace(',', '', $summaryAmountClean);
+                                                            }
+                                                        }
+                                                        $summaryScale = $clampScale($settings['contentScale'] ?? 1);
+                                                        $summaryStyle = $contentStyle;
+                                                        if ($summaryStyle !== '' && substr($summaryStyle, -1) !== ';') {
+                                                            $summaryStyle .= ';';
+                                                        }
+                                                        $summaryStyle .= 'gap:' . (int) round(12 * $summaryScale) . 'px;';
+                                                        $summaryPad = trim((string) ($rawStyle['padding'] ?? ''));
+                                                        if ($summaryPad !== '') {
+                                                            $summaryStyle .= 'padding:' . $scalePaddingValue($summaryPad, $summaryScale) . ';';
+                                                        }
+                                                        $summaryRadius = trim((string) ($rawStyle['borderRadius'] ?? ''));
+                                                        if ($summaryRadius !== '') {
+                                                            $summaryStyle .= 'border-radius:' . $scalePxValue($summaryRadius, $summaryScale) . ';';
+                                                        }
+                                                        $headingStyle = 'font-size:' . (int) round(11 * $summaryScale) . 'px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;';
+                                                        $titleStyle = 'font-size:' . (int) round(18 * $summaryScale) . 'px;';
+                                                        $priceStyle = 'font-size:' . (int) round(32 * $summaryScale) . 'px;';
+                                                        $periodStyle = 'font-size:' . (int) round(12 * $summaryScale) . 'px;';
+                                                        $subtitleStyle = 'font-size:' . (int) round(12 * $summaryScale) . 'px;';
+                                                        $featureStyle = 'font-size:' . (int) round(12 * $summaryScale) . 'px;gap:' . (int) round(6 * $summaryScale) . 'px;';
+                                                        $featureGapStyle = 'gap:' . (int) round(6 * $summaryScale) . 'px;';
+                                                        $ctaStyle = 'font-size:' . (int) round(16 * $summaryScale) . 'px;padding:' . (int) round(8 * $summaryScale) . 'px ' . (int) round(12 * $summaryScale) . 'px;';
+                                                        $summaryFeaturesJson = json_encode(array_values($features), JSON_UNESCAPED_UNICODE);
+                                                        $summaryPricingId = trim((string) ($selectedCheckoutPricing['pricingId'] ?? ''));
+                                                        $summarySourceStep = trim((string) ($selectedCheckoutPricing['sourceStepSlug'] ?? ''));
+                                                    @endphp
+                                                    <div class="builder-pricing" style="{{ $summaryStyle }}">
+                                                        @if($badge !== '')
+                                                            <div class="builder-pricing-badge">{{ $badge }}</div>
+                                                        @endif
+                                                        <div class="builder-pricing-subtitle" style="{{ $headingStyle }}@if($summaryTextColor !== '')color: {{ $summaryTextColor }}; opacity: 0.7;@endif">{{ $summaryHeading }}</div>
+                                                        <div class="builder-pricing-title" style="{{ $titleStyle }}@if($summaryTextColor !== '')color: {{ $summaryTextColor }};@endif">{{ $plan !== '' ? $plan : 'Plan' }}</div>
+                                                        <div>
+                                                            <span class="builder-pricing-price" style="{{ $priceStyle }}@if($summaryTextColor !== '')color: {{ $summaryTextColor }};@endif">{{ $priceVal !== '' ? $priceVal : '₱0' }}</span>
+                                                            @if($period !== '')
+                                                                <span class="builder-pricing-period" style="{{ $periodStyle }}@if($summaryTextColor !== '')color: {{ $summaryTextColor }}; opacity: 0.7;@endif">{{ $period }}</span>
+                                                            @endif
+                                                        </div>
+                                                        @if($subtitle !== '')
+                                                            <div class="builder-pricing-subtitle" style="{{ $subtitleStyle }}@if($summaryTextColor !== '')color: {{ $summaryTextColor }}; opacity: 0.7;@endif">{{ $subtitle }}</div>
+                                                        @endif
+                                                        <ul class="builder-pricing-features" style="{{ $featureGapStyle }}">
+                                                            @foreach($features as $fi => $feat)
+                                                                @php
+                                                                    $featText = trim((string) $feat);
+                                                                    if ($featText === '') $featText = 'Feature ' . ($fi + 1);
+                                                                @endphp
+                                                                <li style="{{ $featureStyle }}@if($summaryTextColor !== '')color: {{ $summaryTextColor }};@endif"><i class="fas fa-check" aria-hidden="true"></i> {{ $featText }}</li>
+                                                            @endforeach
+                                                        </ul>
+                                                        @if($currentStepType === 'checkout')
+                                                            @if($isPreview)
+                                                                <button type="button" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }}; opacity:0.7;cursor:not-allowed;" disabled>{{ $ctaLabel }}</button>
+                                                            @else
+                                                                <form method="POST" action="{{ $checkoutActionUrl }}" style="margin:0;">
+                                                                    @csrf
+                                                                    <input type="hidden" name="amount" value="{{ $summaryAmount > 0 ? $summaryAmount : (float) ($step->price ?? 0) }}">
+                                                                    <input type="hidden" name="website" value="">
+                                                                    <input type="hidden" name="checkout_pricing_id" value="{{ $summaryPricingId }}">
+                                                                    <input type="hidden" name="checkout_pricing_source_step" value="{{ $summarySourceStep }}">
+                                                                    <input type="hidden" name="checkout_pricing_plan" value="{{ $plan }}">
+                                                                    <input type="hidden" name="checkout_pricing_price" value="{{ $priceVal }}">
+                                                                    <input type="hidden" name="checkout_pricing_regular_price" value="{{ $regularPrice }}">
+                                                                    <input type="hidden" name="checkout_pricing_period" value="{{ $period }}">
+                                                                    <input type="hidden" name="checkout_pricing_subtitle" value="{{ $subtitle }}">
+                                                                    <input type="hidden" name="checkout_pricing_badge" value="{{ $badge }}">
+                                                                    <input type="hidden" name="checkout_pricing_features" value="{{ $summaryFeaturesJson }}">
+                                                                    <button type="submit" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
+                                                                </form>
+                                                            @endif
+                                                        @else
+                                                            <button type="button" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }}; opacity:0.7;cursor:not-allowed;" disabled>{{ $ctaLabel }}</button>
+                                                        @endif
+                                                    </div>
                                                 @elseif($type === 'countdown')
                                                     @php
                                                         $cdEnd = trim((string) ($settings['endAt'] ?? ''));
@@ -1907,7 +2045,7 @@
                                                         }
                                                     @endphp
                                                     @if($step->type === 'opt_in' && !$isPreview)
-                                                        <form method="POST" action="{{ route('funnels.portal.optin', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug]) }}" style="{{ $formInlineStyle }}">
+                                                        <form method="POST" action="{{ $optInActionUrl }}" style="{{ $formInlineStyle }}">
                     @csrf
                                                             <input type="hidden" name="website" value="">
                                                             @foreach($formFields as $f)
@@ -1989,7 +2127,7 @@
                 @if(!$isPreview || trim((string) ($step->content ?? '')) !== '')
                     <div class="content">{{ $step->content }}</div>
                 @endif
-                @include('funnels.portal._step-actions', ['funnel' => $funnel, 'step' => $step, 'nextStep' => $nextStep, 'isPreview' => $isPreview])
+                @include('funnels.portal._step-actions', ['funnel' => $funnel, 'step' => $step, 'nextStep' => $nextStep, 'isPreview' => $isPreview, 'isTemplateTest' => $isTemplateTest, 'optInActionUrl' => $optInActionUrl, 'checkoutActionUrl' => $checkoutActionUrl, 'offerActionUrl' => $offerActionUrl, 'restartStepUrl' => $restartStepUrl, 'nextStepUrl' => $nextStep ? $stepRoute($nextStep) : null])
             @endif
         </div>
         @else
@@ -2489,8 +2627,9 @@
                 }
             });
             var action=String(form.getAttribute("action")||"");
-            if(action.indexOf("/checkout")<0)return;
-            syncCheckoutPricingForm(form);
+            if(action.indexOf("/checkout")>=0 || action.indexOf("/offer")>=0){
+                syncCheckoutPricingForm(form);
+            }
         },true);
         function syncAbsoluteColumnHeights(){
             var cols=document.querySelectorAll(".builder-col.builder-col--abs, .builder-section--freeform .builder-col");
@@ -2644,6 +2783,9 @@
             content.style.width=editorCanvasWidth+"px";
             content.style.maxWidth="none";
             content.style.boxSizing="border-box";
+            content.style.marginLeft="auto";
+            content.style.marginRight="auto";
+            content.style.display="block";
             var targetPad=10;
             var viewportW=document.documentElement?document.documentElement.clientWidth:window.innerWidth;
             var availW=viewportW-(targetPad*2);
@@ -2674,6 +2816,9 @@
                 content.style.height="auto";
                 content.style.width=editorCanvasWidth+"px";
                 content.style.maxWidth="none";
+                content.style.marginLeft="auto";
+                content.style.marginRight="auto";
+                content.style.display="block";
                 var targetPad=10;
                 var viewportW=document.documentElement?document.documentElement.clientWidth:window.innerWidth;
                 var deviceW=previewDeviceWidths[previewDevice];

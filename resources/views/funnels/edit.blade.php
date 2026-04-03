@@ -260,7 +260,7 @@
 .el.el--carousel{border:0 !important;background:transparent !important;padding:0 !important}
 .el.el--form{border:0 !important;background:transparent !important;padding:0 !important}
 #canvas .el.el--menu ul{flex-wrap:nowrap !important;white-space:nowrap}
-#canvas.canvas-outline-mode .sec,#canvas.canvas-outline-mode .row,#canvas.canvas-outline-mode .col,#canvas.canvas-outline-mode .el{position:relative;background:transparent;border:1px dashed #E7D8F0 !important;border-radius:0;box-shadow:none !important}
+#canvas.canvas-outline-mode .sec,#canvas.canvas-outline-mode .row,#canvas.canvas-outline-mode .col,#canvas.canvas-outline-mode .el{position:relative;border:1px dashed #E7D8F0 !important;border-radius:0;box-shadow:none !important}
 #canvas.canvas-outline-mode .sec.sec--bare-wrap,#canvas.canvas-outline-mode .sec.sec--bare-carousel{border:0 !important;background:transparent !important;padding:0 !important;margin-bottom:0 !important}
 #canvas.canvas-outline-mode .sec.sec--freeform-canvas{border:0 !important;background:transparent !important;padding:0 !important;margin:0 !important}
 #canvas.canvas-outline-mode .sec{padding:5px !important;margin-bottom:6px}
@@ -575,6 +575,9 @@
         </form>
         <button id="saveBtn" class="fb-btn primary" type="button"><i class="fas fa-save"></i> Save</button>
         <button id="previewBtn" class="fb-btn" type="button"><i class="fas fa-eye"></i> Preview</button>
+        @if(($builderMode ?? 'funnel') === 'template')
+            <button id="testFlowBtn" class="fb-btn" type="button"><i class="fas fa-vial"></i> Test Flow</button>
+        @endif
         @if($funnel->status === 'published')
             <form method="POST" action="{{ $builderUnpublishUrl ?? route('funnels.unpublish', $funnel) }}" id="builderUnpublishForm">@csrf<button class="fb-btn danger" type="submit"><i class="fas fa-ban"></i> Unpublish</button></form>
         @else
@@ -625,6 +628,7 @@
                     <button draggable="true" data-c="testimonial"><i class="fas fa-quote-right"></i>Testimonial</button>
                     <button draggable="true" data-c="faq"><i class="fas fa-circle-question"></i>FAQ</button>
                     <button draggable="true" data-c="pricing"><i class="fas fa-tags"></i>Pricing</button>
+                    <button draggable="true" data-c="checkout_summary"><i class="fas fa-receipt"></i>Checkout Summary</button>
                     <button draggable="true" data-c="countdown"><i class="fas fa-stopwatch"></i>Countdown</button>
                 </div>
             </div>
@@ -839,6 +843,7 @@ const assetLibraryUrl=@json($builderAssetLibraryUrl ?? route('funnels.builder.as
 const assetLibraryDeleteUrl=@json($builderAssetDeleteUrl ?? route('funnels.builder.assets.destroy',$funnel));
 const uploadUrl=@json($builderUploadUrl ?? route('funnels.builder.image.upload',$funnel));
 const previewTpl=@json($builderPreviewUrlTemplate ?? route('funnels.preview',['funnel'=>$funnel,'step'=>'__STEP__']));
+const testFlowTpl=@json($builderTestUrlTemplate ?? null);
 const stepVersionTpl=@json($builderStepVersionUrlTemplate ?? route('funnels.steps.versions.store',['funnel'=>$funnel,'step'=>'__STEP__']));
 const stepStoreUrl=@json($builderStepStoreUrl ?? route('funnels.steps.store',$funnel));
 const stepUpdateTpl=@json($builderStepUpdateUrlTemplate ?? route('funnels.steps.update',['funnel'=>$funnel,'step'=>'__STEP__']));
@@ -1080,6 +1085,28 @@ const makeStretchColumn=(elements,style,settings)=>makeColumn(
     Object.assign({flex:"1"},style||{}),
     Object.assign({stretch:true,stretchJustify:"flex-start",stretchAlign:"stretch"},settings||{})
 );
+function makeCheckoutSummaryEl(opts,style){
+    opts=opts||{};
+    return makeEl("checkout_summary","",Object.assign({
+        width:"100%",
+        padding:"22px",
+        backgroundColor:"#ffffff",
+        border:"1px solid #E6E1EF",
+        borderRadius:"20px",
+        boxShadow:"0 12px 24px rgba(15,23,42,.08)"
+    },style||{}),{
+        heading:opts.heading||"Complete Your Order",
+        plan:opts.plan||"Chosen Plan",
+        price:opts.price||"Selected price",
+        period:opts.period||"/month",
+        subtitle:opts.subtitle||"This summary updates from the pricing selected earlier in the funnel.",
+        badge:opts.badge||"Selected Plan",
+        features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Unlimited steps","Custom domains","Email support"],
+        ctaLabel:opts.ctaLabel||"Pay Now",
+        ctaBgColor:opts.ctaBgColor||"#240E35",
+        ctaTextColor:opts.ctaTextColor||"#ffffff"
+    });
+}
 const makeFeatureCardColumn=(iconName,title,body)=>makeStretchColumn([
     makeEl("icon","",{fontSize:"28px",color:"#6B4A7A",margin:"0 0 10px"},{iconName:iconName||"star",iconStyle:"solid",alignment:"left",link:""}),
     makeEl("heading",title||"Feature title",{fontSize:"18px",color:"#240E35",fontWeight:"800",margin:"0 0 6px"},{}),
@@ -1204,13 +1231,15 @@ function templateWebinarLayout(){
 }
 function templateCheckoutLayout(){
     var section=makeSplitInfoSection(
-        makePanelColumn([makePricingCardEl({
-            plan:"Starter",
-            price:"₱29",
-            period:"/month",
-            subtitle:"Everything you need to launch",
+        makePanelColumn([makeCheckoutSummaryEl({
+            heading:"Complete Your Order",
+            plan:"Chosen Plan",
+            price:"Selected price",
+            period:"/billing cycle",
+            subtitle:"This summary updates from the pricing selected earlier in the funnel.",
             features:["Unlimited steps","Custom domains","Email support"],
-            badge:"Most popular"
+            badge:"Selected Plan",
+            ctaLabel:"Pay Now"
         },makeBareCardStyle())]),
         makePanelColumn([
             makeEl("heading","Complete your order",{fontSize:"24px",color:"#240E35",fontWeight:"800",margin:"0 0 10px"},{}),
@@ -6359,7 +6388,7 @@ function titleCase(v){
 }
 function isAdvancedScaleComponent(t){
     var type=String(t||"").toLowerCase();
-    return type==="testimonial"||type==="faq"||type==="pricing"||type==="countdown"||type==="form";
+    return type==="testimonial"||type==="faq"||type==="pricing"||type==="checkout_summary"||type==="countdown"||type==="form";
 }
 function parsePxVal(v){
     var n=Number(String(v||"0").replace("px","").trim());
@@ -6867,7 +6896,7 @@ function createDefaultElement(type){
     var _cd=new Date(Date.now()+7*24*60*60*1000);
     var _pad=n=>String(n).padStart(2,"0");
     var countdownEndVal=_cd.getFullYear()+"-"+_pad(_cd.getMonth()+1)+"-"+_pad(_cd.getDate())+"T"+_pad(_cd.getHours())+":"+_pad(_cd.getMinutes());
-    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
+    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
     if(!d)return null;
     return {id:uid("el"),type:type,content:d.content,style:clone(d.style),settings:clone(d.settings)};
 }
@@ -8588,6 +8617,81 @@ function renderElement(item,ctx){
         }
         w.appendChild(pricing);
     }
+    else if(item.type==="checkout_summary"){
+        item.settings=item.settings||{};
+        item.settings.features=normalizeFeatureList(item.settings.features);
+        var summaryHeading=String(item.settings.heading||"Order Summary");
+        var summaryPlan=String(item.settings.plan||"Starter");
+        var summaryPrice=normalizeTemplateCurrencyValue(item.settings.price||"");
+        var summaryRegular=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
+        var summaryPeriod=String(item.settings.period||"");
+        var summarySubtitle=String(item.settings.subtitle||"");
+        var summaryBadge=String(item.settings.badge||"");
+        var summaryButton=String(item.settings.ctaLabel||"Pay Now").trim()||"Pay Now";
+        var summaryBg=String(item.settings.ctaBgColor||"#240E35");
+        var summaryText=String(item.settings.ctaTextColor||"#ffffff");
+        var customSummaryColor=(item.style&&item.style.color)?String(item.style.color):"";
+        var card=document.createElement("div");
+        card.className="fb-pricing";
+        if(summaryBadge){
+            var sBadge=document.createElement("div");
+            sBadge.className="fb-pricing-badge";
+            sBadge.textContent=summaryBadge;
+            card.appendChild(sBadge);
+        }
+        var sHeading=document.createElement("div");
+        sHeading.className="fb-pricing-subtitle";
+        sHeading.textContent=summaryHeading;
+        sHeading.style.fontSize="11px";
+        sHeading.style.fontWeight="800";
+        sHeading.style.letterSpacing="0.08em";
+        sHeading.style.textTransform="uppercase";
+        if(customSummaryColor){sHeading.style.color=customSummaryColor;sHeading.style.opacity="0.7";}
+        card.appendChild(sHeading);
+        var sTitle=document.createElement("div");
+        sTitle.className="fb-pricing-title";
+        sTitle.textContent=summaryPlan;
+        if(customSummaryColor)sTitle.style.color=customSummaryColor;
+        card.appendChild(sTitle);
+        var sPriceRow=document.createElement("div");
+        var sPrice=document.createElement("span");
+        sPrice.className="fb-pricing-price";
+        sPrice.textContent=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"₱0");
+        if(customSummaryColor)sPrice.style.color=customSummaryColor;
+        sPriceRow.appendChild(sPrice);
+        if(summaryPeriod){
+            var sPeriod=document.createElement("span");
+            sPeriod.className="fb-pricing-period";
+            sPeriod.textContent=summaryPeriod;
+            if(customSummaryColor){sPeriod.style.color=customSummaryColor;sPeriod.style.opacity="0.7";}
+            sPriceRow.appendChild(sPeriod);
+        }
+        card.appendChild(sPriceRow);
+        if(summarySubtitle){
+            var sSubtitle=document.createElement("div");
+            sSubtitle.className="fb-pricing-subtitle";
+            sSubtitle.textContent=summarySubtitle;
+            if(customSummaryColor){sSubtitle.style.color=customSummaryColor;sSubtitle.style.opacity="0.7";}
+            card.appendChild(sSubtitle);
+        }
+        var sList=document.createElement("ul");
+        sList.className="fb-pricing-features";
+        item.settings.features.forEach(function(f){
+            var li=document.createElement("li");
+            li.textContent=String(f||"Feature");
+            if(customSummaryColor)li.style.color=customSummaryColor;
+            sList.appendChild(li);
+        });
+        card.appendChild(sList);
+        var sButton=document.createElement("button");
+        sButton.type="button";
+        sButton.className="fb-pricing-cta";
+        sButton.textContent=summaryButton;
+        sButton.style.background=summaryBg;
+        sButton.style.color=summaryText;
+        card.appendChild(sButton);
+        w.appendChild(card);
+    }
     else if(item.type==="countdown"){
         item.settings=item.settings||{};
         var endAt=String(item.settings.endAt||"");
@@ -9789,11 +9893,13 @@ function renderCanvas(){
             if(ok)render();
         };
         s.elements=Array.isArray(s.elements)?s.elements:[];
-        (s.elements||[]).forEach(function(it){
-            var elNode=renderElement(it,{s:s.id,scope:"section"});
-            inner.appendChild(elNode);
-            if(isAdvancedScaleComponent(it.type))syncAdvancedElementHeight(elNode,it);
-        });
+        {
+            (s.elements||[]).forEach(function(it){
+                var elNode=renderElement(it,{s:s.id,scope:"section"});
+                inner.appendChild(elNode);
+                if(isAdvancedScaleComponent(it.type))syncAdvancedElementHeight(elNode,it);
+            });
+        }
         if(s.__freeformCanvas){
             var secMaxBot=0;
             (s.elements||[]).forEach(function(it){
@@ -12031,6 +12137,88 @@ function renderSettings(){
             bindRadiusHelpButton("priceRadiusHelp");
         }
         renderPricingEditor();
+    } else if(selKind==="el"&&t.type==="checkout_summary"){
+        t.settings=t.settings||{};
+        t.settings.features=normalizeFeatureList(t.settings.features);
+        var cspadDef=[22,22,22,22],csmarDef=[0,0,0,0];
+        function renderCheckoutSummaryEditor(){
+            var pad=parseSpacing(t.style&&t.style.padding,cspadDef),mar=parseSpacing(t.style&&t.style.margin,csmarDef);
+            var feats=(t.settings.features||[]).map(function(f,idx){
+                var val=String(f||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+                return '<div class="menu-item-card" data-idx="'+idx+'"><div class="menu-item-head"><strong>Summary item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="csMoveUp" data-idx="'+idx+'" title="Move up"><i class="fas fa-arrow-up"></i></button><button type="button" class="csMoveDown" data-idx="'+idx+'" title="Move down"><i class="fas fa-arrow-down"></i></button><button type="button" class="csDelete menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button></div></div><label>Text</label><input class="csFeature" data-idx="'+idx+'" value="'+val+'"></div>';
+            }).join("");
+            settings.innerHTML='<div class="menu-section-title">Checkout Summary</div><div class="meta" style="margin:0 0 10px;">Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.</div><label>Eyebrow</label><input id="csHeading"><label>Fallback plan name</label><input id="csPlan"><label>Fallback price</label><input id="csPrice" placeholder="₱29"><label>Fallback regular price</label><input id="csRegular" placeholder="₱49"><label>Period</label><input id="csPeriod" placeholder="/month"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="Selected Plan"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
+            bind("csHeading",(t.settings&&t.settings.heading)||"Order Summary",v=>{t.settings=t.settings||{};t.settings.heading=v;renderCanvas();},{undo:true});
+            bind("csPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings=t.settings||{};t.settings.plan=v;renderCanvas();},{undo:true});
+            bindCurrency("csPrice",(t.settings&&t.settings.price)||"",v=>{t.settings=t.settings||{};t.settings.price=v;renderCanvas();},{undo:true});
+            bindCurrency("csRegular",(t.settings&&t.settings.regularPrice)||"",v=>{t.settings=t.settings||{};t.settings.regularPrice=v;renderCanvas();},{undo:true});
+            bind("csPeriod",(t.settings&&t.settings.period)||"",v=>{t.settings=t.settings||{};t.settings.period=v;renderCanvas();},{undo:true});
+            bind("csSubtitle",(t.settings&&t.settings.subtitle)||"",v=>{t.settings=t.settings||{};t.settings.subtitle=v;renderCanvas();},{undo:true});
+            bind("csBadge",(t.settings&&t.settings.badge)||"",v=>{t.settings=t.settings||{};t.settings.badge=v;renderCanvas();},{undo:true});
+            bind("csCtaLabel",(t.settings&&t.settings.ctaLabel)||"Pay Now",v=>{t.settings=t.settings||{};t.settings.ctaLabel=v;renderCanvas();},{undo:true});
+            bind("csCtaBg",(t.settings&&t.settings.ctaBgColor)||"#240E35",v=>{t.settings=t.settings||{};t.settings.ctaBgColor=v;renderCanvas();},{undo:true});
+            bind("csCtaText",(t.settings&&t.settings.ctaTextColor)||"#ffffff",v=>{t.settings=t.settings||{};t.settings.ctaTextColor=v;renderCanvas();},{undo:true});
+            bind("csTextColor",(t.style&&t.style.color)||"#240E35",v=>sty().color=v,{undo:true});
+            bind("csBg",(t.style&&t.style.backgroundColor)||"#ffffff",v=>sty().backgroundColor=v,{undo:true});
+            bind("csBorder",(t.style&&t.style.border)||"1px solid #E6E1EF",v=>sty().border=v,{undo:true});
+            bindPx("csRadius",(t.style&&t.style.borderRadius)||"20px",v=>sty().borderRadius=v,{undo:true});
+            bind("csShadow",(t.style&&t.style.boxShadow)||"0 12px 24px rgba(15,23,42,.08)",v=>sty().boxShadow=v,{undo:true});
+            settings.querySelectorAll(".csFeature").forEach(function(inp){
+                inp.addEventListener("input",function(){
+                    var idx=Number(inp.getAttribute("data-idx"));
+                    if(isNaN(idx)||!Array.isArray(t.settings.features)||!t.settings.features[idx])return;
+                    saveToHistory();
+                    t.settings.features[idx]=String(inp.value||"").trim()||("Summary item "+(idx+1));
+                    renderCanvas();
+                });
+            });
+            settings.querySelectorAll(".csDelete").forEach(function(btn){
+                btn.addEventListener("click",function(){
+                    var idx=Number(btn.getAttribute("data-idx"));
+                    if(isNaN(idx)||!Array.isArray(t.settings.features)||t.settings.features.length<=1)return;
+                    saveToHistory();
+                    t.settings.features.splice(idx,1);
+                    t.settings.features=normalizeFeatureList(t.settings.features);
+                    renderCheckoutSummaryEditor();
+                    renderCanvas();
+                });
+            });
+            settings.querySelectorAll(".csMoveUp").forEach(function(btn){
+                btn.addEventListener("click",function(){
+                    var idx=Number(btn.getAttribute("data-idx"));
+                    if(isNaN(idx)||idx<=0||!Array.isArray(t.settings.features))return;
+                    saveToHistory();
+                    var tmp=t.settings.features[idx-1];
+                    t.settings.features[idx-1]=t.settings.features[idx];
+                    t.settings.features[idx]=tmp;
+                    renderCheckoutSummaryEditor();
+                    renderCanvas();
+                });
+            });
+            settings.querySelectorAll(".csMoveDown").forEach(function(btn){
+                btn.addEventListener("click",function(){
+                    var idx=Number(btn.getAttribute("data-idx"));
+                    if(isNaN(idx)||!Array.isArray(t.settings.features)||idx>=t.settings.features.length-1)return;
+                    saveToHistory();
+                    var tmp=t.settings.features[idx+1];
+                    t.settings.features[idx+1]=t.settings.features[idx];
+                    t.settings.features[idx]=tmp;
+                    renderCheckoutSummaryEditor();
+                    renderCanvas();
+                });
+            });
+            var addCsFeature=document.getElementById("addCsFeature");
+            if(addCsFeature)addCsFeature.onclick=function(){
+                saveToHistory();
+                t.settings.features=t.settings.features||[];
+                t.settings.features.push("Summary item "+(t.settings.features.length+1));
+                renderCheckoutSummaryEditor();
+                renderCanvas();
+            };
+            mountSpacingControls();
+            bindRadiusHelpButton("csRadiusHelp");
+        }
+        renderCheckoutSummaryEditor();
     } else if(selKind==="el"&&t.type==="countdown"){
         t.settings=t.settings||{};
         var padDef=[16,16,16,16],marDef=[0,0,0,0];
@@ -12440,6 +12628,7 @@ const sidebarComponentMeta={
     testimonial:{desc:"Social proof card with quote and author details."},
     faq:{desc:"Question-and-answer block for objections and clarity."},
     pricing:{desc:"Offer card with plan, price, features, and button."},
+    checkout_summary:{desc:"Compact checkout confirmation with selected plan and pay button."},
     countdown:{desc:"Urgency timer for expiring offers or launches."}
 };
 function sidebarPreviewMarkup(type){
@@ -12476,6 +12665,8 @@ function sidebarPreviewMarkup(type){
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line md'></span></span><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line lg'></span></span></span></span>";
         case "pricing":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Popular</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>₱49</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
+        case "checkout_summary":
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Selected</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±29</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Pay Now</span></span></span>";
         case "countdown":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-timer'><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>12</span><br><span class='fb-comp-preview-timer-unit'>Hr</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>08</span><br><span class='fb-comp-preview-timer-unit'>Min</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>43</span><br><span class='fb-comp-preview-timer-unit'>Sec</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>05</span><br><span class='fb-comp-preview-timer-unit'>Day</span></span></span></span></span>";
         default:
@@ -12718,6 +12909,16 @@ document.getElementById("previewBtn").onclick=()=>{
         .then(()=>{window.open(previewTpl.replace("__STEP__",String(s.id)),"_blank");})
         .catch(()=>{saveMsg.textContent="Save failed";alert("Save failed.");});
 };
+var testFlowBtn=document.getElementById("testFlowBtn");
+if(testFlowBtn){
+    testFlowBtn.onclick=()=>{
+        const s=cur();if(!s||!testFlowTpl)return;
+        flushAutoSave()
+            .then(()=>persistCurrentStep())
+            .then(()=>{window.open(testFlowTpl.replace("__STEP__",String(s.id)),"_blank");})
+            .catch(()=>{saveMsg.textContent="Save failed";alert("Save failed.");});
+    };
+}
 document.addEventListener("keydown",e=>{
     const key=String(e.key||"").toLowerCase();
     const ae=document.activeElement;
