@@ -204,6 +204,7 @@ class FunnelPortalController extends Controller
 
         $payment = Payment::create([
             'tenant_id' => $funnel->tenant_id,
+            'payment_type' => Payment::TYPE_FUNNEL_CHECKOUT,
             'funnel_id' => $funnel->id,
             'funnel_step_id' => $step->id,
             'lead_id' => $this->currentLeadId($funnel->id),
@@ -303,6 +304,7 @@ class FunnelPortalController extends Controller
 
         $payment = Payment::create([
             'tenant_id' => $funnel->tenant_id,
+            'payment_type' => Payment::TYPE_FUNNEL_CHECKOUT,
             'funnel_id' => $funnel->id,
             'funnel_step_id' => $step->id,
             'lead_id' => $leadId,
@@ -408,6 +410,7 @@ class FunnelPortalController extends Controller
         if (! $recentDecision && $accept && (float) $step->price > 0) {
             $payment = Payment::create([
                 'tenant_id' => $funnel->tenant_id,
+                'payment_type' => Payment::TYPE_FUNNEL_CHECKOUT,
                 'funnel_id' => $funnel->id,
                 'funnel_step_id' => $step->id,
                 'lead_id' => $this->currentLeadId($funnel->id),
