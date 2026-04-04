@@ -155,9 +155,11 @@ Route::middleware(['auth', 'tenant.subscription', 'role:sales-agent,marketing-ma
         Route::post('/funnels/{funnel}/steps/{step}/versions', [FunnelController::class, 'storeVersion'])->name('funnels.steps.versions.store');
         Route::post('/funnels/{funnel}/steps/reorder', [FunnelController::class, 'reorderSteps'])->name('funnels.steps.reorder');
 
+    });
+
+    Route::middleware(['role:account-owner'])->group(function () {
         Route::get('/automation', [AutomationController::class, 'index'])->name('automation.index');
         Route::post('/automation/toggle', [AutomationController::class, 'toggle'])->name('automation.toggle');
-
     });
 
     Route::middleware(['role:account-owner,finance'])->group(function () {

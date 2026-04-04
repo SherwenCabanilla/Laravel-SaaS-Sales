@@ -167,9 +167,13 @@
                 </a>
             @endif
 
-            {{-- Funnels & Automation (Owner, Marketing) --}}
+            {{-- Funnels (Owner, Marketing) --}}
             @if(auth()->user()->hasRole('account-owner') || auth()->user()->hasRole('marketing-manager'))
                 <a href="{{ route('funnels.index') }}" class="{{ request()->routeIs('funnels.*') ? 'active' : '' }}"><i class="fas fa-filter"></i> <span>Funnels</span></a>
+            @endif
+
+            {{-- Automation (Account Owner only) --}}
+            @if(auth()->user()->hasRole('account-owner'))
                 <a href="{{ route('automation.index') }}" class="{{ request()->routeIs('automation.*') ? 'active' : '' }}"><i class="fas fa-clipboard-list"></i> <span>Automation</span></a>
             @endif
 
