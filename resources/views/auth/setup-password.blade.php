@@ -30,7 +30,7 @@
             cursor: pointer;
         }
         .toggle-eye:focus-visible { outline: 2px solid #240e35; outline-offset: 2px; border-radius: 4px; }
-        button { width: 100%; margin-top: 20px; border: 0; border-radius: 8px; padding: 12px; background: #240e35; color: #fff; font-weight: 700; cursor: pointer; }
+        button:not(.toggle-eye) { width: 100%; margin-top: 20px; border: 0; border-radius: 8px; min-height: 40px; padding: 10px 16px; background: #240e35; color: #fff; font-size: 14px; font-weight: 600; line-height: 1.2; cursor: pointer; }
         .msg { border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; }
         .msg.error { background: #fee2e2; color: #991b1b; }
         .hint { margin-top: 10px; font-size: 12px; color: #475569; }

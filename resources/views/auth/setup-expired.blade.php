@@ -12,7 +12,7 @@
         p { color: #475569; margin: 0 0 18px; }
         label { display: block; font-weight: 600; color: #334155; margin: 14px 0 6px; }
         input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; box-sizing: border-box; }
-        button { width: 100%; margin-top: 20px; border: 0; border-radius: 8px; padding: 12px; background: #240e35; color: #fff; font-weight: 700; cursor: pointer; }
+        button { width: 100%; margin-top: 20px; border: 0; border-radius: 8px; min-height: 40px; padding: 10px 16px; background: #240e35; color: #fff; font-size: 14px; font-weight: 600; line-height: 1.2; cursor: pointer; }
         .msg { border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 14px; }
         .msg.success { background: #dcfce7; color: #166534; }
         .msg.error { background: #fee2e2; color: #991b1b; }
