@@ -61,6 +61,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user has at least one role from a list of slugs.
+     *
+     * @param  array<int, string>  $roleSlugs
+     */
+    public function hasAnyRole(array $roleSlugs): bool
+    {
+        foreach ($roleSlugs as $roleSlug) {
+            if ($this->hasRole($roleSlug)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
