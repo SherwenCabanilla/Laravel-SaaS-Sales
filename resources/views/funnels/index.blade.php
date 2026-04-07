@@ -13,6 +13,55 @@
         .funnels-table {
             min-width: 760px;
         }
+        .funnels-table th:last-child,
+        .funnels-table td:last-child {
+            min-width: 270px;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .funnels-table th:nth-child(2),
+        .funnels-table td:nth-child(2) {
+            white-space: nowrap;
+            min-width: 120px;
+        }
+        .funnels-actions {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+        .funnels-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .funnels-action i {
+            font-size: 14px;
+        }
+        .funnels-action--builder {
+            color: var(--theme-primary, #240E35);
+        }
+        .funnels-action--analytics {
+            color: #0F766E;
+        }
+        .funnels-action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+            line-height: 1;
+            padding: 0;
+        }
+        .funnels-action-btn--delete {
+            color: #DC2626;
+        }
         .funnels-search-form {
             display:flex;
             gap:10px;
@@ -116,6 +165,12 @@
     var funnelsListContent=document.getElementById("funnelsListContent");
     var timeout=null;
     var modal=document.getElementById("fbDeleteConfirm");
+    function setFunnelsListVisibility(visible){
+        if(!funnelsListContent||!toggleFunnelsListBtn)return;
+        funnelsListContent.style.display=visible?"block":"none";
+        toggleFunnelsListBtn.textContent=visible?"Hide":"Show";
+        toggleFunnelsListBtn.setAttribute("aria-expanded",visible?"true":"false");
+    }
     if(searchInput&&tableBody){
         searchInput.addEventListener("keyup",function(){
             clearTimeout(timeout);
@@ -128,12 +183,12 @@
                 .then(function(response){return response.text();})
                 .then(function(html){
                     tableBody.innerHTML=html;
+                    setFunnelsListVisibility(true);
                     if(paginationLinks){
                         if(query.length>0){
                             paginationLinks.style.display='none';
                         }else{
                             paginationLinks.style.display='block';
-                            if(query==='')window.location.reload();
                         }
                     }
                 })
@@ -144,9 +199,7 @@
     if(toggleFunnelsListBtn&&funnelsListContent){
         toggleFunnelsListBtn.addEventListener("click",function(){
             var isHidden=funnelsListContent.style.display==="none";
-            funnelsListContent.style.display=isHidden?"block":"none";
-            toggleFunnelsListBtn.textContent=isHidden?"Hide":"Show";
-            toggleFunnelsListBtn.setAttribute("aria-expanded",isHidden?"true":"false");
+            setFunnelsListVisibility(isHidden);
         });
     }
     if(!modal)return;

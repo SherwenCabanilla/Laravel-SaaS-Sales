@@ -59,9 +59,7 @@
             <div style="margin:18px 0; padding:14px 16px; border-radius:12px; background:#fbf9fd; border:1px solid #ece2f5; color:#475569; font-size:13px; line-height:1.55;">
                 Starter flow by purpose:
                 <br><strong>Service / Lead</strong>: Landing -> Opt-in -> Sales -> Checkout -> Thank You
-                <br><strong>Digital Product</strong>: Sales -> Checkout -> Thank You
                 <br><strong>Physical Product</strong>: Sales -> Checkout -> Thank You
-                <br><strong>Hybrid</strong>: Landing -> Sales -> Checkout -> Thank You
                 <br><br>Shared templates are available only inside the builder templates panel.
             </div>
 

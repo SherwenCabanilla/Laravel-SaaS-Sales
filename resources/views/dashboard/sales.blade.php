@@ -2,6 +2,18 @@
 
 @section('title', 'Sales Dashboard')
 
+@section('styles')
+    <style>
+        .chart-heading { display:flex; align-items:center; gap:8px; margin:0 0 10px; }
+        .chart-heading h3 { margin:0; }
+        .chart-help-wrap { position:relative; display:inline-flex; }
+        .chart-help-dot { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; border:1px solid var(--theme-primary, #240E35); color:var(--theme-primary, #240E35); background:#fff; font-size:11px; font-weight:800; cursor:help; line-height:1; }
+        .chart-help-tip { position:absolute; left:50%; top:calc(100% + 8px); transform:translateX(-50%); min-width:220px; max-width:280px; padding:8px 10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:10px; background:#fff; color:var(--theme-primary, #240E35); font-size:12px; font-weight:700; line-height:1.4; box-shadow:0 10px 24px rgba(15,23,42,.12); opacity:0; visibility:hidden; pointer-events:none; z-index:20; }
+        .chart-help-wrap:hover .chart-help-tip,
+        .chart-help-wrap:focus-within .chart-help-tip { opacity:1; visibility:visible; }
+    </style>
+@endsection
+
 @php
     $companyName = optional(auth()->user()->tenant)->company_name ?? 'No Company';
     $companyInitials = collect(preg_split('/\s+/', trim($companyName)))
@@ -49,7 +61,13 @@
 
     <div class="charts">
         <div class="chart">
-            <h3>My Pipeline Stage Counts</h3>
+            <div class="chart-heading">
+                <h3>My Pipeline Stage Counts</h3>
+                <span class="chart-help-wrap">
+                    <span class="chart-help-dot" tabindex="0" aria-label="Pipeline chart help">?</span>
+                    <span class="chart-help-tip">Shows the number of your assigned leads in each pipeline stage.</span>
+                </span>
+            </div>
             <canvas id="salesPipelineChart"></canvas>
         </div>
         <div class="chart">
