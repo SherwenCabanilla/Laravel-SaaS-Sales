@@ -1,19 +1,9 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Team Management')
 
 @section('styles')
-    <style>
-        .team-table-scroll {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .team-table {
-            min-width: 760px;
-        }
-    </style>
+        <link rel="stylesheet" href="{{ asset('css/extracted/users-index-style1.css') }}">
 @endsection
 
 @section('content')
@@ -114,3 +104,4 @@
         });
     </script>
 @endsection
+

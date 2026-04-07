@@ -1,8 +1,9 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Funnel Builder')
 
 @section('styles')
+        <link rel="stylesheet" href="{{ asset('css/extracted/funnels-index-style1.css') }}">
     <style>
         .funnels-table-scroll {
             width: 100%;
@@ -158,6 +159,12 @@
     var reviewsModalUrl="";
     var timeout=null;
     var modal=document.getElementById("fbDeleteConfirm");
+    function setFunnelsListVisibility(visible){
+        if(!funnelsListContent||!toggleFunnelsListBtn)return;
+        funnelsListContent.style.display=visible?"block":"none";
+        toggleFunnelsListBtn.textContent=visible?"Hide":"Show";
+        toggleFunnelsListBtn.setAttribute("aria-expanded",visible?"true":"false");
+    }
     if(searchInput&&tableBody){
         searchInput.addEventListener("keyup",function(){
             clearTimeout(timeout);
@@ -170,12 +177,12 @@
                 .then(function(response){return response.text();})
                 .then(function(html){
                     tableBody.innerHTML=html;
+                    setFunnelsListVisibility(true);
                     if(paginationLinks){
                         if(query.length>0){
                             paginationLinks.style.display='none';
                         }else{
                             paginationLinks.style.display='block';
-                            if(query==='')window.location.reload();
                         }
                     }
                 })
@@ -186,9 +193,7 @@
     if(toggleFunnelsListBtn&&funnelsListContent){
         toggleFunnelsListBtn.addEventListener("click",function(){
             var isHidden=funnelsListContent.style.display==="none";
-            funnelsListContent.style.display=isHidden?"block":"none";
-            toggleFunnelsListBtn.textContent=isHidden?"Hide":"Show";
-            toggleFunnelsListBtn.setAttribute("aria-expanded",isHidden?"true":"false");
+            setFunnelsListVisibility(isHidden);
         });
     }
     if(!modal)return;

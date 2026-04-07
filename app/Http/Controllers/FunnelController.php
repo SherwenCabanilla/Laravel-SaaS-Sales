@@ -21,18 +21,40 @@ class FunnelController extends Controller
 {
     private const MAX_STEP_REVISIONS = 40;
     private const MAX_MANUAL_VERSIONS = 25;
+    private const CREATE_PURPOSE_KEYS = ['service', 'physical_product'];
 
     public function index(Request $request)
     {
         $tenantId = auth()->user()->tenant_id;
         $search = trim((string) $request->query('search', ''));
+        $normalizedSearch = mb_strtolower($search);
+        $purposeMatches = collect(Funnel::PURPOSES)
+            ->filter(function (string $label, string $key) use ($normalizedSearch) {
+                if ($normalizedSearch === '') {
+                    return false;
+                }
+
+                $normalizedLabel = mb_strtolower($label);
+                $normalizedKey = mb_strtolower(str_replace('_', ' ', $key));
+
+                return str_contains($normalizedLabel, $normalizedSearch)
+                    || str_contains($normalizedKey, $normalizedSearch);
+            })
+            ->keys()
+            ->values()
+            ->all();
 
         $funnels = Funnel::where('tenant_id', $tenantId)
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($innerQuery) use ($search) {
+            ->when($search !== '', function ($query) use ($search, $purposeMatches) {
+                $query->where(function ($innerQuery) use ($search, $purposeMatches) {
                     $innerQuery->where('name', 'like', "%{$search}%")
                         ->orWhere('slug', 'like', "%{$search}%")
-                        ->orWhere('description', 'like', "%{$search}%");
+                        ->orWhere('description', 'like', "%{$search}%")
+                        ->orWhere('purpose', 'like', "%{$search}%");
+
+                    if ($purposeMatches !== []) {
+                        $innerQuery->orWhereIn('purpose', $purposeMatches);
+                    }
                 });
             })
             ->withCount('steps')
@@ -56,8 +78,12 @@ class FunnelController extends Controller
             return redirect()->route('funnels.index')->with('error', $e->getMessage());
         }
 
+        $purposeOptions = collect(Funnel::PURPOSES)
+            ->only(self::CREATE_PURPOSE_KEYS)
+            ->all();
+
         return view('funnels.create', [
-            'purposeOptions' => Funnel::PURPOSES,
+            'purposeOptions' => $purposeOptions,
         ]);
     }
 
@@ -66,7 +92,7 @@ class FunnelController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'purpose' => ['required', Rule::in(array_keys(Funnel::PURPOSES))],
+            'purpose' => ['required', Rule::in(self::CREATE_PURPOSE_KEYS)],
             'default_tags' => 'nullable|string|max:500',
         ]);
 

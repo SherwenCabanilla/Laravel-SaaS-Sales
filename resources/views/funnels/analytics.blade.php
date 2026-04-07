@@ -1,95 +1,9 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Funnel Analytics')
 
 @section('styles')
-    <style>
-        .analytics-shell { display: grid; gap: 18px; }
-        .analytics-topbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; }
-        .analytics-topbar h1 { margin: 0; color: var(--theme-primary, #240E35); }
-        .analytics-topbar p { margin: 6px 0 0; color: var(--theme-muted, #6B7280); }
-        .analytics-actions { display:flex; flex-wrap:wrap; gap:10px; }
-        .analytics-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:10px; border:1px solid var(--theme-border, #E6E1EF); background:#fff; color:var(--theme-primary, #240E35); text-decoration:none; font-weight:700; }
-        .analytics-btn.primary { background: var(--theme-primary, #240E35); color:#fff; border-color: var(--theme-primary, #240E35); }
-        .analytics-toggle-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 14px; border-radius:10px; border:1px solid var(--theme-border, #E6E1EF); background:var(--theme-primary, #240E35); color:#fff; font-weight:800; cursor:pointer; }
-        .analytics-alert { border-radius:14px; border:1px solid; padding:14px 16px; font-weight:600; }
-        .analytics-alert--success { background:#ecfdf3; border-color:#a7f3d0; color:#065f46; }
-        .analytics-alert--error { background:#fef2f2; border-color:#fecaca; color:#991b1b; }
-        .analytics-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; }
-        .analytics-field { display:grid; gap:6px; min-width:180px; }
-        .analytics-field label { font-size:12px; font-weight:800; color: var(--theme-muted, #6B7280); text-transform:uppercase; letter-spacing:.04em; }
-        .analytics-field input,
-        .analytics-field select { padding:10px 12px; border:1px solid var(--theme-border, #E6E1EF); border-radius:10px; background:#fff; }
-        .analytics-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; }
-        .analytics-kpi { background:#fff; border:1px solid var(--theme-border, #E6E1EF); border-radius:16px; padding:18px; box-shadow:0 10px 30px rgba(15,23,42,.04); }
-        .analytics-kpi-label { font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color: var(--theme-muted, #6B7280); }
-        .analytics-kpi-value { margin-top:10px; font-size:30px; font-weight:900; color: var(--theme-primary, #240E35); }
-        .analytics-kpi-sub { margin-top:8px; color: var(--theme-muted, #6B7280); font-size:13px; }
-        .analytics-grid { display:grid; grid-template-columns:2fr 1fr; gap:18px; }
-        .analytics-grid.analytics-grid--summary { grid-template-columns:minmax(0, 1.7fr) minmax(320px, .95fr) minmax(300px, .85fr); align-items:stretch; }
-        .analytics-card { background:#fff; border:1px solid var(--theme-border, #E6E1EF); border-radius:18px; padding:18px; box-shadow:0 10px 30px rgba(15,23,42,.04); }
-        .analytics-card h3 { margin:0 0 14px; color: var(--theme-primary, #240E35); }
-        .analytics-chart-wrap { position:relative; min-height:280px; }
-        .analytics-chart-wrap canvas { width:100% !important; height:100% !important; display:block; }
-        .analytics-card.analytics-card--step-visits { width:100%; }
-        .analytics-card.analytics-card--step-visits .analytics-chart-wrap { min-height: 260px; }
-        .analytics-card.analytics-card--offer-rates { width:100%; }
-        .analytics-card.analytics-card--offer-rates .analytics-chart-wrap { min-height: 260px; max-height: 260px; display:flex; align-items:center; justify-content:center; }
-        .analytics-card.analytics-card--offer-rates .analytics-chart-wrap canvas { max-width:300px !important; max-height:300px !important; margin:0 auto; }
-        .analytics-card.analytics-card--offer-counts { width:100%; }
-        .analytics-card.analytics-card--physical-overview { width:100%; }
-        .analytics-callout { padding:14px 16px; border-radius:14px; border:1px solid var(--theme-border, #E6E1EF); background:linear-gradient(180deg,#fff,#faf7ff); color:var(--theme-muted, #6B7280); }
-        .analytics-callout strong { display:block; margin-bottom:8px; color:var(--theme-primary, #240E35); }
-        .analytics-list { display:grid; gap:10px; margin:0; padding:0; list-style:none; }
-        .analytics-list li { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding-bottom:10px; border-bottom:1px solid var(--theme-border, #E6E1EF); }
-        .analytics-list li:last-child { border-bottom:none; padding-bottom:0; }
-        .analytics-list-label { font-weight:700; color:var(--theme-primary, #240E35); }
-        .analytics-list-meta { display:block; margin-top:4px; font-size:12px; color:var(--theme-muted, #6B7280); }
-        .analytics-list-value { font-weight:900; color:var(--theme-primary, #240E35); white-space:nowrap; }
-        .analytics-chart-empty { min-height:280px; display:grid; place-items:center; text-align:center; padding:20px; border-radius:14px; background: var(--theme-surface-softer, #F7F7FB); color: var(--theme-muted, #6B7280); }
-        .analytics-table-wrap { overflow:auto; }
-        .analytics-table { width:100%; border-collapse:collapse; min-width:640px; }
-        .analytics-table th, .analytics-table td { padding:12px 10px; border-bottom:1px solid var(--theme-border, #E6E1EF); text-align:left; vertical-align:top; }
-        .analytics-table th { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color: var(--theme-muted, #6B7280); }
-        .analytics-pill { display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; background: var(--theme-surface-soft, #F3EEF7); color: var(--theme-primary, #240E35); font-size:12px; font-weight:800; }
-        .analytics-mini-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
-        .analytics-mini-stat { border:1px solid var(--theme-border, #E6E1EF); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#fcfbfe); }
-        .analytics-mini-stat--button { width:100%; appearance:none; text-align:left; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
-        .analytics-mini-stat--button:hover { transform:translateY(-1px); box-shadow:0 10px 24px rgba(15,23,42,.08); border-color:rgba(36, 14, 53, .18); }
-        .analytics-mini-stat--button:focus-visible { outline:3px solid rgba(124,58,237,.24); outline-offset:2px; }
-        .analytics-mini-stat span { display:block; font-size:12px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color: var(--theme-muted, #6B7280); }
-        .analytics-mini-stat strong { display:block; margin-top:8px; font-size:24px; color: var(--theme-primary, #240E35); }
-        .analytics-mini-stat small { display:block; margin-top:8px; color: var(--theme-muted, #6B7280); font-size:12px; }
-        .analytics-events { display:grid; gap:12px; }
-        .analytics-event { border:1px solid var(--theme-border, #E6E1EF); border-radius:14px; padding:14px; background:linear-gradient(180deg,#fff,#fcfbfe); }
-        .analytics-event-head { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-        .analytics-event-meta { color: var(--theme-muted, #6B7280); font-size:13px; line-height:1.5; }
-        .analytics-empty { padding:18px; border-radius:14px; background: var(--theme-surface-softer, #F7F7FB); color: var(--theme-muted, #6B7280); }
-        .analytics-section-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; margin-bottom:14px; }
-        .analytics-table-row-hidden { display:none; }
-        .analytics-modal[hidden] { display:none !important; }
-        .analytics-modal { position:fixed; inset:0; z-index:1100; display:grid; place-items:center; padding:20px; }
-        .analytics-modal-backdrop { position:absolute; inset:0; background:rgba(15, 23, 42, .48); }
-        .analytics-modal-dialog { position:relative; width:min(920px, calc(100vw - 32px)); max-height:calc(100vh - 40px); overflow:auto; border-radius:20px; border:1px solid var(--theme-border, #E6E1EF); background:#fff; box-shadow:0 24px 70px rgba(15,23,42,.28); }
-        .analytics-modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; padding:20px 20px 0; }
-        .analytics-modal-head h3 { margin:0; }
-        .analytics-modal-head p { margin:6px 0 0; color:var(--theme-muted, #6B7280); }
-        .analytics-modal-close { appearance:none; border:1px solid var(--theme-border, #E6E1EF); background:#fff; color:var(--theme-primary, #240E35); width:40px; height:40px; border-radius:999px; font-size:18px; font-weight:900; cursor:pointer; }
-        .analytics-modal-body { padding:18px 20px 20px; }
-        .analytics-inline-form { display:grid; gap:8px; min-width:280px; }
-        .analytics-inline-form input,
-        .analytics-inline-form select,
-        .analytics-inline-form textarea { width:100%; padding:9px 10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:10px; background:#fff; font:inherit; }
-        .analytics-inline-form textarea { min-height:72px; resize:vertical; }
-        .analytics-inline-form-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-        .analytics-link { color:#1d4ed8; text-decoration:none; font-weight:700; }
-        @media (max-width: 1200px) {
-            .analytics-grid.analytics-grid--summary { grid-template-columns:1fr; }
-        }
-        @media (max-width: 960px) {
-            .analytics-grid { grid-template-columns:1fr; }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/funnels-analytics.css') }}">
 @endsection
 
 @section('content')
@@ -121,6 +35,12 @@
         $physicalPendingOrders = collect($analytics['physical_pending_orders'] ?? []);
         $physicalPaidOrders = collect($analytics['physical_paid_orders'] ?? []);
         $physicalProductBreakdown = collect($analytics['physical_product_breakdown'] ?? []);
+        $productBreakdownPerPage = 3;
+        $productBreakdownTotal = $physicalProductBreakdown->count();
+        $productBreakdownLastPage = max(1, (int) ceil(max(1, $productBreakdownTotal) / $productBreakdownPerPage));
+        $productBreakdownPage = max(1, (int) request()->query('product_page', 1));
+        $productBreakdownPage = min($productBreakdownPage, $productBreakdownLastPage);
+        $productBreakdownRows = $physicalProductBreakdown->forPage($productBreakdownPage, $productBreakdownPerPage)->values();
         $checkoutToPaidRate = (int) ($totals['checkout_start_count'] ?? 0) > 0
             ? round((((int) ($physicalOrderTotals['paid_orders'] ?? 0)) / max(1, (int) ($totals['checkout_start_count'] ?? 0))) * 100, 2)
             : 0;
@@ -194,13 +114,6 @@
         <div class="analytics-topbar">
             <div>
                 <h1>{{ $funnel->name }} Analytics</h1>
-                <p>
-                    @if($isPhysicalAnalytics)
-                        Manage physical-product orders here. Focus on pending orders, paid orders, product quantities, and delivery updates you can email directly to customers.
-                    @else
-                        Track views, opt-ins, checkout starts, revenue, drop-off, and recent funnel events in one place.
-                    @endif
-                </p>
             </div>
             <div class="analytics-actions">
                 <a href="{{ route('funnels.index') }}" class="analytics-btn"><i class="fas fa-arrow-left"></i> Back to Funnels</a>
@@ -208,13 +121,6 @@
                 <a href="{{ route('funnels.analytics.export', array_merge(['funnel' => $funnel], request()->query())) }}" class="analytics-btn"><i class="fas fa-file-export"></i> Export CSV</a>
             </div>
         </div>
-
-        @if($isPhysicalAnalytics)
-            <div class="analytics-callout">
-                <strong>Physical funnel view</strong>
-                This screen is organized around orders first. Focus on revenue, paid orders, pending orders, and product movement. Traffic metrics are still available, but they are secondary here.
-            </div>
-        @endif
 
         <div class="analytics-card">
             <form method="GET" action="{{ route('funnels.analytics', $funnel) }}" class="analytics-filters">
@@ -258,9 +164,14 @@
         <div class="analytics-kpis">
             @if($isPhysicalAnalytics)
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Revenue</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Revenue</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Revenue help">?</span>
+                            <span class="analytics-help-tip">Paid revenue from completed orders.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">PHP {{ number_format((float) ($totals['revenue'] ?? 0), 2) }}</div>
-                    <div class="analytics-kpi-sub">Paid revenue from completed orders</div>
                 </div>
                 <div class="analytics-kpi">
                     <div class="analytics-kpi-label">Paid Orders</div>
@@ -268,14 +179,24 @@
                     <div class="analytics-kpi-sub">{{ number_format((float) $checkoutToPaidRate, 2) }}% of checkout starts became paid orders</div>
                 </div>
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Pending Orders</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Pending Orders</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Pending orders help">?</span>
+                            <span class="analytics-help-tip">Orders waiting for payment completion.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">{{ number_format((int) ($physicalOrderTotals['pending_orders'] ?? 0)) }}</div>
-                    <div class="analytics-kpi-sub">Orders waiting for payment completion</div>
                 </div>
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Units Ordered</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Units Ordered</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Units ordered help">?</span>
+                            <span class="analytics-help-tip">Total item quantity across non-abandoned orders.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">{{ number_format((int) ($physicalOrderTotals['units_ordered'] ?? 0)) }}</div>
-                    <div class="analytics-kpi-sub">Total item quantity across non-abandoned orders</div>
                 </div>
                 <div class="analytics-kpi">
                     <div class="analytics-kpi-label">Abandoned Checkouts</div>
@@ -289,9 +210,14 @@
                 </div>
             @else
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Entry Visits</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Entry Visits</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Entry visits help">?</span>
+                            <span class="analytics-help-tip">Unique first-step visits.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">{{ number_format((int) ($totals['entry_visits'] ?? 0)) }}</div>
-                    <div class="analytics-kpi-sub">Unique first-step visits</div>
                 </div>
                 <div class="analytics-kpi">
                     <div class="analytics-kpi-label">Opt-ins</div>
@@ -309,9 +235,14 @@
                     <div class="analytics-kpi-sub">{{ number_format((float) ($rates['paid_conversion_rate'] ?? 0), 2) }}% conversion</div>
                 </div>
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Revenue</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Revenue</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Revenue help">?</span>
+                            <span class="analytics-help-tip">Paid revenue tied to this funnel.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">PHP {{ number_format((float) ($totals['revenue'] ?? 0), 2) }}</div>
-                    <div class="analytics-kpi-sub">Paid revenue tied to this funnel</div>
                 </div>
                 <div class="analytics-kpi">
                     <div class="analytics-kpi-label">Abandoned Checkout</div>
@@ -319,14 +250,24 @@
                     <div class="analytics-kpi-sub">{{ number_format((float) ($rates['abandoned_checkout_rate'] ?? 0), 2) }}% abandonment</div>
                 </div>
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Average Order Value</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Average Order Value</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Average order value help">?</span>
+                            <span class="analytics-help-tip">Average paid order amount.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">PHP {{ number_format((float) ($totals['average_order_value'] ?? 0), 2) }}</div>
-                    <div class="analytics-kpi-sub">Average paid order amount</div>
                 </div>
                 <div class="analytics-kpi">
-                    <div class="analytics-kpi-label">Revenue Per Visit</div>
+                    <div class="analytics-kpi-label analytics-kpi-label-wrap">
+                        <span>Revenue Per Visit</span>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Revenue per visit help">?</span>
+                            <span class="analytics-help-tip">Revenue divided by entry visits.</span>
+                        </span>
+                    </div>
                     <div class="analytics-kpi-value">PHP {{ number_format((float) ($totals['revenue_per_visit'] ?? 0), 2) }}</div>
-                    <div class="analytics-kpi-sub">Revenue divided by entry visits</div>
                 </div>
             @endif
         </div>
@@ -394,42 +335,81 @@
 
                 <div class="analytics-card analytics-card--offer-counts">
                     <h3>Product Breakdown</h3>
-                    <div class="analytics-table-wrap">
-                        <table class="analytics-table" style="min-width:420px;">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Units</th>
-                                    <th>Orders</th>
-                                    <th>Paid Units</th>
-                                </tr>
-                            </thead>
+                    <div class="analytics-table-wrap analytics-table-wrap--product">
+                        <table class="analytics-table">
                             <tbody>
-                                @forelse($physicalProductBreakdown as $item)
+                                @forelse($productBreakdownRows as $item)
                                     <tr>
-                                        <td><strong>{{ $item['name'] ?? 'Product' }}</strong></td>
-                                        <td>{{ number_format((int) ($item['units'] ?? 0)) }}</td>
-                                        <td>{{ number_format((int) ($item['orders'] ?? 0)) }}</td>
-                                        <td>{{ number_format((int) ($item['paid_units'] ?? 0)) }}</td>
+                                        <td>
+                                            <div class="analytics-product-cell">
+                                                <strong>{{ $item['name'] ?? 'Product' }}</strong>
+                                                <span class="analytics-info-dot" data-product-details-toggle role="button" tabindex="0" aria-expanded="false" aria-label="Show product quantity details">
+                                                    <i class="fas fa-info" aria-hidden="true"></i>
+                                                </span>
+                                            </div>
+                                            <div class="analytics-product-details" data-product-details>
+                                                    <div class="analytics-tooltip-grid">
+                                                        <span class="label">Units</span><span class="value">{{ number_format((int) ($item['units'] ?? 0)) }}</span>
+                                                        <span class="label">Orders</span><span class="value">{{ number_format((int) ($item['orders'] ?? 0)) }}</span>
+                                                        <span class="label">Paid Units</span><span class="value">{{ number_format((int) ($item['paid_units'] ?? 0)) }}</span>
+                                                    </div>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4">No product quantities have been recorded yet.</td>
+                                        <td>No product quantities have been recorded yet.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
+                    @if($productBreakdownTotal > $productBreakdownPerPage)
+                        <div class="analytics-product-pagination">
+                            <span class="analytics-product-page-note">
+                                Showing {{ ($productBreakdownPage - 1) * $productBreakdownPerPage + 1 }}-{{ min($productBreakdownTotal, $productBreakdownPage * $productBreakdownPerPage) }} of {{ $productBreakdownTotal }}
+                            </span>
+                            @if($productBreakdownPage > 1)
+                                <a
+                                    href="{{ route('funnels.analytics', array_merge(['funnel' => $funnel], request()->except('product_page'), ['product_page' => $productBreakdownPage - 1])) }}"
+                                    class="analytics-btn"
+                                >
+                                    <i class="fas fa-chevron-left" aria-hidden="true"></i> Prev
+                                </a>
+                            @endif
+                            @if($productBreakdownPage < $productBreakdownLastPage)
+                                <a
+                                    href="{{ route('funnels.analytics', array_merge(['funnel' => $funnel], request()->except('product_page'), ['product_page' => $productBreakdownPage + 1])) }}"
+                                    class="analytics-btn"
+                                >
+                                    Next <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+                    <div class="analytics-product-endnote">***Nothing Follows***</div>
                 </div>
             @else
                 <div class="analytics-card analytics-card--step-visits">
-                    <h3>Step Visits</h3>
+                    <div class="analytics-chart-title">
+                        <h3>Step Visits</h3>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Step visits help">?</span>
+                            <span class="analytics-help-tip">Shows visits and drop-off count for each funnel step.</span>
+                        </span>
+                    </div>
                     <div class="analytics-chart-wrap">
                         <canvas id="stepVisitsChart"></canvas>
                     </div>
                 </div>
                 <div class="analytics-card analytics-card--offer-rates">
-                    <h3>Offer Rates</h3>
+                    <div class="analytics-chart-title">
+                        <h3>Offer Rates</h3>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Offer rates help">?</span>
+                            <span class="analytics-help-tip">Shows acceptance and abandonment rates for offer flow decisions.</span>
+                        </span>
+                    </div>
                     @if($hasOfferData)
                         <div class="analytics-chart-wrap">
                             <canvas id="offerRatesChart"></canvas>
@@ -468,14 +448,26 @@
         @unless($isPhysicalAnalytics)
             <div class="analytics-grid">
                 <div class="analytics-card">
-                    <h3>Daily Funnel Trend</h3>
+                    <div class="analytics-chart-title">
+                        <h3>Daily Funnel Trend</h3>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Daily trend help">?</span>
+                            <span class="analytics-help-tip">Shows daily movement of visits, opt-ins, checkout starts, and paid events.</span>
+                        </span>
+                    </div>
                     <div class="analytics-chart-wrap">
                         <canvas id="dailyTrendChart"></canvas>
                     </div>
                 </div>
 
                 <div class="analytics-card">
-                    <h3>Conversion Path</h3>
+                    <div class="analytics-chart-title">
+                        <h3>Conversion Path</h3>
+                        <span class="analytics-help-wrap">
+                            <span class="analytics-help-dot" tabindex="0" aria-label="Conversion path help">?</span>
+                            <span class="analytics-help-tip">Shows how many users reached each major conversion stage.</span>
+                        </span>
+                    </div>
                     <div class="analytics-chart-wrap">
                         <canvas id="conversionPathChart"></canvas>
                     </div>
@@ -487,7 +479,7 @@
             <div class="analytics-card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                     <h3 style="margin:0;">Pending Orders</h3>
-                    <button type="button" id="togglePendingOrdersBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="pendingOrdersContent">Show</button>
+                    <button type="button" id="togglePendingOrdersBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="pendingOrdersContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
                 </div>
                 <div id="pendingOrdersContent" style="display:none;">
                     <div class="analytics-table-wrap">
@@ -524,7 +516,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7">No pending physical-product orders right now.</td>
+                                        <td colspan="7" style="text-align:center;">No pending physical-product orders right now.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -536,7 +528,7 @@
             <div class="analytics-card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                     <h3 style="margin:0;">Paid Orders</h3>
-                    <button type="button" id="togglePaidOrdersBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="paidOrdersContent">Show</button>
+                    <button type="button" id="togglePaidOrdersBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="paidOrdersContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
                 </div>
                 <div id="paidOrdersContent" style="display:none;">
                     <div class="analytics-table-wrap">
@@ -584,26 +576,20 @@
                                         </td>
                                         <td>
                                             @if(!empty($row['email']))
-                                                <form method="POST" action="{{ route('funnels.analytics.delivery-update', $funnel) }}" class="analytics-inline-form">
-                                                    @csrf
-                                                    <input type="hidden" name="order_key" value="{{ $row['order_key'] ?? '' }}">
-                                                    <input type="hidden" name="recipient_email" value="{{ $row['email'] ?? '' }}">
-                                                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Delivery status</label>
-                                                    <select name="delivery_status">
-                                                        @foreach($deliveryStatusOptions as $value => $label)
-                                                            <option value="{{ $value }}" {{ ($row['delivery_status'] ?? 'processing') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                                                        @endforeach
-                                                    </select>
-                                                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Courier</label>
-                                                    <input type="text" name="courier_name" value="{{ $row['courier_name'] ?? 'LBC' }}" placeholder="LBC">
-                                                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Tracking link</label>
-                                                    <input type="url" name="tracking_url" value="{{ $row['tracking_url'] ?? '' }}" placeholder="https://www.lbcexpress.com/...">
-                                                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Extra message</label>
-                                                    <textarea name="custom_message" placeholder="Optional note for the customer">{{ $row['delivery_message'] ?? '' }}</textarea>
-                                                    <div class="analytics-inline-form-actions">
-                                                        <button type="submit" class="analytics-btn primary">Send Email Update</button>
-                                                    </div>
-                                                </form>
+                                                <button
+                                                    type="button"
+                                                    class="analytics-btn primary"
+                                                    data-delivery-update
+                                                    data-order-key="{{ $row['order_key'] ?? '' }}"
+                                                    data-recipient-email="{{ $row['email'] ?? '' }}"
+                                                    data-delivery-status="{{ $row['delivery_status'] ?? 'processing' }}"
+                                                    data-courier-name="{{ $row['courier_name'] ?? 'LBC' }}"
+                                                    data-tracking-url="{{ $row['tracking_url'] ?? '' }}"
+                                                    data-custom-message="{{ $row['delivery_message'] ?? '' }}"
+                                                    data-customer="{{ $row['customer'] ?? 'Anonymous visitor' }}"
+                                                >
+                                                    <i class="fas fa-circle-info" aria-hidden="true"></i> See Details
+                                                </button>
                                             @else
                                                 <span style="color:var(--theme-muted, #6B7280);">No customer email available for this order.</span>
                                             @endif
@@ -624,7 +610,7 @@
         <div class="analytics-card">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                 <h3 style="margin:0;">{{ $summarySectionTitle }}</h3>
-                <button type="button" id="toggleOfferActivityBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="offerActivityContent">Show</button>
+                <button type="button" id="toggleOfferActivityBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="offerActivityContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
             </div>
             <div id="offerActivityContent" style="display:none;">
                 @unless($isPhysicalAnalytics)
@@ -688,7 +674,7 @@
                                                     </div>
                                                     @if(!empty($item['badge']) || !empty($item['price']))
                                                         <div style="font-size:12px;color:var(--theme-muted, #6B7280);margin-bottom:4px;">
-                                                            {{ trim(implode(' • ', array_filter([
+                                                            {{ trim(implode(' â€¢ ', array_filter([
                                                                 $item['badge'] ?? null,
                                                                 $item['price'] ?? null,
                                                             ]))) }}
@@ -749,7 +735,7 @@
             <div class="analytics-card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                     <h3 style="margin:0;">Step Performance</h3>
-                    <button type="button" id="toggleStepPerformanceBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="stepPerformanceContent">Show</button>
+                    <button type="button" id="toggleStepPerformanceBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="stepPerformanceContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
                 </div>
                 <div id="stepPerformanceContent" style="display:none;">
                     <div class="analytics-table-wrap">
@@ -806,7 +792,7 @@
                 <h3 style="margin:0;">Recent Funnel Events</h3>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;">
                     <a href="{{ route('funnels.events', $funnel) }}" class="analytics-btn">Open Raw Events JSON</a>
-                    <button type="button" id="toggleRecentEventsBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="recentEventsContent">Show</button>
+                    <button type="button" id="toggleRecentEventsBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="recentEventsContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
                 </div>
             </div>
 
@@ -876,6 +862,45 @@
             </div>
         </div>
     </div>
+
+    <div id="deliveryUpdateModal" class="analytics-modal" hidden aria-hidden="true">
+        <div class="analytics-modal-backdrop" data-delivery-modal-close></div>
+        <div class="analytics-modal-dialog analytics-modal-dialog--compact" role="dialog" aria-modal="true" aria-labelledby="deliveryUpdateModalTitle">
+            <div class="analytics-modal-head">
+                <div>
+                    <h3 id="deliveryUpdateModalTitle">Delivery Update</h3>
+                    <p>Update status, tracking, and customer message before sending the email.</p>
+                </div>
+                <button type="button" class="analytics-modal-close" data-delivery-modal-close aria-label="Close delivery update modal">&times;</button>
+            </div>
+            <div class="analytics-modal-body">
+                <div class="analytics-delivery-meta">
+                    <strong id="deliveryUpdateModalCustomer">Customer: N/A</strong>
+                    <span id="deliveryUpdateModalEmail" style="color:var(--theme-muted, #6B7280);">Email: N/A</span>
+                </div>
+                <form method="POST" action="{{ route('funnels.analytics.delivery-update', $funnel) }}" class="analytics-inline-form analytics-inline-form--compact" id="deliveryUpdateModalForm">
+                    @csrf
+                    <input type="hidden" name="order_key" id="deliveryUpdateOrderKey" value="">
+                    <input type="hidden" name="recipient_email" id="deliveryUpdateRecipientEmail" value="">
+                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Delivery status</label>
+                    <select name="delivery_status" id="deliveryUpdateStatus">
+                        @foreach($deliveryStatusOptions as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Courier</label>
+                    <input type="text" name="courier_name" id="deliveryUpdateCourier" value="" placeholder="LBC">
+                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Tracking link</label>
+                    <input type="url" name="tracking_url" id="deliveryUpdateTracking" value="" placeholder="https://www.lbcexpress.com/...">
+                    <label style="font-size:12px;font-weight:800;color:var(--theme-muted, #6B7280);">Extra message</label>
+                    <textarea name="custom_message" id="deliveryUpdateMessage" placeholder="Optional note for the customer"></textarea>
+                    <div class="analytics-inline-form-actions analytics-inline-form-actions--right">
+                        <button type="submit" class="analytics-btn primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Send Email Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @section('scripts')
@@ -914,18 +939,53 @@
         const offerActivityModalDescription = document.getElementById('offerActivityModalDescription');
         const offerActivityModalRows = document.getElementById('offerActivityModalRows');
         const offerActivityButtons = document.querySelectorAll('[data-offer-activity]');
+        const deliveryUpdateModal = document.getElementById('deliveryUpdateModal');
+        const deliveryUpdateButtons = document.querySelectorAll('[data-delivery-update]');
+        const deliveryUpdateOrderKey = document.getElementById('deliveryUpdateOrderKey');
+        const deliveryUpdateRecipientEmail = document.getElementById('deliveryUpdateRecipientEmail');
+        const deliveryUpdateStatus = document.getElementById('deliveryUpdateStatus');
+        const deliveryUpdateCourier = document.getElementById('deliveryUpdateCourier');
+        const deliveryUpdateTracking = document.getElementById('deliveryUpdateTracking');
+        const deliveryUpdateMessage = document.getElementById('deliveryUpdateMessage');
+        const deliveryUpdateModalCustomer = document.getElementById('deliveryUpdateModalCustomer');
+        const deliveryUpdateModalEmail = document.getElementById('deliveryUpdateModalEmail');
+        const productDetailsToggles = document.querySelectorAll('[data-product-details-toggle]');
         let lastOfferActivityTrigger = null;
+        let lastDeliveryUpdateTrigger = null;
+
+        function setToggleButtonState(button, expanded) {
+            if (!button) {
+                return;
+            }
+
+            const icon = button.querySelector('i');
+            const label = button.querySelector('span');
+
+            if (icon) {
+                icon.classList.toggle('fa-eye', !expanded);
+                icon.classList.toggle('fa-eye-slash', expanded);
+            }
+
+            if (label) {
+                label.textContent = expanded ? 'Hide' : 'Show';
+            } else {
+                button.textContent = expanded ? 'Hide' : 'Show';
+            }
+
+            button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        }
 
         function bindCollapsibleSection(button, content) {
             if (!button || !content) {
                 return;
             }
 
+            setToggleButtonState(button, false);
+
             button.addEventListener('click', function() {
                 const isHidden = content.style.display === 'none';
                 content.style.display = isHidden ? 'block' : 'none';
-                button.textContent = isHidden ? 'Hide' : 'Show';
-                button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                setToggleButtonState(button, isHidden);
             });
         }
 
@@ -934,6 +994,29 @@
         bindCollapsibleSection(togglePaidOrdersBtn, paidOrdersContent);
         bindCollapsibleSection(toggleStepPerformanceBtn, stepPerformanceContent);
         bindCollapsibleSection(toggleRecentEventsBtn, recentEventsContent);
+
+        productDetailsToggles.forEach((toggleBtn) => {
+            const toggleDetails = function() {
+                const row = toggleBtn.closest('tr');
+                const details = row ? row.querySelector('[data-product-details]') : null;
+                if (!details) {
+                    return;
+                }
+
+                const isOpen = details.classList.contains('is-open');
+                details.classList.toggle('is-open', !isOpen);
+                toggleBtn.setAttribute('aria-expanded', !isOpen ? 'true' : 'false');
+                toggleBtn.setAttribute('aria-label', !isOpen ? 'Hide product quantity details' : 'Show product quantity details');
+            };
+
+            toggleBtn.addEventListener('click', toggleDetails);
+            toggleBtn.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleDetails();
+                }
+            });
+        });
 
         function applyOfferActivityFilters() {
             if (!offerActivityTableRows.length) {
@@ -1040,6 +1123,19 @@
             }
         }
 
+        function closeDeliveryUpdateModal() {
+            if (!deliveryUpdateModal) {
+                return;
+            }
+
+            deliveryUpdateModal.hidden = true;
+            deliveryUpdateModal.setAttribute('aria-hidden', 'true');
+
+            if (lastDeliveryUpdateTrigger) {
+                lastDeliveryUpdateTrigger.focus();
+            }
+        }
+
         function openOfferActivityModal(groupKey, trigger) {
             const group = offerActivityGroups[groupKey];
             if (!group || !offerActivityModal || !offerActivityModalTitle || !offerActivityModalDescription) {
@@ -1054,9 +1150,58 @@
             offerActivityModal.setAttribute('aria-hidden', 'false');
         }
 
+        function openDeliveryUpdateModal(button) {
+            if (!deliveryUpdateModal || !button) {
+                return;
+            }
+
+            const orderKey = String(button.getAttribute('data-order-key') || '').trim();
+            const recipientEmail = String(button.getAttribute('data-recipient-email') || '').trim();
+            const deliveryStatus = String(button.getAttribute('data-delivery-status') || 'processing').trim();
+            const courierName = String(button.getAttribute('data-courier-name') || 'LBC').trim();
+            const trackingUrl = String(button.getAttribute('data-tracking-url') || '').trim();
+            const customMessage = String(button.getAttribute('data-custom-message') || '').trim();
+            const customer = String(button.getAttribute('data-customer') || 'Anonymous visitor').trim();
+
+            if (deliveryUpdateOrderKey) {
+                deliveryUpdateOrderKey.value = orderKey;
+            }
+            if (deliveryUpdateRecipientEmail) {
+                deliveryUpdateRecipientEmail.value = recipientEmail;
+            }
+            if (deliveryUpdateStatus) {
+                deliveryUpdateStatus.value = deliveryStatus || 'processing';
+            }
+            if (deliveryUpdateCourier) {
+                deliveryUpdateCourier.value = courierName || 'LBC';
+            }
+            if (deliveryUpdateTracking) {
+                deliveryUpdateTracking.value = trackingUrl;
+            }
+            if (deliveryUpdateMessage) {
+                deliveryUpdateMessage.value = customMessage;
+            }
+            if (deliveryUpdateModalCustomer) {
+                deliveryUpdateModalCustomer.textContent = 'Customer: ' + (customer || 'Anonymous visitor');
+            }
+            if (deliveryUpdateModalEmail) {
+                deliveryUpdateModalEmail.textContent = 'Email: ' + (recipientEmail || 'N/A');
+            }
+
+            lastDeliveryUpdateTrigger = button;
+            deliveryUpdateModal.hidden = false;
+            deliveryUpdateModal.setAttribute('aria-hidden', 'false');
+        }
+
         offerActivityButtons.forEach((button) => {
             button.addEventListener('click', function() {
                 openOfferActivityModal(button.getAttribute('data-offer-activity'), button);
+            });
+        });
+
+        deliveryUpdateButtons.forEach((button) => {
+            button.addEventListener('click', function() {
+                openDeliveryUpdateModal(button);
             });
         });
 
@@ -1064,9 +1209,17 @@
             element.addEventListener('click', closeOfferActivityModal);
         });
 
+        document.querySelectorAll('[data-delivery-modal-close]').forEach((element) => {
+            element.addEventListener('click', closeDeliveryUpdateModal);
+        });
+
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape' && offerActivityModal && !offerActivityModal.hidden) {
                 closeOfferActivityModal();
+                return;
+            }
+            if (event.key === 'Escape' && deliveryUpdateModal && !deliveryUpdateModal.hidden) {
+                closeDeliveryUpdateModal();
             }
         });
 
@@ -1205,3 +1358,4 @@
         }
     </script>
 @endsection
+

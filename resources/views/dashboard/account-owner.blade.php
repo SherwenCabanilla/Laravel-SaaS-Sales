@@ -1,6 +1,10 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Account Owner Dashboard')
+
+@section('styles')
+        <link rel="stylesheet" href="{{ asset('css/extracted/dashboard-account-owner-style1.css') }}">
+@endsection
 
 @php
     $companyName = optional(auth()->user()->tenant)->company_name ?? 'No Company';
@@ -12,10 +16,9 @@
     $companyInitials = $companyInitials !== '' ? $companyInitials : 'NC';
     $companyHue = abs(crc32($companyName ?: 'company')) % 360;
     $companyBg = "hsl({$companyHue}, 60%, 42%)";
-    $physicalSales = data_get($analyticsSummary, 'physical_sales', []);
-    $physicalDeliveryStatuses = data_get($physicalSales, 'delivery_statuses', []);
-    $physicalTopProducts = data_get($physicalSales, 'top_products', []);
-    $physicalTopFunnels = data_get($physicalSales, 'top_funnels', []);
+    $servicePaidRevenue = (float) ($serviceSalesTotal ?? 0);
+    $physicalPaidRevenue = (float) ($physicalProductSalesTotal ?? 0);
+    $teamActivityOpen = request()->has('activity_page');
 @endphp
 
 @section('content')
@@ -98,7 +101,15 @@
         </div>
         <div class="card">
             <h3>Funnel Paid Revenue</h3>
-            <p>{{ number_format($revenueTotal, 2) }}</p>
+            <p>â‚±{{ number_format($revenueTotal, 2) }}</p>
+        </div>
+        <div class="card">
+            <h3>Service Sales</h3>
+            <p>â‚±{{ number_format($servicePaidRevenue, 2) }}</p>
+        </div>
+        <div class="card">
+            <h3>Physical Product Sales</h3>
+            <p>â‚±{{ number_format($physicalPaidRevenue, 2) }}</p>
         </div>
         <div class="card">
             <h3>Total Users</h3>
@@ -116,18 +127,36 @@
 
     <div class="charts">
         <div class="chart">
-            <h3>Pipeline Distribution</h3>
+            <div class="chart-heading">
+                <h3>Pipeline Distribution</h3>
+                <span class="chart-help-wrap">
+                    <span class="chart-help-dot" tabindex="0" aria-label="Pipeline distribution help">?</span>
+                    <span class="chart-help-tip">Shows how many leads are in each pipeline status right now.</span>
+                </span>
+            </div>
             <canvas id="pipelineDistributionChart"></canvas>
         </div>
         <div class="chart">
-            <h3>Pipeline Aging</h3>
+            <div class="chart-heading">
+                <h3>Pipeline Aging</h3>
+                <span class="chart-help-wrap">
+                    <span class="chart-help-dot" tabindex="0" aria-label="Pipeline aging help">?</span>
+                    <span class="chart-help-tip">Shows how long open leads have been waiting in the pipeline.</span>
+                </span>
+            </div>
             <canvas id="pipelineAgingChart"></canvas>
         </div>
     </div>
 
     <div class="charts">
         <div class="chart">
-            <h3>Revenue Trend (Last 6 Months)</h3>
+            <div class="chart-heading">
+                <h3>Revenue Trend (Last 6 Months)</h3>
+                <span class="chart-help-wrap">
+                    <span class="chart-help-dot" tabindex="0" aria-label="Revenue trend help">?</span>
+                    <span class="chart-help-tip">Shows month-by-month paid revenue for the last six months.</span>
+                </span>
+            </div>
             <canvas id="ownerRevenueTrendChart"></canvas>
         </div>
         <div class="chart">
@@ -179,159 +208,16 @@
         </table>
     </div>
 
-    <div class="card" style="margin-bottom: 20px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px;">
-            <div>
-                <h3 style="margin:0;">Physical Product Sales</h3>
-                <p style="margin:8px 0 0;color:var(--theme-muted, #6B7280);max-width:760px;">
-                    Tenant-wide order visibility across physical-product and hybrid funnels, including paid revenue, pending value, units sold, and the funnels/products driving sales.
-                </p>
-            </div>
-            <div style="padding:10px 14px;border-radius:12px;background:#f4f3f8;font-weight:700;color:var(--theme-primary, #240E35);">
-                {{ (int) data_get($physicalSales, 'funnel_count', 0) }} physical / hybrid funnel{{ (int) data_get($physicalSales, 'funnel_count', 0) === 1 ? '' : 's' }}
-            </div>
-        </div>
-
-        @if((int) data_get($physicalSales, 'funnel_count', 0) > 0)
-            <div class="kpi-cards" style="margin-bottom:18px;">
-                <div class="card">
-                    <h3>Paid Orders</h3>
-                    <p>{{ number_format((int) data_get($physicalSales, 'paid_orders', 0)) }}</p>
-                </div>
-                <div class="card">
-                    <h3>Pending Orders</h3>
-                    <p>{{ number_format((int) data_get($physicalSales, 'pending_orders', 0)) }}</p>
-                </div>
-                <div class="card">
-                    <h3>Units Sold</h3>
-                    <p>{{ number_format((int) data_get($physicalSales, 'units_ordered', 0)) }}</p>
-                </div>
-                <div class="card">
-                    <h3>Paid Revenue</h3>
-                    <p>{{ number_format((float) data_get($physicalSales, 'paid_revenue', 0), 2) }}</p>
-                </div>
-                <div class="card">
-                    <h3>Pending Value</h3>
-                    <p>{{ number_format((float) data_get($physicalSales, 'pending_revenue', 0), 2) }}</p>
-                </div>
-                <div class="card">
-                    <h3>Avg Paid Order</h3>
-                    <p>{{ number_format((float) data_get($physicalSales, 'average_paid_order_value', 0), 2) }}</p>
-                </div>
-            </div>
-
-            <div class="charts">
-                <div class="chart">
-                    <h3>Top Products</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Product</th>
-                                <th>Units</th>
-                                <th>Paid Units</th>
-                                <th>Orders</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($physicalTopProducts as $product)
-                                <tr>
-                                    <td>{{ $product['name'] ?? 'Product' }}</td>
-                                    <td>{{ number_format((int) ($product['units'] ?? 0)) }}</td>
-                                    <td>{{ number_format((int) ($product['paid_units'] ?? 0)) }}</td>
-                                    <td>{{ number_format((int) ($product['orders'] ?? 0)) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4">No product-level order data yet.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="chart">
-                    <h3>Delivery Status Mix</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Status</th>
-                                <th>Orders</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($physicalDeliveryStatuses as $status => $count)
-                                <tr>
-                                    <td>{{ ucwords($status) }}</td>
-                                    <td>{{ number_format((int) $count) }}</td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="2">No delivery updates or payment-linked order statuses yet.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="card" style="margin-top:18px;">
-                <h3>Top Physical Funnels</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Funnel</th>
-                            <th>Purpose</th>
-                            <th>Total Orders</th>
-                            <th>Paid</th>
-                            <th>Pending</th>
-                            <th>Units</th>
-                            <th>Revenue</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($physicalTopFunnels as $funnelRow)
-                            <tr>
-                                <td>{{ $funnelRow['name'] ?? 'Funnel' }}</td>
-                                <td>{{ $funnelRow['purpose'] ?? 'Physical Product' }}</td>
-                                <td>{{ number_format((int) ($funnelRow['total_orders'] ?? 0)) }}</td>
-                                <td>{{ number_format((int) ($funnelRow['paid_orders'] ?? 0)) }}</td>
-                                <td>{{ number_format((int) ($funnelRow['pending_orders'] ?? 0)) }}</td>
-                                <td>{{ number_format((int) ($funnelRow['units_ordered'] ?? 0)) }}</td>
-                                <td>{{ number_format((float) ($funnelRow['paid_revenue'] ?? 0), 2) }}</td>
-                                <td>
-                                    @if(!empty($funnelRow['id']))
-                                        <a href="{{ route('funnels.analytics', $funnelRow['id']) }}" style="color:#0F766E; text-decoration:none; font-weight:700;">Open funnel analytics</a>
-                                    @else
-                                        N/A
-                                    @endif
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8">No physical-product funnel performance data yet.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        @else
-            <div style="padding:16px 18px;border-radius:14px;background:#f8fafc;color:var(--theme-muted, #6B7280);">
-                No physical-product or hybrid funnels found for this tenant yet.
-            </div>
-        @endif
-    </div>
-
-    <div class="card">
+    <div class="card" id="team-activity">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
             <h3 style="margin:0;">Team Activity Snapshot</h3>
             <button type="button" id="toggleTeamActivityBtn"
                 style="padding:10px 16px;background:var(--theme-primary,#240E35);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-width:88px;"
-                aria-expanded="false">
-                Show
+                aria-expanded="{{ $teamActivityOpen ? 'true' : 'false' }}">
+                {{ $teamActivityOpen ? 'Hide' : 'Show' }}
             </button>
         </div>
-        <div id="teamActivityContent" style="display:none;">
+        <div id="teamActivityContent" style="display:{{ $teamActivityOpen ? 'block' : 'none' }};">
             <table>
                 <thead>
                     <tr>
@@ -357,7 +243,7 @@
                 </tbody>
             </table>
             <div style="margin-top: 16px;">
-                {{ $teamActivity->links('pagination::bootstrap-4') }}
+                {{ $teamActivity->fragment('team-activity')->links('pagination::bootstrap-4') }}
             </div>
         </div>
     </div>
@@ -533,3 +419,4 @@
         }
     </script>
 @endsection
+
