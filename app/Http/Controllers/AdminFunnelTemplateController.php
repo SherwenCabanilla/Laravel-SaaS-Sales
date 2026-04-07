@@ -283,7 +283,10 @@ class AdminFunnelTemplateController extends Controller
 
     public function publish(FunnelTemplate $funnelTemplate)
     {
-        $issues = $this->validatePublishReadiness($funnelTemplate->steps()->where('is_active', true)->orderBy('position')->get());
+        $issues = $this->validatePublishReadiness(
+            $funnelTemplate->steps()->where('is_active', true)->orderBy('position')->get(),
+            (string) $funnelTemplate->template_type
+        );
         if ($issues !== []) {
             return redirect()->back()->with('error', implode(' ', $issues));
         }
@@ -1169,11 +1172,20 @@ class AdminFunnelTemplateController extends Controller
             ->all();
     }
 
-    private function validatePublishReadiness($steps): array
+    private function requiredStepTypesForTemplateType(string $templateType): array
+    {
+        return match (FunnelTemplate::normalizeTemplateType($templateType)) {
+            'digital_product', 'physical_product' => ['sales', 'checkout', 'thank_you'],
+            'hybrid' => ['landing', 'sales', 'checkout', 'thank_you'],
+            default => ['landing', 'opt_in', 'sales', 'checkout', 'thank_you'],
+        };
+    }
+
+    private function validatePublishReadiness($steps, string $templateType = 'service'): array
     {
         $ordered = collect($steps)->values();
         $issues = [];
-        $requiredTypes = ['landing', 'opt_in', 'sales', 'checkout', 'thank_you'];
+        $requiredTypes = $this->requiredStepTypesForTemplateType($templateType);
 
         foreach ($requiredTypes as $requiredType) {
             if (! $ordered->contains(fn ($step) => strtolower(trim((string) ($step->type ?? ''))) === $requiredType)) {

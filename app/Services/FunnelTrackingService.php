@@ -24,6 +24,7 @@ class FunnelTrackingService
     public const EVENT_DOWNSELL_ACCEPTED = 'funnel_downsell_accepted';
     public const EVENT_DOWNSELL_DECLINED = 'funnel_downsell_declined';
     public const EVENT_CHECKOUT_ABANDONED = 'funnel_checkout_abandoned';
+    public const EVENT_ORDER_DELIVERY_UPDATED = 'funnel_order_delivery_updated';
 
     public function sessionIdentifier(?Request $request = null): ?string
     {
@@ -168,6 +169,37 @@ class FunnelTrackingService
         ]);
     }
 
+    public function trackOrderDeliveryUpdate(Funnel $funnel, array $orderRow, array $meta = []): FunnelEvent
+    {
+        return $this->recordEvent([
+            'tenant_id' => $funnel->tenant_id,
+            'funnel_id' => $funnel->id,
+            'funnel_step_id' => (int) ($orderRow['funnel_step_id'] ?? 0) ?: null,
+            'lead_id' => (int) ($orderRow['lead_id'] ?? 0) ?: null,
+            'payment_id' => (int) ($orderRow['payment_id'] ?? 0) ?: null,
+            'event_name' => self::EVENT_ORDER_DELIVERY_UPDATED,
+            'session_identifier' => trim((string) ($orderRow['session_identifier'] ?? '')) ?: null,
+            'meta' => array_merge([
+                'order_key' => (string) ($orderRow['order_key'] ?? ''),
+                'recipient_email' => (string) ($orderRow['email'] ?? ''),
+                'customer_name' => (string) ($orderRow['customer'] ?? ''),
+                'delivery_status' => (string) ($meta['delivery_status'] ?? ''),
+                'tracking_url' => (string) ($meta['tracking_url'] ?? ''),
+                'courier_name' => (string) ($meta['courier_name'] ?? ''),
+                'custom_message' => (string) ($meta['custom_message'] ?? ''),
+                'source' => 'manual_delivery_update',
+            ], $meta),
+        ]);
+    }
+
+    public function findPhysicalOrderRow(Funnel $funnel, string $orderKey, array $filters = []): ?array
+    {
+        $analytics = $this->analyticsForFunnel($funnel, $filters);
+
+        return collect($analytics['physical_orders'] ?? [])
+            ->first(fn (array $row) => trim((string) ($row['order_key'] ?? '')) === trim($orderKey));
+    }
+
     public function hasRecentEvent(array $filters, int $seconds = 120): bool
     {
         return FunnelEvent::query()
@@ -197,7 +229,7 @@ class FunnelTrackingService
         $perPage = max(1, min((int) ($filters['per_page'] ?? 50), 100));
 
         return $this->baseFunnelQuery($funnel, $filters)
-            ->with(['step:id,funnel_id,title,slug,type', 'lead:id,name,email', 'payment:id,amount,status,payment_date'])
+            ->with(['step:id,funnel_id,title,slug,type', 'lead:id,name,email,phone', 'payment:id,amount,status,payment_date'])
             ->orderByDesc('occurred_at')
             ->paginate($perPage);
     }
@@ -207,7 +239,7 @@ class FunnelTrackingService
         $this->syncAbandonedCheckoutEvents($funnel);
 
         return $this->baseFunnelQuery($funnel, $filters)
-            ->with(['step:id,funnel_id,title,slug,type', 'lead:id,name,email', 'payment:id,amount,status,payment_date'])
+            ->with(['step:id,funnel_id,title,slug,type', 'lead:id,name,email,phone', 'payment:id,amount,status,payment_date'])
             ->orderByDesc('occurred_at')
             ->get();
     }
@@ -220,7 +252,7 @@ class FunnelTrackingService
         $events = $this->baseFunnelQuery($funnel, $filters)
             ->with([
                 'step:id,funnel_id,title,slug,type',
-                'lead:id,name,email',
+                'lead:id,name,email,phone',
                 'payment:id,amount,status,payment_date',
             ])
             ->get();
@@ -273,6 +305,15 @@ class FunnelTrackingService
             ];
         })->values();
 
+        $offerCustomerSummary = $this->offerCustomerSummaryRows($events);
+        $physicalOrderRows = collect($offerCustomerSummary)
+            ->filter(function (array $row) use ($funnel) {
+                $purpose = trim((string) ($row['funnel_purpose'] ?? $funnel->purpose ?? 'service'));
+                return in_array($purpose, ['physical_product', 'hybrid'], true);
+            })
+            ->values()
+            ->all();
+
         return [
             'filters' => [
                 'from' => ($filters['from'] ?? null)?->toIso8601String(),
@@ -290,6 +331,7 @@ class FunnelTrackingService
                 self::EVENT_DOWNSELL_ACCEPTED,
                 self::EVENT_DOWNSELL_DECLINED,
                 self::EVENT_CHECKOUT_ABANDONED,
+                self::EVENT_ORDER_DELIVERY_UPDATED,
             ],
             'totals' => [
                 'entry_visits' => $entryVisits,
@@ -321,7 +363,12 @@ class FunnelTrackingService
                 'downsell_accepted' => $this->offerActivityRows($events, self::EVENT_DOWNSELL_ACCEPTED),
                 'downsell_declined' => $this->offerActivityRows($events, self::EVENT_DOWNSELL_DECLINED),
             ],
-            'offer_customer_summary' => $this->offerCustomerSummaryRows($events),
+            'offer_customer_summary' => $offerCustomerSummary,
+            'physical_orders' => $physicalOrderRows,
+            'physical_order_totals' => $this->physicalOrderTotals($physicalOrderRows),
+            'physical_pending_orders' => array_values(array_filter($physicalOrderRows, fn (array $row) => ($row['order_status'] ?? '') === 'pending')),
+            'physical_paid_orders' => array_values(array_filter($physicalOrderRows, fn (array $row) => ($row['order_status'] ?? '') === 'paid')),
+            'physical_product_breakdown' => $this->physicalProductBreakdown($physicalOrderRows),
             'conversion_funnel' => [
                 ['label' => 'Entry Visits', 'count' => $entryVisits],
                 ['label' => 'Opt-ins', 'count' => $optInCount],
@@ -388,6 +435,8 @@ class FunnelTrackingService
             return in_array($event->event_name, [
                 self::EVENT_CHECKOUT_STARTED,
                 self::EVENT_PAYMENT_PAID,
+                self::EVENT_CHECKOUT_ABANDONED,
+                self::EVENT_ORDER_DELIVERY_UPDATED,
                 self::EVENT_UPSELL_ACCEPTED,
                 self::EVENT_UPSELL_DECLINED,
                 self::EVENT_DOWNSELL_ACCEPTED,
@@ -396,25 +445,117 @@ class FunnelTrackingService
         });
 
         return $relevantEvents
-            ->groupBy(function (FunnelEvent $event) {
-                $sessionId = trim((string) ($event->session_identifier ?? ''));
-                if ($sessionId !== '') {
-                    return 'session:'.$sessionId;
-                }
-
-                if ($event->lead_id) {
-                    return 'lead:'.$event->lead_id;
-                }
-
-                return 'event:'.$event->id;
-            })
+            ->groupBy(fn (FunnelEvent $event) => $this->eventOrderGroupKey($event))
             ->map(function (Collection $group) {
                 $ordered = $group->sortBy(fn (FunnelEvent $event) => optional($event->occurred_at)?->getTimestamp() ?? 0)->values();
                 $latest = $ordered->last();
                 $leadEvent = $ordered->first(fn (FunnelEvent $event) => $event->lead !== null);
                 $leadName = trim((string) ($leadEvent?->lead?->name ?? ''));
                 $leadEmail = trim((string) ($leadEvent?->lead?->email ?? ''));
-                $leadLabel = $leadName !== '' ? $leadName : ($leadEmail !== '' ? $leadEmail : 'Anonymous visitor');
+                $leadPhone = trim((string) ($leadEvent?->lead?->phone ?? ''));
+                $checkoutStarted = $ordered->first(fn (FunnelEvent $event) => $event->event_name === self::EVENT_CHECKOUT_STARTED);
+
+                $customerName = trim((string) (
+                    data_get($checkoutStarted?->meta, 'customer.full_name')
+                    ?: data_get($latest?->meta, 'customer.full_name')
+                    ?: $leadName
+                ));
+                $customerEmail = trim((string) (
+                    data_get($checkoutStarted?->meta, 'customer.email')
+                    ?: data_get($latest?->meta, 'customer.email')
+                    ?: $leadEmail
+                ));
+                $customerPhone = trim((string) (
+                    data_get($checkoutStarted?->meta, 'customer.phone')
+                    ?: data_get($latest?->meta, 'customer.phone')
+                    ?: $leadPhone
+                ));
+                $firstName = trim((string) (
+                    data_get($checkoutStarted?->meta, 'customer.first_name')
+                    ?: data_get($latest?->meta, 'customer.first_name')
+                ));
+                $lastName = trim((string) (
+                    data_get($checkoutStarted?->meta, 'customer.last_name')
+                    ?: data_get($latest?->meta, 'customer.last_name')
+                ));
+                $street = trim((string) (
+                    data_get($checkoutStarted?->meta, 'shipping.street')
+                    ?: data_get($latest?->meta, 'shipping.street')
+                ));
+                $barangay = trim((string) (
+                    data_get($checkoutStarted?->meta, 'shipping.barangay')
+                    ?: data_get($latest?->meta, 'shipping.barangay')
+                ));
+                $cityMunicipality = trim((string) (
+                    data_get($checkoutStarted?->meta, 'shipping.city_municipality')
+                    ?: data_get($latest?->meta, 'shipping.city_municipality')
+                ));
+                $province = trim((string) (
+                    data_get($checkoutStarted?->meta, 'shipping.province')
+                    ?: data_get($latest?->meta, 'shipping.province')
+                ));
+                $postalCode = trim((string) (
+                    data_get($checkoutStarted?->meta, 'shipping.postal_code')
+                    ?: data_get($latest?->meta, 'shipping.postal_code')
+                ));
+                $notes = trim((string) (
+                    data_get($checkoutStarted?->meta, 'shipping.notes')
+                    ?: data_get($latest?->meta, 'shipping.notes')
+                ));
+                $deliveryAddress = trim((string) (
+                    data_get($checkoutStarted?->meta, 'delivery_address')
+                    ?: data_get($latest?->meta, 'delivery_address')
+                ));
+                if ($deliveryAddress === '') {
+                    $deliveryAddress = collect([$street, $barangay, $cityMunicipality, $province, $postalCode])
+                        ->filter(fn (?string $value) => $value !== null && $value !== '')
+                        ->implode(', ');
+                }
+                $orderItemsRaw = data_get($checkoutStarted?->meta, 'order_items');
+                if (! is_array($orderItemsRaw)) {
+                    $orderItemsRaw = data_get($latest?->meta, 'order_items');
+                }
+                $orderItems = [];
+                $orderQuantity = 0;
+                if (is_array($orderItemsRaw)) {
+                    foreach ($orderItemsRaw as $item) {
+                        if (! is_array($item)) {
+                            continue;
+                        }
+                        $itemName = trim((string) ($item['name'] ?? ''));
+                        $itemPrice = trim((string) ($item['price'] ?? ''));
+                        $itemRegularPrice = trim((string) ($item['regular_price'] ?? ($item['regularPrice'] ?? '')));
+                        $itemBadge = trim((string) ($item['badge'] ?? ''));
+                        $itemPeriod = trim((string) ($item['period'] ?? ''));
+                        $quantity = max(1, (int) ($item['quantity'] ?? 1));
+                        if ($itemName === '' && $itemPrice === '' && $itemRegularPrice === '' && $itemBadge === '') {
+                            continue;
+                        }
+                        $orderItems[] = [
+                            'name' => $itemName !== '' ? $itemName : 'Product',
+                            'price' => $itemPrice !== '' ? $itemPrice : null,
+                            'regular_price' => $itemRegularPrice !== '' ? $itemRegularPrice : null,
+                            'badge' => $itemBadge !== '' ? $itemBadge : null,
+                            'period' => $itemPeriod !== '' ? $itemPeriod : null,
+                            'quantity' => $quantity,
+                        ];
+                        $orderQuantity += $quantity;
+                    }
+                }
+                $orderItemsLabel = trim((string) (
+                    data_get($checkoutStarted?->meta, 'order_items_label')
+                    ?: data_get($latest?->meta, 'order_items_label')
+                ));
+                if ($orderItemsLabel === '' && $orderItems !== []) {
+                    $orderItemsLabel = collect($orderItems)
+                        ->map(fn (array $item) => ($item['name'] ?? 'Product') . ' x' . max(1, (int) ($item['quantity'] ?? 1)))
+                        ->implode(', ');
+                }
+                $leadLabel = $customerName !== '' ? $customerName : ($customerEmail !== '' ? $customerEmail : 'Anonymous visitor');
+                $orderKey = trim((string) (
+                    data_get($latest?->meta, 'order_key')
+                    ?: ($checkoutStarted ? $this->eventOrderGroupKey($checkoutStarted) : $this->eventOrderGroupKey($latest))
+                ));
 
                 $selectedOffer = $ordered
                     ->map(function (FunnelEvent $event) {
@@ -424,7 +565,6 @@ class FunnelTrackingService
                     })
                     ->first(fn (?string $value) => $value !== null && $value !== '');
 
-                $checkoutStarted = $ordered->first(fn (FunnelEvent $event) => $event->event_name === self::EVENT_CHECKOUT_STARTED);
                 $checkoutAmount = $checkoutStarted
                     ? (float) data_get($checkoutStarted->meta, 'amount', $checkoutStarted->payment?->amount ?? 0)
                     : 0.0;
@@ -433,12 +573,85 @@ class FunnelTrackingService
                 $upsellDeclined = $ordered->first(fn (FunnelEvent $event) => $event->event_name === self::EVENT_UPSELL_DECLINED);
                 $downsellAccepted = $ordered->first(fn (FunnelEvent $event) => $event->event_name === self::EVENT_DOWNSELL_ACCEPTED);
                 $downsellDeclined = $ordered->first(fn (FunnelEvent $event) => $event->event_name === self::EVENT_DOWNSELL_DECLINED);
+                $paymentPaid = $ordered->last(fn (FunnelEvent $event) => $event->event_name === self::EVENT_PAYMENT_PAID);
+                $abandoned = $ordered->last(fn (FunnelEvent $event) => $event->event_name === self::EVENT_CHECKOUT_ABANDONED);
+                $paymentCarrier = $ordered->reverse()->first(function (FunnelEvent $event) {
+                    return $event->payment !== null || trim((string) data_get($event->meta, 'payment_status')) !== '';
+                });
+                $paymentStatus = strtolower(trim((string) (
+                    $paymentPaid?->payment?->status
+                    ?? data_get($paymentPaid?->meta, 'payment_status')
+                    ?? $paymentCarrier?->payment?->status
+                    ?? data_get($paymentCarrier?->meta, 'payment_status')
+                    ?? ''
+                )));
+                if ($paymentStatus === '') {
+                    if ($paymentPaid) {
+                        $paymentStatus = 'paid';
+                    } elseif ($abandoned) {
+                        $paymentStatus = 'abandoned';
+                    } elseif ($checkoutStarted) {
+                        $paymentStatus = 'pending';
+                    }
+                }
+                $provider = trim((string) (
+                    data_get($paymentPaid?->meta, 'provider')
+                    ?? data_get($paymentCarrier?->meta, 'provider')
+                    ?? $paymentPaid?->payment?->provider
+                    ?? $paymentCarrier?->payment?->provider
+                    ?? ''
+                ));
+                $orderStatus = $paymentPaid || $paymentStatus === 'paid'
+                    ? 'paid'
+                    : ($abandoned ? 'abandoned' : ($checkoutStarted ? 'pending' : 'unknown'));
+                $deliveryUpdate = $ordered->last(fn (FunnelEvent $event) => $event->event_name === self::EVENT_ORDER_DELIVERY_UPDATED);
+                $deliveryStatus = trim((string) (
+                    data_get($deliveryUpdate?->meta, 'delivery_status')
+                    ?: ($orderStatus === 'paid' ? 'paid' : ($orderStatus === 'pending' ? 'pending_payment' : $orderStatus))
+                ));
+                $trackingUrl = trim((string) data_get($deliveryUpdate?->meta, 'tracking_url'));
+                $courierName = trim((string) data_get($deliveryUpdate?->meta, 'courier_name'));
+                $deliveryMessage = trim((string) data_get($deliveryUpdate?->meta, 'custom_message'));
+                $deliveryUpdatedAt = optional($deliveryUpdate?->occurred_at)?->toIso8601String();
+                $deliveryUpdatedLabel = optional($deliveryUpdate?->occurred_at)?->format('M j, Y g:i A');
 
                 return [
+                    'order_key' => $orderKey,
+                    'session_identifier' => trim((string) ($latest?->session_identifier ?? $checkoutStarted?->session_identifier ?? '')) ?: null,
+                    'lead_id' => $leadEvent?->lead?->id ?? $checkoutStarted?->lead_id ?? $latest?->lead_id,
+                    'payment_id' => $paymentPaid?->payment_id ?? $checkoutStarted?->payment_id ?? $latest?->payment_id,
+                    'funnel_step_id' => $checkoutStarted?->funnel_step_id ?? $latest?->funnel_step_id,
                     'customer' => $leadLabel,
-                    'email' => $leadEmail !== '' ? $leadEmail : null,
+                    'email' => $customerEmail !== '' ? $customerEmail : null,
+                    'phone' => $customerPhone !== '' ? $customerPhone : null,
+                    'first_name' => $firstName !== '' ? $firstName : null,
+                    'last_name' => $lastName !== '' ? $lastName : null,
                     'selected_offer' => $selectedOffer !== '' ? $selectedOffer : null,
+                    'order_items' => $orderItems,
+                    'order_items_label' => $orderItemsLabel !== '' ? $orderItemsLabel : ($selectedOffer !== '' ? $selectedOffer : null),
+                    'order_quantity' => $orderQuantity > 0 ? $orderQuantity : ($selectedOffer !== '' ? 1 : 0),
                     'checkout_amount' => round($checkoutAmount, 2),
+                    'street' => $street !== '' ? $street : null,
+                    'barangay' => $barangay !== '' ? $barangay : null,
+                    'city_municipality' => $cityMunicipality !== '' ? $cityMunicipality : null,
+                    'province' => $province !== '' ? $province : null,
+                    'postal_code' => $postalCode !== '' ? $postalCode : null,
+                    'notes' => $notes !== '' ? $notes : null,
+                    'delivery_address' => $deliveryAddress !== '' ? $deliveryAddress : null,
+                    'funnel_purpose' => trim((string) (
+                        data_get($checkoutStarted?->meta, 'funnel_purpose')
+                        ?: data_get($latest?->meta, 'funnel_purpose')
+                        ?: 'service'
+                    )),
+                    'provider' => $provider !== '' ? $provider : null,
+                    'payment_status' => $paymentStatus !== '' ? $paymentStatus : null,
+                    'order_status' => $orderStatus,
+                    'delivery_status' => $deliveryStatus !== '' ? $deliveryStatus : null,
+                    'tracking_url' => $trackingUrl !== '' ? $trackingUrl : null,
+                    'courier_name' => $courierName !== '' ? $courierName : null,
+                    'delivery_message' => $deliveryMessage !== '' ? $deliveryMessage : null,
+                    'delivery_updated_at' => $deliveryUpdatedAt,
+                    'delivery_updated_label' => $deliveryUpdatedLabel ?: null,
                     'upsell_status' => $this->offerStatusLabel($upsellAccepted, $upsellDeclined),
                     'downsell_status' => $this->offerStatusLabel($downsellAccepted, $downsellDeclined),
                     'last_activity' => optional($latest?->occurred_at)?->format('M j, Y g:i A') ?? 'N/A',
@@ -446,6 +659,97 @@ class FunnelTrackingService
                 ];
             })
             ->sortByDesc(fn (array $row) => strtotime((string) ($row['last_activity_at'] ?? '')) ?: 0)
+            ->values()
+            ->all();
+    }
+
+    private function eventOrderGroupKey(?FunnelEvent $event): string
+    {
+        if (! $event) {
+            return 'event:0';
+        }
+
+        $metaOrderKey = trim((string) data_get($event->meta, 'order_key'));
+        if ($metaOrderKey !== '') {
+            return $metaOrderKey;
+        }
+
+        $sessionId = trim((string) ($event->session_identifier ?? ''));
+        if ($sessionId !== '') {
+            return 'session:'.$sessionId;
+        }
+
+        if ($event->lead_id) {
+            return 'lead:'.$event->lead_id;
+        }
+
+        return 'event:'.$event->id;
+    }
+
+    private function physicalOrderTotals(array $rows): array
+    {
+        $collection = collect($rows);
+        $paid = $collection->where('order_status', 'paid');
+        $pending = $collection->where('order_status', 'pending');
+        $abandoned = $collection->where('order_status', 'abandoned');
+        $activeOrders = $collection->reject(fn (array $row) => ($row['order_status'] ?? '') === 'abandoned');
+        $units = $activeOrders->sum(fn (array $row) => max(0, (int) ($row['order_quantity'] ?? 0)));
+
+        return [
+            'total_orders' => $activeOrders->count(),
+            'paid_orders' => $paid->count(),
+            'pending_orders' => $pending->count(),
+            'abandoned_orders' => $abandoned->count(),
+            'units_ordered' => (int) $units,
+            'paid_revenue' => round((float) $paid->sum(fn (array $row) => (float) ($row['checkout_amount'] ?? 0)), 2),
+        ];
+    }
+
+    private function physicalProductBreakdown(array $rows): array
+    {
+        $products = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $status = trim((string) ($row['order_status'] ?? ''));
+            if ($status === 'abandoned') {
+                continue;
+            }
+
+            foreach ((is_array($row['order_items'] ?? null) ? $row['order_items'] : []) as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $name = trim((string) ($item['name'] ?? ''));
+                if ($name === '') {
+                    continue;
+                }
+
+                $key = mb_strtolower($name);
+                if (! isset($products[$key])) {
+                    $products[$key] = [
+                        'name' => $name,
+                        'units' => 0,
+                        'orders' => 0,
+                        'paid_units' => 0,
+                    ];
+                }
+
+                $qty = max(1, (int) ($item['quantity'] ?? 1));
+                $products[$key]['units'] += $qty;
+                $products[$key]['orders'] += 1;
+                if ($status === 'paid') {
+                    $products[$key]['paid_units'] += $qty;
+                }
+            }
+        }
+
+        return collect($products)
+            ->sortByDesc(fn (array $item) => $item['units'])
             ->values()
             ->all();
     }

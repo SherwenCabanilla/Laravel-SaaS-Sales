@@ -398,6 +398,10 @@
 .fb-product-media-nav.is-left{left:10px}
 .fb-product-media-nav.is-right{right:10px}
 .fb-product-media-nav[disabled]{opacity:.45;cursor:default}
+.fb-product-media:hover .fb-product-media-nav,.fb-product-media:focus-within .fb-product-media-nav{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
+@media (hover:hover) and (pointer:fine){
+  .fb-product-media .fb-product-media-nav{opacity:0;pointer-events:none;transform:translateY(-50%) scale(.92);transition:opacity .18s ease,transform .18s ease}
+}
 .fb-product-media-dots{display:flex;align-items:center;justify-content:center;gap:6px}
 .fb-product-media-dot{width:8px;height:8px;border-radius:999px;background:#CBD5E1}
 .fb-product-media-dot.is-active{width:22px;background:#240E35}
@@ -427,6 +431,16 @@
 .fb-physical-checkout-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#475569}
 .fb-physical-checkout-row strong{color:#0f172a;font-size:13px}
 .fb-physical-checkout-row--total strong:last-child{font-size:18px;color:#16a34a}
+.fb-physical-checkout-lines{display:grid;gap:8px}
+.fb-physical-checkout-line{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef2f7}
+.fb-physical-checkout-line:last-child{border-bottom:0;padding-bottom:0}
+.fb-physical-checkout-line-thumb{width:40px;height:40px;border-radius:12px;border:1px solid #dbe3f0;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.fb-physical-checkout-line-thumb i{font-size:14px;color:#94a3b8}
+.fb-physical-checkout-line-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.fb-physical-checkout-line-meta{min-width:0;display:grid;gap:2px}
+.fb-physical-checkout-line-title{font-size:12px;font-weight:800;color:#0f172a;line-height:1.25}
+.fb-physical-checkout-line-sub{font-size:11px;color:#64748b;line-height:1.25}
+.fb-physical-checkout-line-total{font-size:12px;font-weight:800;color:#0f172a}
 .fb-physical-checkout .fb-pricing-features{gap:5px}
 .fb-physical-checkout .fb-pricing-features li{font-size:11px}
 .fb-physical-checkout .fb-pricing-cta{width:100%;padding:10px 14px;border-radius:12px}
@@ -904,10 +918,11 @@ const stepStoreUrl=@json($builderStepStoreUrl ?? route('funnels.steps.store',$fu
 const stepUpdateTpl=@json($builderStepUpdateUrlTemplate ?? route('funnels.steps.update',['funnel'=>$funnel,'step'=>'__STEP__']));
 const stepDeleteTpl=@json($builderStepDeleteUrlTemplate ?? route('funnels.steps.destroy',['funnel'=>$funnel,'step'=>'__STEP__']));
 const stepReorderUrl=@json($builderStepReorderUrl ?? route('funnels.steps.reorder',$funnel));
+const funnelUpdateUrl=@json($builderUpdateUrl ?? route('funnels.update', $funnel));
 const csrf="{{ csrf_token() }}";
 const funnelSlug=@json($funnel->slug);
 const builderPurposeRaw=@json(($funnel->purpose ?? $funnel->template_type ?? 'service'));
-const builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
+let builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
 const funnelStepUrlTpl=@json($builderPublicStepUrlTemplate ?? route('funnels.portal.step',['funnelSlug'=>$funnel->slug,'stepSlug'=>'__STEP__']));
 const steps=@json($builderSteps);
 const sharedTemplatesUrl=@json($builderSharedTemplatesUrl ?? null);
@@ -1080,6 +1095,30 @@ function applyPurposeComponentVisibility(){
         group.style.display=visibleButtons.length?"":"none";
     });
 }
+function normalizeBuilderPurpose(value){
+    var normalized=String(value||"service").trim().toLowerCase();
+    return ["service","digital_product","physical_product","hybrid"].indexOf(normalized)>=0?normalized:"service";
+}
+function setBuilderPurpose(nextPurpose){
+    builderPurpose=normalizeBuilderPurpose(nextPurpose);
+    applyPurposeComponentVisibility();
+}
+function syncBuilderPurposeFromTemplate(template){
+    var nextPurpose=normalizeBuilderPurpose(template&&template.template_type||"service");
+    if(!funnelUpdateUrl){
+        setBuilderPurpose(nextPurpose);
+        return Promise.resolve(nextPurpose);
+    }
+    if(nextPurpose===builderPurpose){
+        setBuilderPurpose(nextPurpose);
+        return Promise.resolve(nextPurpose);
+    }
+    return requestJson(funnelUpdateUrl,"PUT",{purpose:nextPurpose}).then(function(resp){
+        var savedPurpose=normalizeBuilderPurpose((resp&&resp.funnel&&resp.funnel.purpose)||nextPurpose);
+        setBuilderPurpose(savedPurpose);
+        return savedPurpose;
+    });
+}
 renderStepOptions();
 applyPurposeComponentVisibility();
 if(canvasBgColor){
@@ -1205,13 +1244,13 @@ function makePhysicalCheckoutSummaryEl(opts,style){
         borderRadius:"20px",
         boxShadow:"0 12px 24px rgba(15,23,42,.08)"
     },style||{}),{
-        heading:opts.heading||"Review Your Order",
-        plan:opts.plan||"Selected Product",
-        price:opts.price||"Selected total",
+        heading:opts.heading||"Cart Summary",
+        plan:opts.plan||"3 items",
+        price:opts.price||"₱4,000",
         period:opts.period||"",
-        subtitle:opts.subtitle||"Selected products, cart items, and delivery details update here before payment.",
-        badge:opts.badge||"Order Summary",
-        features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are completed below"],
+        subtitle:opts.subtitle||"Review the products in your cart before paying.",
+        badge:opts.badge||"Cart",
+        features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are completed before payment"],
         ctaLabel:opts.ctaLabel||"Place Order",
         ctaBgColor:opts.ctaBgColor||"#240E35",
         ctaTextColor:opts.ctaTextColor||"#ffffff"
@@ -3548,9 +3587,18 @@ function applySharedFunnelTemplate(template){
                 var currentStepId=cur()?+cur().id:null;
                 var nextStateLayout=null;
                 var appliedIds={};
-                tplSteps.forEach(function(sourceStep,idx){
-                    var targetStep=ordered[idx];
+                var templatePools={};
+                tplSteps.forEach(function(sourceStep){
+                    var sourceType=String(sourceStep&&sourceStep.type||"").toLowerCase();
+                    if(!templatePools[sourceType])templatePools[sourceType]=[];
+                    templatePools[sourceType].push(sourceStep);
+                });
+                ordered.forEach(function(targetStep,idx){
                     if(!targetStep)return;
+                    var targetType=String(targetStep.type||"").toLowerCase();
+                    var pool=templatePools[targetType]||[];
+                    var sourceStep=pool.length?pool.shift():(tplSteps[idx]||null);
+                    if(!sourceStep)return;
                     appliedIds[String(targetStep.id||"")]=true;
                     targetStep.position=idx+1;
                     targetStep.title=String(sourceStep.title||defaultStepTitleForType(sourceStep.type)||"Untitled");
@@ -3589,10 +3637,10 @@ function applySharedFunnelTemplate(template){
                 var appliedSteps=ordered.filter(function(step){
                     return !!appliedIds[String(step&&step.id||"")];
                 });
-                return persistStepDefinitions(appliedSteps).then(function(){
+                return persistStepDefinitions(ordered).then(function(){
                     return persistStepOrder(orderedStepIdsWithPositions());
                 }).then(function(){
-                    return persistLayoutsForSteps(appliedSteps,true);
+                    return persistLayoutsForSteps(ordered,true);
                 }).then(function(){
                     renderStepOptions();
                     syncPageManagerList();
@@ -3603,12 +3651,17 @@ function applySharedFunnelTemplate(template){
                     state.linkPick=null;
                     renderTemplateLibrary();
                     render();
-                    if(saveMsg){
-                        saveMsg.textContent=createdTypes.length
-                            ? 'Saved template applied to '+appliedSteps.length+' page(s); created: '+createdTypes.map(pageTypeLabel).join(", ")+'.'
-                            : 'Saved template applied to all '+appliedSteps.length+' page(s).';
-                    }
-                    return true;
+                    return syncBuilderPurposeFromTemplate(template).catch(function(err){
+                        showBuilderToast((err&&err.message)||"Template applied, but funnel purpose could not be updated.","error");
+                        return builderPurpose;
+                    }).then(function(){
+                        if(saveMsg){
+                            saveMsg.textContent=createdTypes.length
+                                ? 'Saved template applied to '+appliedSteps.length+' page(s); created: '+createdTypes.map(pageTypeLabel).join(", ")+'.'
+                                : 'Saved template applied to all '+appliedSteps.length+' page(s).';
+                        }
+                        return true;
+                    });
                 });
             }).catch(function(err){
                 showBuilderToast((err&&err.message)||"Failed to apply saved template.","error");
@@ -4208,6 +4261,12 @@ function mergeStepData(raw){
         revision_history:normalizeRevisionHistory(r.revision_history||r.manual_versions),
     };
 }
+function layoutHasContent(layout){
+    if(!layout||typeof layout!=="object"||Array.isArray(layout))return false;
+    var rootCount=Array.isArray(layout.root)?layout.root.length:0;
+    var sectionCount=Array.isArray(layout.sections)?layout.sections.length:0;
+    return rootCount>0||sectionCount>0;
+}
 function normalizeRevisionHistory(raw){
     var list=Array.isArray(raw)?raw:[];
     return list.map(function(item){
@@ -4241,6 +4300,15 @@ function applyStepUpdate(rawStep){
     var merged=mergeStepData(rawStep);
     var idx=steps.findIndex(function(s){return +s.id===+merged.id;});
     if(idx>=0){
+        if((!merged.layout_json||typeof merged.layout_json!=="object")&&steps[idx]&&steps[idx].layout_json&&typeof steps[idx].layout_json==="object"){
+            merged.layout_json=steps[idx].layout_json;
+        }else if(
+            steps[idx]&&steps[idx].layout_json&&typeof steps[idx].layout_json==="object"&&
+            layoutHasContent(steps[idx].layout_json)&&
+            !layoutHasContent(merged.layout_json)
+        ){
+            merged.layout_json=steps[idx].layout_json;
+        }
         steps[idx]=Object.assign({},steps[idx],merged);
     }else{
         steps.push(merged);
@@ -5267,6 +5335,42 @@ function withCanvasBgInLayout(layout,bg){
     else if(Object.prototype.hasOwnProperty.call(out.__editor,"canvasBg"))delete out.__editor.canvasBg;
     if(_canvasLockedWidth>0)out.__editor.canvasWidth=_canvasLockedWidth;
     if(_canvasInnerWidth>0)out.__editor.canvasInnerWidth=_canvasInnerWidth;
+    if(_canvasContentWidth>0)out.__editor.canvasContentWidth=_canvasContentWidth;
+    return out;
+}
+function measureSectionStageWidths(){
+    var out={};
+    if(!canvas||!canvas.querySelectorAll)return out;
+    canvas.querySelectorAll(".sec[data-sec-id]").forEach(function(sectionNode){
+        if(!sectionNode||sectionNode.classList.contains("sec--freeform-canvas"))return;
+        var secId=String(sectionNode.getAttribute("data-sec-id")||"").trim();
+        if(secId==="")return;
+        var inner=sectionNode.querySelector(".sec-inner")||sectionNode;
+        var width=Math.max(
+            Math.round(inner.clientWidth||0),
+            inner.getBoundingClientRect?Math.round(inner.getBoundingClientRect().width||0):0
+        );
+        if(width>0)out[secId]=width;
+    });
+    return out;
+}
+function withMeasuredSectionStageWidths(layout){
+    var out=(layout&&typeof layout==="object")?clone(layout):{root:[],sections:[]};
+    var measured=measureSectionStageWidths();
+    var applyStageWidth=function(section){
+        if(!section||typeof section!=="object"||section.__freeformCanvas)return;
+        var secId=String(section.id||"").trim();
+        var stageWidth=Math.round(Number(measured[secId])||0);
+        if(stageWidth<=0)return;
+        section.settings=(section.settings&&typeof section.settings==="object")?section.settings:{};
+        section.settings.stageWidth=stageWidth;
+    };
+    (Array.isArray(out.sections)?out.sections:[]).forEach(applyStageWidth);
+    (Array.isArray(out.root)?out.root:[]).forEach(function(node){
+        if(!node||typeof node!=="object")return;
+        if(String(node.kind||"").toLowerCase()!=="section")return;
+        applyStageWidth(node);
+    });
     return out;
 }
 function propagateCanvasBgToAllSteps(bg){
@@ -6465,7 +6569,7 @@ function titleCase(v){
 }
 function isAdvancedScaleComponent(t){
     var type=String(t||"").toLowerCase();
-    return type==="testimonial"||type==="faq"||type==="pricing"||type==="product_offer"||type==="checkout_summary"||type==="physical_checkout_summary"||type==="countdown"||type==="form";
+    return type==="testimonial"||type==="faq"||type==="pricing"||type==="product_offer"||type==="checkout_summary"||type==="physical_checkout_summary"||type==="shipping_details"||type==="countdown"||type==="form";
 }
 function parsePxVal(v){
     var n=Number(String(v||"0").replace("px","").trim());
@@ -6556,6 +6660,84 @@ function applyAdvancedScaleToNode(node,item,scale){
             cta.style.padding=Math.round(8*s)+"px "+Math.round(12*s)+"px";
         }
     }
+    if(type==="checkout_summary"||type==="physical_checkout_summary"){
+        var isPhysicalSummaryScale=type==="physical_checkout_summary";
+        var checkoutCard=node.querySelector(".fb-pricing");
+        var checkoutBadge=node.querySelector(".fb-pricing-badge");
+        var checkoutTitle=node.querySelector(".fb-pricing-title");
+        var checkoutPrice=node.querySelector(".fb-pricing-price");
+        var checkoutPeriods=node.querySelectorAll(".fb-pricing-period");
+        var checkoutSubtitle=node.querySelector(".fb-pricing-subtitle");
+        var checkoutFeatures=node.querySelector(".fb-pricing-features");
+        var checkoutFeatureItems=node.querySelectorAll(".fb-pricing-features li");
+        var checkoutCta=node.querySelector(".fb-pricing-cta");
+        if(checkoutCard)checkoutCard.style.gap=Math.max(6,Math.round((isPhysicalSummaryScale?12:10)*s))+"px";
+        if(checkoutBadge){
+            checkoutBadge.style.fontSize=Math.max(8,Math.round(11*s))+"px";
+            checkoutBadge.style.padding=Math.max(2,Math.round(4*s))+"px "+Math.max(6,Math.round(10*s))+"px";
+        }
+        if(checkoutTitle)checkoutTitle.style.fontSize=Math.max(12,Math.round((isPhysicalSummaryScale?16:18)*s))+"px";
+        if(checkoutPrice)checkoutPrice.style.fontSize=Math.max(18,Math.round((isPhysicalSummaryScale?24:30)*s))+"px";
+        checkoutPeriods.forEach(function(el){el.style.fontSize=Math.max(9,Math.round(12*s))+"px";});
+        if(checkoutSubtitle)checkoutSubtitle.style.fontSize=Math.max(9,Math.round(12*s))+"px";
+        if(checkoutFeatures)checkoutFeatures.style.gap=Math.max(3,Math.round((isPhysicalSummaryScale?5:6)*s))+"px";
+        checkoutFeatureItems.forEach(function(el){el.style.fontSize=Math.max(9,Math.round((isPhysicalSummaryScale?11:12)*s))+"px";});
+        if(checkoutCta){
+            checkoutCta.style.fontSize=Math.max(11,Math.round(16*s))+"px";
+            checkoutCta.style.padding=Math.max(7,Math.round((isPhysicalSummaryScale?10:8)*s))+"px "+Math.max(10,Math.round((isPhysicalSummaryScale?14:12)*s))+"px";
+        }
+        if(isPhysicalSummaryScale){
+            var physicalLabel=node.querySelector(".fb-physical-checkout-label");
+            var physicalProduct=node.querySelector(".fb-physical-checkout-product");
+            var physicalThumb=node.querySelector(".fb-physical-checkout-thumb");
+            var physicalThumbIcon=node.querySelector(".fb-physical-checkout-thumb i");
+            var physicalRows=node.querySelector(".fb-physical-checkout-rows");
+            var physicalRowItems=node.querySelectorAll(".fb-physical-checkout-row");
+            var physicalRowStrong=node.querySelectorAll(".fb-physical-checkout-row strong");
+            var physicalLines=node.querySelector(".fb-physical-checkout-lines");
+            var physicalLineItems=node.querySelectorAll(".fb-physical-checkout-line");
+            var physicalLineThumbs=node.querySelectorAll(".fb-physical-checkout-line-thumb");
+            var physicalLineThumbIcons=node.querySelectorAll(".fb-physical-checkout-line-thumb i");
+            var physicalLineTitles=node.querySelectorAll(".fb-physical-checkout-line-title");
+            var physicalLineSubs=node.querySelectorAll(".fb-physical-checkout-line-sub");
+            var physicalLineTotals=node.querySelectorAll(".fb-physical-checkout-line-total");
+            if(physicalLabel)physicalLabel.style.fontSize=Math.max(8,Math.round(11*s))+"px";
+            if(physicalProduct){
+                physicalProduct.style.gridTemplateColumns=Math.max(44,Math.round(64*s))+"px minmax(0,1fr)";
+                physicalProduct.style.gap=Math.max(8,Math.round(12*s))+"px";
+                physicalProduct.style.padding=Math.max(8,Math.round(12*s))+"px";
+            }
+            if(physicalThumb){
+                var thumbSize=Math.max(44,Math.round(64*s));
+                physicalThumb.style.width=thumbSize+"px";
+                physicalThumb.style.height=thumbSize+"px";
+                physicalThumb.style.borderRadius=Math.max(10,Math.round(16*s))+"px";
+            }
+            if(physicalThumbIcon)physicalThumbIcon.style.fontSize=Math.max(14,Math.round(22*s))+"px";
+            if(physicalRows){
+                physicalRows.style.gap=Math.max(5,Math.round(8*s))+"px";
+                physicalRows.style.padding=Math.max(6,Math.round(10*s))+"px 0";
+            }
+            physicalRowItems.forEach(function(el){el.style.fontSize=Math.max(9,Math.round(12*s))+"px";});
+            physicalRowStrong.forEach(function(el){el.style.fontSize=Math.max(10,Math.round(13*s))+"px";});
+            if(physicalLines)physicalLines.style.gap=Math.max(5,Math.round(8*s))+"px";
+            physicalLineItems.forEach(function(el){
+                el.style.gridTemplateColumns=Math.max(30,Math.round(40*s))+"px 1fr auto";
+                el.style.gap=Math.max(6,Math.round(10*s))+"px";
+                el.style.padding=Math.max(5,Math.round(8*s))+"px 0";
+            });
+            physicalLineThumbs.forEach(function(el){
+                var lineThumbSize=Math.max(30,Math.round(40*s));
+                el.style.width=lineThumbSize+"px";
+                el.style.height=lineThumbSize+"px";
+                el.style.borderRadius=Math.max(8,Math.round(12*s))+"px";
+            });
+            physicalLineThumbIcons.forEach(function(el){el.style.fontSize=Math.max(10,Math.round(14*s))+"px";});
+            physicalLineTitles.forEach(function(el){el.style.fontSize=Math.max(9,Math.round(12*s))+"px";});
+            physicalLineSubs.forEach(function(el){el.style.fontSize=Math.max(8,Math.round(11*s))+"px";});
+            physicalLineTotals.forEach(function(el){el.style.fontSize=Math.max(9,Math.round(12*s))+"px";});
+        }
+    }
     if(type==="product_offer"){
         var productCard=node.querySelector(".fb-product-offer");
         var productMedia=node.querySelector(".fb-product-media");
@@ -6628,21 +6810,36 @@ function applyAdvancedScaleToNode(node,item,scale){
         nums.forEach(function(el){el.style.fontSize=Math.round(20*s)+"px";});
         units.forEach(function(el){el.style.fontSize=Math.round(10*s)+"px";});
     }
-    if(type==="form"){
+    if(type==="form"||type==="shipping_details"){
+        var isShippingDetails=type==="shipping_details";
+        var shippingHeading=node.querySelector(".fb-shipping-heading");
+        var shippingSubtitle=node.querySelector(".fb-shipping-subtitle");
         var labels=node.querySelectorAll("label");
         var inputs=node.querySelectorAll(".fb-form-input");
         var submit=node.querySelector("button");
+        var formBox=node.firstElementChild;
+        if(formBox&&formBox.style){
+            formBox.style.gap=Math.max(0,Math.round(2*s))+"px";
+        }
+        if(shippingHeading){
+            shippingHeading.style.fontSize=Math.max(12,Math.round(20*s))+"px";
+            shippingHeading.style.marginBottom=Math.max(3,Math.round(6*s))+"px";
+        }
+        if(shippingSubtitle){
+            shippingSubtitle.style.fontSize=Math.max(9,Math.round(12*s))+"px";
+            shippingSubtitle.style.marginBottom=Math.max(5,Math.round(10*s))+"px";
+        }
         labels.forEach(function(el){
-            el.style.fontSize=Math.round(12*s)+"px";
-            el.style.marginBottom=Math.round(4*s)+"px";
+            el.style.fontSize=Math.max(9,Math.round(12*s))+"px";
+            el.style.marginBottom=Math.max(2,Math.round(4*s))+"px";
         });
         inputs.forEach(function(el){
-            el.style.fontSize=Math.round(14*s)+"px";
-            el.style.padding=Math.round(8*s)+"px";
+            el.style.fontSize=Math.max(10,Math.round(14*s))+"px";
+            el.style.padding=Math.max(5,Math.round(8*s))+"px";
             el.style.borderRadius=Math.max(4,Math.round(8*s))+"px";
-            el.style.marginBottom=Math.round(8*s)+"px";
+            el.style.marginBottom=Math.max(4,Math.round(8*s))+"px";
         });
-        if(submit){
+        if(!isShippingDetails&&submit){
             submit.style.fontSize=Math.round(14*s)+"px";
             submit.style.padding=Math.round(8*s)+"px "+Math.round(12*s)+"px";
             submit.style.borderRadius=Math.max(6,Math.round(8*s))+"px";
@@ -7028,7 +7225,7 @@ function createDefaultElement(type){
     var _cd=new Date(Date.now()+7*24*60*60*1000);
     var _pad=n=>String(n).padStart(2,"0");
     var countdownEndVal=_cd.getFullYear()+"-"+_pad(_cd.getMonth()+1)+"-"+_pad(_cd.getDate())+"T"+_pad(_cd.getHours())+":"+_pad(_cd.getMinutes());
-    const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},product_offer:{content:"",style:{width:"160px",padding:"8px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Starter Bundle",price:"₱299",regularPrice:"₱499",period:"",subtitle:"",description:"Add a fuller product description here for your quick-view modal.",features:[],ctaLabel:"Buy",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Best Seller",quickViewEnabled:true,quickViewLabel:"Details",cartEnabled:true,activeMedia:0,media:[{type:"image",src:"",alt:"Main product image",poster:""}]}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},physical_checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Review Your Order",plan:"Selected Product",price:"Selected total",period:"",subtitle:"Selected products, cart items, and delivery details update here before payment.",features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are completed below"],ctaLabel:"Place Order",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Order Summary"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
+const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},shipping_details:{content:"",style:{width:"420px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Shipping Details",subtitle:"Enter your delivery and contact information before placing the order.",labelColor:"#240E35",placeholderColor:"#94a3b8",fields:[{type:"first_name",label:"First name",placeholder:"First name",required:true},{type:"last_name",label:"Last name",placeholder:"Last name",required:true},{type:"email",label:"Email",placeholder:"Email address",required:true},{type:"phone_number",label:"Phone number",placeholder:"09XXXXXXXXX",required:true},{type:"province",label:"Province",placeholder:"Province",required:true},{type:"city_municipality",label:"City / Municipality",placeholder:"City / Municipality",required:true},{type:"barangay",label:"Barangay",placeholder:"Barangay",required:true},{type:"street",label:"Street address",placeholder:"House no., street, building",required:true},{type:"postal_code",label:"Postal code",placeholder:"Postal code",required:false},{type:"notes",label:"Order notes",placeholder:"Optional notes for delivery",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},product_offer:{content:"",style:{width:"160px",padding:"8px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Starter Bundle",price:"₱299",regularPrice:"₱499",period:"",subtitle:"",description:"Add a fuller product description here for your quick-view modal.",features:[],ctaLabel:"Buy",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Best Seller",stockQuantity:"",quickViewEnabled:true,quickViewLabel:"Details",cartEnabled:true,activeMedia:0,media:[{type:"image",src:"",alt:"Main product image",poster:""}]}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},physical_checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Cart Summary",plan:"3 items",price:"₱4,000",period:"",subtitle:"Review the products in your cart before paying.",features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are collected before payment"],ctaLabel:"Place Order",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Cart"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
     if(!d)return null;
     return {id:uid("el"),type:type,content:d.content,style:clone(d.style),settings:clone(d.settings)};
 }
@@ -7806,38 +8003,61 @@ function addSnapGuide(host,orient,pos){
 }
 
 function computeSnap(newX,newY,elW,elH,hostW,hostH,siblings){
-    var snapX=null,snapY=null;
-    var guidesV=[],guidesH=[];
     var elCx=newX+elW/2, elCy=newY+elH/2;
     var elRight=newX+elW, elBottom=newY+elH;
+    var bestX={dist:SNAP_THRESHOLD+1,pos:null,guides:[],label:""};
+    var bestY={dist:SNAP_THRESHOLD+1,pos:null,guides:[],label:""};
+
+    function tryX(current,target,finalPos,guides,label){
+        var d=Math.abs(current-target);
+        if(d<=SNAP_THRESHOLD&&d<bestX.dist){
+            bestX={dist:d,pos:finalPos,guides:(guides||[]),label:String(label||"").trim()};
+        }
+    }
+
+    function tryY(current,target,finalPos,guides,label){
+        var d=Math.abs(current-target);
+        if(d<=SNAP_THRESHOLD&&d<bestY.dist){
+            bestY={dist:d,pos:finalPos,guides:(guides||[]),label:String(label||"").trim()};
+        }
+    }
+
     var hostCx=hostW/2, hostCy=hostH/2;
-    var best=SNAP_THRESHOLD+1;
-
-    function tryV(val,target){var d=Math.abs(val-target);if(d<SNAP_THRESHOLD&&d<best){best=d;return true;}return false;}
-
-    best=SNAP_THRESHOLD+1;
-    if(tryV(elCx,hostCx)){snapX=hostCx-elW/2;guidesV=[hostCx];}
-    best=SNAP_THRESHOLD+1;
-    if(tryV(elCy,hostCy)){snapY=hostCy-elH/2;guidesH=[hostCy];}
+    tryX(elCx,hostCx,hostCx-elW/2,[hostCx],"Canvas center");
+    tryY(elCy,hostCy,hostCy-elH/2,[hostCy],"Canvas center");
 
     siblings.forEach(function(sib){
-        if(snapX===null){
-            if(Math.abs(elCx-sib.cx)<SNAP_THRESHOLD){snapX=sib.cx-elW/2;guidesV.push(sib.cx);}
-            else if(Math.abs(newX-sib.left)<SNAP_THRESHOLD){snapX=sib.left;guidesV.push(sib.left);}
-            else if(Math.abs(elRight-sib.right)<SNAP_THRESHOLD){snapX=sib.right-elW;guidesV.push(sib.right);}
-            else if(Math.abs(newX-sib.right)<SNAP_THRESHOLD){snapX=sib.right;guidesV.push(sib.right);}
-            else if(Math.abs(elRight-sib.left)<SNAP_THRESHOLD){snapX=sib.left-elW;guidesV.push(sib.left);}
-        }
-        if(snapY===null){
-            if(Math.abs(elCy-sib.cy)<SNAP_THRESHOLD){snapY=sib.cy-elH/2;guidesH.push(sib.cy);}
-            else if(Math.abs(newY-sib.top)<SNAP_THRESHOLD){snapY=sib.top;guidesH.push(sib.top);}
-            else if(Math.abs(elBottom-sib.bottom)<SNAP_THRESHOLD){snapY=sib.bottom-elH;guidesH.push(sib.bottom);}
-            else if(Math.abs(newY-sib.bottom)<SNAP_THRESHOLD){snapY=sib.bottom;guidesH.push(sib.bottom);}
-            else if(Math.abs(elBottom-sib.top)<SNAP_THRESHOLD){snapY=sib.top-elH;guidesH.push(sib.top);}
-        }
+        tryX(elCx,sib.cx,sib.cx-elW/2,[sib.cx],"Align center");
+        tryX(newX,sib.left,sib.left,[sib.left],"Align left");
+        tryX(elRight,sib.right,sib.right-elW,[sib.right],"Align right");
+        tryX(newX,sib.right,sib.right,[sib.right],"Snap to edge");
+        tryX(elRight,sib.left,sib.left-elW,[sib.left],"Snap to edge");
+
+        tryY(elCy,sib.cy,sib.cy-elH/2,[sib.cy],"Align middle");
+        tryY(newY,sib.top,sib.top,[sib.top],"Align top");
+        tryY(elBottom,sib.bottom,sib.bottom-elH,[sib.bottom],"Align bottom");
+        tryY(newY,sib.bottom,sib.bottom,[sib.bottom],"Snap to edge");
+        tryY(elBottom,sib.top,sib.top-elH,[sib.top],"Snap to edge");
     });
 
-    return {x:snapX,y:snapY,guidesV:guidesV,guidesH:guidesH};
+    for(var i=0;i<siblings.length;i++){
+        for(var j=i+1;j<siblings.length;j++){
+            var pair=siblings[i],other=siblings[j];
+            var midCx=(pair.cx+other.cx)/2;
+            var midCy=(pair.cy+other.cy)/2;
+            tryX(elCx,midCx,midCx-elW/2,[midCx],"Center between");
+            tryY(elCy,midCy,midCy-elH/2,[midCy],"Center between");
+        }
+    }
+
+    return {
+        x:bestX.pos,
+        y:bestY.pos,
+        guidesV:bestX.guides,
+        guidesH:bestY.guides,
+        labelV:bestX.label,
+        labelH:bestY.label
+    };
 }
 
 function startElDrag(e,w,item,ctx){
@@ -8521,8 +8741,9 @@ function renderElement(item,ctx){
             w.appendChild(ph);
         }
     }
-    else if(item.type==="form"){
+    else if(item.type==="form"||item.type==="shipping_details"){
         item.settings=item.settings||{};
+        var isShippingDetails=item.type==="shipping_details";
         var fal=(item.settings.alignment)||"left";
         var fw=(item.style&&item.style.width)||(item.settings&&item.settings.width)||"100%";
         var hasFormHeight=!!(item.style&&String(item.style.height||"").trim()!=="");
@@ -8552,6 +8773,27 @@ function renderElement(item,ctx){
         formBox.style.display="grid";
         formBox.style.alignContent="start";
         if(hasFormHeight)formBox.style.height="100%";
+        if(isShippingDetails){
+            var shipHeading=document.createElement("div");
+            shipHeading.className="fb-shipping-heading";
+            shipHeading.textContent=String(item.settings.heading||"Shipping Details");
+            shipHeading.style.fontSize="20px";
+            shipHeading.style.fontWeight="800";
+            shipHeading.style.marginBottom="6px";
+            shipHeading.style.color="#240E35";
+            formBox.appendChild(shipHeading);
+            var shipSubtitle=String(item.settings.subtitle||"").trim();
+            if(shipSubtitle!==""){
+                var shipSubtitleEl=document.createElement("div");
+                shipSubtitleEl.className="fb-shipping-subtitle";
+                shipSubtitleEl.textContent=shipSubtitle;
+                shipSubtitleEl.style.fontSize="12px";
+                shipSubtitleEl.style.lineHeight="1.5";
+                shipSubtitleEl.style.color="#64748b";
+                shipSubtitleEl.style.marginBottom="10px";
+                formBox.appendChild(shipSubtitleEl);
+            }
+        }
         flist.forEach(function(f){
             var lbl=(f&&f.label)?String(f.label):"Field";
             var lab=document.createElement("label");
@@ -8572,21 +8814,23 @@ function renderElement(item,ctx){
             formBox.appendChild(lab);
             formBox.appendChild(inp);
         });
-        var btnWrap=document.createElement("div");
-        btnWrap.style.display="flex";
-        btnWrap.style.justifyContent=fbtnJustify;
-        btnWrap.style.marginTop="4px";
-        var btn=document.createElement("button");
-        btn.type="button";
-        btn.className="fb-btn primary";
-        btn.disabled=true;
-        btn.textContent=(item.content||"Submit");
-        btn.style.backgroundColor=fbtnBg;
-        btn.style.color=fbtnColor;
-        btn.style.fontWeight=fbtnWeight;
-        btn.style.fontStyle=fbtnStyle;
-        btnWrap.appendChild(btn);
-        formBox.appendChild(btnWrap);
+        if(!isShippingDetails){
+            var btnWrap=document.createElement("div");
+            btnWrap.style.display="flex";
+            btnWrap.style.justifyContent=fbtnJustify;
+            btnWrap.style.marginTop="4px";
+            var btn=document.createElement("button");
+            btn.type="button";
+            btn.className="fb-btn primary";
+            btn.disabled=true;
+            btn.textContent=(item.content||"Submit");
+            btn.style.backgroundColor=fbtnBg;
+            btn.style.color=fbtnColor;
+            btn.style.fontWeight=fbtnWeight;
+            btn.style.fontStyle=fbtnStyle;
+            btnWrap.appendChild(btn);
+            formBox.appendChild(btnWrap);
+        }
         w.innerHTML="";
         w.appendChild(formBox);
         var neededFormHeight=Math.ceil(formBox.scrollHeight||formBox.getBoundingClientRect().height||0);
@@ -8939,13 +9183,13 @@ function renderElement(item,ctx){
         item.settings=item.settings||{};
         item.settings.features=normalizeFeatureList(item.settings.features);
         var isPhysicalCheckoutSummary=item.type==="physical_checkout_summary";
-        var summaryHeading=String(item.settings.heading||(isPhysicalCheckoutSummary?"Review Your Order":"Order Summary"));
-        var summaryPlan=String(item.settings.plan||(isPhysicalCheckoutSummary?"Selected Product":"Starter"));
+        var summaryHeading=String(item.settings.heading||(isPhysicalCheckoutSummary?"Cart Summary":"Order Summary"));
+        var summaryPlan=String(item.settings.plan||(isPhysicalCheckoutSummary?"3 items":"Starter"));
         var summaryPrice=normalizeTemplateCurrencyValue(item.settings.price||"");
         var summaryRegular=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
         var summaryPeriod=String(item.settings.period||"");
         var summarySubtitle=String(item.settings.subtitle||"");
-        var summaryBadge=String(item.settings.badge||"");
+        var summaryBadge=String(item.settings.badge||(isPhysicalCheckoutSummary?"Cart":""));
         var summaryButton=String(item.settings.ctaLabel||(isPhysicalCheckoutSummary?"Place Order":"Pay Now")).trim()||(isPhysicalCheckoutSummary?"Place Order":"Pay Now");
         var summaryBg=String(item.settings.ctaBgColor||"#240E35");
         var summaryText=String(item.settings.ctaTextColor||"#ffffff");
@@ -8956,7 +9200,7 @@ function renderElement(item,ctx){
         if(summaryBadge){
             var sBadge=document.createElement("div");
             sBadge.className="fb-pricing-badge";
-            sBadge.textContent=summaryBadge;
+            sBadge.textContent=isPhysicalCheckoutSummary?"Cart":summaryBadge;
             card.appendChild(sBadge);
         }
         if(isPhysicalCheckoutSummary){
@@ -8964,7 +9208,7 @@ function renderElement(item,ctx){
             head.className="fb-physical-checkout-head";
             var sHeading=document.createElement("div");
             sHeading.className="fb-physical-checkout-label";
-            sHeading.textContent=summaryHeading;
+            sHeading.textContent="Cart Summary";
             if(customSummaryColor){sHeading.style.color=customSummaryColor;sHeading.style.opacity="0.7";}
             head.appendChild(sHeading);
             card.appendChild(head);
@@ -8979,21 +9223,19 @@ function renderElement(item,ctx){
             meta.className="fb-physical-checkout-meta";
             var sTitle=document.createElement("div");
             sTitle.className="fb-pricing-title";
-            sTitle.textContent=summaryPlan;
+            sTitle.textContent="3 items";
             if(customSummaryColor)sTitle.style.color=customSummaryColor;
             meta.appendChild(sTitle);
-            if(summarySubtitle){
-                var sSubtitle=document.createElement("div");
-                sSubtitle.className="fb-pricing-subtitle";
-                sSubtitle.textContent=summarySubtitle;
-                if(customSummaryColor){sSubtitle.style.color=customSummaryColor;sSubtitle.style.opacity="0.7";}
-                meta.appendChild(sSubtitle);
-            }
+            var sSubtitle=document.createElement("div");
+            sSubtitle.className="fb-pricing-subtitle";
+            sSubtitle.textContent="Review the products in your cart before paying.";
+            if(customSummaryColor){sSubtitle.style.color=customSummaryColor;sSubtitle.style.opacity="0.7";}
+            meta.appendChild(sSubtitle);
             var priceWrap=document.createElement("div");
             priceWrap.className="fb-physical-checkout-price";
             var sPrice=document.createElement("span");
             sPrice.className="fb-pricing-price";
-            sPrice.textContent=priceText;
+            sPrice.textContent="₱4,000";
             if(customSummaryColor)sPrice.style.color=customSummaryColor;
             priceWrap.appendChild(sPrice);
             if(summaryPeriod){
@@ -9011,17 +9253,54 @@ function renderElement(item,ctx){
             rows.className="fb-physical-checkout-rows";
             var row1=document.createElement("div");
             row1.className="fb-physical-checkout-row";
-            row1.innerHTML='<span>Items subtotal</span><strong>'+priceText+'</strong>';
+            row1.innerHTML='<span>Items subtotal</span><strong>₱4,000</strong>';
             var row2=document.createElement("div");
             row2.className="fb-physical-checkout-row";
-            row2.innerHTML='<span>Shipping</span><strong>Calculated later</strong>';
+            row2.innerHTML='<span>Shipping</span><strong>Calculated at checkout</strong>';
             var row3=document.createElement("div");
             row3.className="fb-physical-checkout-row fb-physical-checkout-row--total";
-            row3.innerHTML='<strong>Order total</strong><strong>'+priceText+'</strong>';
+            row3.innerHTML='<strong>Order total</strong><strong>₱4,000</strong>';
             rows.appendChild(row1);
             rows.appendChild(row2);
             rows.appendChild(row3);
             card.appendChild(rows);
+
+            var placeholderLines=document.createElement("div");
+            placeholderLines.className="fb-physical-checkout-lines";
+            [
+                {name:"Product one",sub:"Qty: 1 • Best Seller",total:"₱500"},
+                {name:"Product two",sub:"Qty: 1 • Featured",total:"₱1,500"}
+            ].forEach(function(line){
+                var row=document.createElement("div");
+                row.className="fb-physical-checkout-line";
+                var rowThumb=document.createElement("div");
+                rowThumb.className="fb-physical-checkout-line-thumb";
+                rowThumb.innerHTML='<i class="fas fa-box-open"></i>';
+                var rowMeta=document.createElement("div");
+                rowMeta.className="fb-physical-checkout-line-meta";
+                var rowTitle=document.createElement("div");
+                rowTitle.className="fb-physical-checkout-line-title";
+                rowTitle.textContent=line.name;
+                var rowSub=document.createElement("div");
+                rowSub.className="fb-physical-checkout-line-sub";
+                rowSub.textContent=line.sub;
+                var rowTotal=document.createElement("div");
+                rowTotal.className="fb-physical-checkout-line-total";
+                rowTotal.textContent=line.total;
+                if(customSummaryColor){
+                    rowTitle.style.color=customSummaryColor;
+                    rowTotal.style.color=customSummaryColor;
+                    rowSub.style.color=customSummaryColor;
+                    rowSub.style.opacity="0.7";
+                }
+                rowMeta.appendChild(rowTitle);
+                rowMeta.appendChild(rowSub);
+                row.appendChild(rowThumb);
+                row.appendChild(rowMeta);
+                row.appendChild(rowTotal);
+                placeholderLines.appendChild(row);
+            });
+            card.appendChild(placeholderLines);
         }else{
             var sHeading=document.createElement("div");
             sHeading.className="fb-pricing-subtitle";
@@ -9059,15 +9338,17 @@ function renderElement(item,ctx){
                 card.appendChild(sSubtitle);
             }
         }
-        var sList=document.createElement("ul");
-        sList.className="fb-pricing-features";
-        item.settings.features.forEach(function(f){
-            var li=document.createElement("li");
-            li.textContent=String(f||"Feature");
-            if(customSummaryColor)li.style.color=customSummaryColor;
-            sList.appendChild(li);
-        });
-        card.appendChild(sList);
+        if(!isPhysicalCheckoutSummary){
+            var sList=document.createElement("ul");
+            sList.className="fb-pricing-features";
+            item.settings.features.forEach(function(f){
+                var li=document.createElement("li");
+                li.textContent=String(f||"Feature");
+                if(customSummaryColor)li.style.color=customSummaryColor;
+                sList.appendChild(li);
+            });
+            card.appendChild(sList);
+        }
         var sButton=document.createElement("button");
         sButton.type="button";
         sButton.className="fb-pricing-cta";
@@ -10576,7 +10857,7 @@ function initContextMenu(){
 function bind(id,val,cb,opts){
     const n=document.getElementById(id);if(!n)return;
     n.value=val||"";
-    const fire=()=>{if(opts&&opts.undo)saveToHistory();let v=n.value;if(opts&&opts.px)v=pxIfNumber(v);cb(v);refreshAfterSetting();};
+    const fire=()=>{if(opts&&opts.undo)saveToHistory();let v=n.value;if(opts&&opts.px)v=pxIfNumber(v);cb(v);queueAutoSave();refreshAfterSetting();};
     n.addEventListener("input",fire);
     n.addEventListener("change",fire);
     n.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();fire();}});
@@ -10609,6 +10890,7 @@ function bindCurrency(id,val,cb,opts){
             n.setSelectionRange(Math.min(nextStart,normalized.length),Math.min(nextEnd,normalized.length));
         }
         cb(normalized);
+        queueAutoSave();
         refreshAfterSetting();
     };
     n.addEventListener("input",fire);
@@ -10665,7 +10947,7 @@ function bindRichEditor(id,val,cb){
 function bindPx(id,val,cb,opts){
     const n=document.getElementById(id);if(!n)return;
     n.value=pxToNumber(val);
-    const fire=()=>{if(opts&&opts.undo)saveToHistory();const raw=(n.value||"").trim();cb(raw===""?"":raw+"px");refreshAfterSetting();};
+    const fire=()=>{if(opts&&opts.undo)saveToHistory();const raw=(n.value||"").trim();cb(raw===""?"":raw+"px");queueAutoSave();refreshAfterSetting();};
     n.addEventListener("input",fire);
     n.addEventListener("change",fire);
     n.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();fire();}});
@@ -12192,6 +12474,18 @@ function renderSettings(){
         var bgUpForm=document.getElementById("bgUp");
         if(bgUpForm)bgUpForm.onchange=()=>{if(bgUpForm.files&&bgUpForm.files[0]){saveToHistory();var bgImg=document.getElementById("bgImg");uploadImage(bgUpForm.files[0],url=>{var s=sty();s.backgroundImage='url('+url+')';if(bgImg)bgImg.value=url;renderCanvas();},"Background image upload");}};
         mountBackgroundAssetLibrary("bgUp","bgAssetLibraryBtn","bgImg","Form Background Asset Library");
+    } else if(selKind==="el"&&t.type==="shipping_details"){
+        t.settings=t.settings||{};
+        t.settings.fields=normalizeFormFields(t.settings.fields,false);
+        settings.innerHTML='<div class="menu-section-title">Shipping Details</div><div class="meta" style="margin:0 0 10px;">Dedicated delivery and customer information block for physical-product checkout pages.</div><label>Heading</label><input id="shipHeading"><label>Subtitle</label><input id="shipSubtitle"><label>Width</label><input id="shipWidth" placeholder="420px"><label>Label color</label><input id="shipLabelColor" type="color"><label>Placeholder color</label><input id="shipPlaceholderColor" type="color"><label>Background color</label><input id="shipBg" type="color"><label>Border</label><input id="shipBorder"><label>Shadow</label><input id="shipShadow">'+posControls+moveControls+remove;
+        bind("shipHeading",(t.settings&&t.settings.heading)||"Shipping Details",v=>{t.settings=t.settings||{};t.settings.heading=v||"Shipping Details";renderCanvas();},{undo:true});
+        bind("shipSubtitle",(t.settings&&t.settings.subtitle)||"Enter your delivery and contact information before placing the order.",v=>{t.settings=t.settings||{};t.settings.subtitle=v||"";renderCanvas();},{undo:true});
+        bind("shipWidth",(t.style&&t.style.width)||"420px",v=>{sty().width=v||"420px";sty().height="";},{undo:true});
+        bind("shipLabelColor",(t.settings&&t.settings.labelColor)||"#240E35",v=>{t.settings=t.settings||{};t.settings.labelColor=v||"#240E35";renderCanvas();},{undo:true});
+        bind("shipPlaceholderColor",(t.settings&&t.settings.placeholderColor)||"#94a3b8",v=>{t.settings=t.settings||{};t.settings.placeholderColor=v||"#94a3b8";renderCanvas();},{undo:true});
+        bind("shipBg",(t.style&&t.style.backgroundColor)||"#ffffff",v=>sty().backgroundColor=v,{undo:true});
+        bind("shipBorder",(t.style&&t.style.border)||"1px solid #E6E1EF",v=>sty().border=v,{undo:true});
+        bind("shipShadow",(t.style&&t.style.boxShadow)||"0 12px 24px rgba(15,23,42,.08)",v=>sty().boxShadow=v,{undo:true});
     } else if(selKind==="el"&&t.type==="icon"){
         t.settings=t.settings||{};
         t.settings.iconName=sanitizeIconName(t.settings.iconName||"star");
@@ -12390,6 +12684,10 @@ function renderSettings(){
                 ? '<div class="menu-split"></div><div class="menu-section-title">Payment Action</div><div class="meta" style="margin:0 0 10px;">Checkout-step product buttons automatically submit payment.</div><label>Payment button label</label><input id="poCtaLabel"><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">'
                 : '<div class="menu-split"></div><div class="menu-section-title">Call to Actions</div><label>Button label</label><input id="poCtaLabel"><label>Button link</label><input id="poCtaLink" placeholder="https://..."><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">';
             settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="₱299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="₱499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
+            var poDescriptionField=document.getElementById("poDescription");
+            if(poDescriptionField){
+                poDescriptionField.insertAdjacentHTML("afterend",'<div class="menu-split"></div><div class="menu-section-title">Inventory</div><label>Available stock</label><input id="poStock" type="number" min="0" step="1" placeholder="Leave blank for unlimited"><div class="meta" style="margin:6px 0 0;">Set a stock count to cap cart quantity and stop checkout once paid orders consume the remaining inventory.</div>');
+            }
             bind("poPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings.plan=v;renderCanvas();},{undo:true});
             bindCurrency("poPrice",(t.settings&&t.settings.price)||"",v=>{t.settings.price=v;renderCanvas();},{undo:true});
             bindCurrency("poRegular",(t.settings&&t.settings.regularPrice)||"",v=>{t.settings.regularPrice=v;renderCanvas();},{undo:true});
@@ -12397,6 +12695,7 @@ function renderSettings(){
             bind("poSubtitle",(t.settings&&t.settings.subtitle)||"",v=>{t.settings.subtitle=v;renderCanvas();},{undo:true});
             bind("poBadge",(t.settings&&t.settings.badge)||"",v=>{t.settings.badge=v;renderCanvas();},{undo:true});
             bind("poDescription",(t.settings&&t.settings.description)||"",v=>{t.settings.description=v;renderCanvas();},{undo:true});
+            bind("poStock",(t.settings&&t.settings.stockQuantity)!==undefined?(t.settings.stockQuantity):"",v=>{var raw=String(v||"").trim();if(raw===""){t.settings.stockQuantity="";}else{t.settings.stockQuantity=String(Math.max(0,parseInt(raw,10)||0));}renderCanvas();},{undo:true});
             bind("poCtaLabel",(t.settings&&t.settings.ctaLabel)||"Buy Now",v=>{t.settings.ctaLabel=v;renderCanvas();},{undo:true});
             bind("poCtaBg",(t.settings&&t.settings.ctaBgColor)||"#240E35",v=>{t.settings.ctaBgColor=v;renderCanvas();},{undo:true});
             bind("poCtaText",(t.settings&&t.settings.ctaTextColor)||"#ffffff",v=>{t.settings.ctaTextColor=v;renderCanvas();},{undo:true});
@@ -13193,7 +13492,8 @@ const sidebarComponentMeta={
     pricing:{desc:"Offer card with plan, price, features, and button."},
     product_offer:{desc:"Marketplace-style product card with mixed media, price, and buy button."},
     checkout_summary:{desc:"Compact checkout confirmation with selected plan and pay button."},
-    physical_checkout_summary:{desc:"Physical-product checkout summary with cart-aware order details and payment CTA."},
+    shipping_details:{desc:"Dedicated shipping and customer details form for physical-product checkout."},
+    physical_checkout_summary:{desc:"Physical-product order summary with cart-aware details and a shipping modal before payment."},
     countdown:{desc:"Urgency timer for expiring offers or launches."}
 };
 function sidebarPreviewMarkup(type){
@@ -13224,6 +13524,8 @@ function sidebarPreviewMarkup(type){
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-button-wrap'><span class='fb-comp-preview-nav'><span class='fb-comp-preview-nav-item is-wide'></span><span class='fb-comp-preview-nav-item is-mid'></span><span class='fb-comp-preview-nav-item is-cta'></span></span></span></span>";
         case "form":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-form'><span class='fb-comp-preview-input'></span><span class='fb-comp-preview-input'></span><span class='fb-comp-preview-btn'>Submit</span></span></span></span>";
+        case "shipping_details":
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-stack'><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-line md'></span></span><span class='fb-comp-preview-form'><span class='fb-comp-preview-input'></span><span class='fb-comp-preview-input'></span><span class='fb-comp-preview-input'></span></span></span></span>";
         case "testimonial":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-stack'><span class='fb-comp-preview-line full'></span><span class='fb-comp-preview-line md'></span></span><span class='fb-comp-preview-avatar-row'><span class='fb-comp-preview-avatar'></span><span class='fb-comp-preview-line sm'></span></span></span></span>";
         case "faq":
@@ -13334,6 +13636,7 @@ if(fbTabTemplates)fbTabTemplates.onclick=()=>showLeftPanel("templates");
 if(fbTabHistory)fbTabHistory.onclick=()=>showLeftPanel("history");
 var _canvasLockedWidth=0;
 var _canvasInnerWidth=0;
+var _canvasContentWidth=0;
 function lockCanvasWidth(){
     if(!canvas)return;
     if(fbGrid&&fbGrid.classList.contains("components-hidden"))return;
@@ -13342,6 +13645,12 @@ function lockCanvasWidth(){
         _canvasLockedWidth=w;
         var innerW=canvas.clientWidth||0; // includes padding, excludes scrollbar
         if(innerW>0)_canvasInnerWidth=innerW;
+        var canvasStyle=window.getComputedStyle?window.getComputedStyle(canvas):null;
+        var padX=canvasStyle?((parseFloat(canvasStyle.paddingLeft)||0)+(parseFloat(canvasStyle.paddingRight)||0)):0;
+        var borderX=canvasStyle?((parseFloat(canvasStyle.borderLeftWidth)||0)+(parseFloat(canvasStyle.borderRightWidth)||0)):0;
+        var contentW=Math.round(w-padX-borderX);
+        if(contentW<=0 && innerW>0)contentW=Math.round(innerW-padX);
+        if(contentW>0)_canvasContentWidth=contentW;
         canvas.style.width=w+"px";canvas.style.maxWidth=w+"px";
     }
 }
@@ -13406,6 +13715,8 @@ function persistCurrentStep(){
     var prefs=editorPrefs();
     if(_canvasLockedWidth>0)prefs.canvasWidth=_canvasLockedWidth;
     if(_canvasInnerWidth>0)prefs.canvasInnerWidth=_canvasInnerWidth;
+    if(_canvasContentWidth>0)prefs.canvasContentWidth=_canvasContentWidth;
+    var layoutToSave=withMeasuredSectionStageWidths(state.layout);
     var canvasBg=normalizeCanvasBgValue(prefs.canvasBg||"");
     var requestHeaders={"Content-Type":"application/json","X-CSRF-TOKEN":csrf,"Accept":"application/json"};
     function saveStepLayout(stepId,layout,bg,skipRevision){
@@ -13419,9 +13730,9 @@ function persistCurrentStep(){
         });
     }
     saveMsg.textContent=_autoSaveMode?"Autosaving...":"Saving...";
-    return saveStepLayout(s.id,state.layout,canvasBg,false)
+    return saveStepLayout(s.id,layoutToSave,canvasBg,false)
         .then(function(p){
-            s.layout_json=p.layout_json||clone(state.layout);
+            s.layout_json=p.layout_json||clone(layoutToSave);
             s.background_color=(p&&typeof p.background_color==="string"&&p.background_color.trim()!=="")?p.background_color.trim():null;
             s.revision_history=normalizeRevisionHistory(p&&p.revision_history);
             var others=steps.filter(function(step){return +step.id!==+s.id;});

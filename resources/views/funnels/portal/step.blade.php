@@ -1,6 +1,38 @@
 @php
     $publishedFreeformCanvasWidth = 0;
-    $previewFreeformRightInset = 12;
+    $previewFreeformRightInset = 0;
+    $builderCanvasPaddingWidth = 20;
+    $builderCanvasBorderWidth = 2;
+    $resolveSavedCanvasWidth = function (array $editorMeta) use ($builderCanvasPaddingWidth, $builderCanvasBorderWidth): int {
+        $canvasContentWidthRaw = (int) ($editorMeta['canvasContentWidth'] ?? 0);
+        if ($canvasContentWidthRaw > 0) {
+            return max(0, $canvasContentWidthRaw);
+        }
+        $canvasInnerWidthRaw = (int) ($editorMeta['canvasInnerWidth'] ?? 0);
+        if ($canvasInnerWidthRaw > 0) {
+            return max(0, $canvasInnerWidthRaw - $builderCanvasPaddingWidth);
+        }
+        $canvasWidthRaw = (int) ($editorMeta['canvasWidth'] ?? 0);
+        if ($canvasWidthRaw > 0) {
+            return max(0, $canvasWidthRaw - ($builderCanvasPaddingWidth + $builderCanvasBorderWidth));
+        }
+        return 0;
+    };
+    $resolveSavedStageWidth = function (array $editorMeta) use ($builderCanvasPaddingWidth, $builderCanvasBorderWidth): int {
+        $canvasInnerWidthRaw = (int) ($editorMeta['canvasInnerWidth'] ?? 0);
+        if ($canvasInnerWidthRaw > 0) {
+            return max(0, $canvasInnerWidthRaw);
+        }
+        $canvasWidthRaw = (int) ($editorMeta['canvasWidth'] ?? 0);
+        if ($canvasWidthRaw > 0) {
+            return max(0, $canvasWidthRaw - $builderCanvasBorderWidth);
+        }
+        $canvasContentWidthRaw = (int) ($editorMeta['canvasContentWidth'] ?? 0);
+        if ($canvasContentWidthRaw > 0) {
+            return max(0, $canvasContentWidthRaw + $builderCanvasPaddingWidth);
+        }
+        return 0;
+    };
     $initialLayout = is_array($step->layout_json ?? null) ? $step->layout_json : [];
     $initialRootItems = is_array($initialLayout['root'] ?? null) ? $initialLayout['root'] : [];
     if (count($initialRootItems) === 0 && is_array($initialLayout['sections'] ?? null)) {
@@ -23,35 +55,31 @@
         $initialFreeformEls[] = $initialRootItem;
     }
     $initialEditorMeta = is_array($initialLayout['__editor'] ?? null) ? $initialLayout['__editor'] : [];
-    $initialCanvasWidthRaw = (int) ($initialEditorMeta['canvasWidth'] ?? 0);
-    $initialCanvasInnerWidthRaw = (int) ($initialEditorMeta['canvasInnerWidth'] ?? 0);
-    $publishedFreeformCanvasWidth = $initialCanvasWidthRaw > 0
-        ? max(0, $initialCanvasWidthRaw)
-        : ($initialCanvasInnerWidthRaw > 0 ? max(0, $initialCanvasInnerWidthRaw) : 0);
-    if ($publishedFreeformCanvasWidth <= 0) {
-        $initialDerivedCanvasWidth = 0;
-        foreach ($initialFreeformEls as $initialFreeformEl) {
-            if (!is_array($initialFreeformEl)) {
-                continue;
-            }
-            $initialFreeformStyle = is_array($initialFreeformEl['style'] ?? null) ? $initialFreeformEl['style'] : [];
-            $initialFreeformSettings = is_array($initialFreeformEl['settings'] ?? null) ? $initialFreeformEl['settings'] : [];
-            $initialLeft = (int) ($initialFreeformSettings['freeX'] ?? 0);
-            if ($initialLeft <= 0) {
-                $initialLeft = (int) str_replace('px', '', (string) ($initialFreeformStyle['left'] ?? '0'));
-            }
-            $initialWidth = (int) str_replace('px', '', (string) ($initialFreeformStyle['width'] ?? '0'));
-            if ($initialWidth <= 0) {
-                $initialWidth = (int) ($initialFreeformSettings['fixedWidth'] ?? 0);
-            }
-            if ($initialWidth <= 0) {
-                $initialWidth = 120;
-            }
-            $initialRight = $initialLeft + $initialWidth;
-            if ($initialRight > $initialDerivedCanvasWidth) {
-                $initialDerivedCanvasWidth = $initialRight;
-            }
+    $publishedFreeformCanvasWidth = $resolveSavedCanvasWidth($initialEditorMeta);
+    $initialDerivedCanvasWidth = 0;
+    foreach ($initialFreeformEls as $initialFreeformEl) {
+        if (!is_array($initialFreeformEl)) {
+            continue;
         }
+        $initialFreeformStyle = is_array($initialFreeformEl['style'] ?? null) ? $initialFreeformEl['style'] : [];
+        $initialFreeformSettings = is_array($initialFreeformEl['settings'] ?? null) ? $initialFreeformEl['settings'] : [];
+        $initialLeft = (int) ($initialFreeformSettings['freeX'] ?? 0);
+        if ($initialLeft <= 0) {
+            $initialLeft = (int) str_replace('px', '', (string) ($initialFreeformStyle['left'] ?? '0'));
+        }
+        $initialWidth = (int) str_replace('px', '', (string) ($initialFreeformStyle['width'] ?? '0'));
+        if ($initialWidth <= 0) {
+            $initialWidth = (int) ($initialFreeformSettings['fixedWidth'] ?? 0);
+        }
+        if ($initialWidth <= 0) {
+            $initialWidth = 120;
+        }
+        $initialRight = $initialLeft + $initialWidth;
+        if ($initialRight > $initialDerivedCanvasWidth) {
+            $initialDerivedCanvasWidth = $initialRight;
+        }
+    }
+    if ($initialDerivedCanvasWidth > $publishedFreeformCanvasWidth) {
         $publishedFreeformCanvasWidth = $initialDerivedCanvasWidth;
     }
 
@@ -99,6 +127,8 @@
             box-sizing: border-box;
         }
         body.is-preview .step-content--full { padding: 10px; overflow-x: auto; overflow-y: visible; }
+        body.portal-has-freeform-canvas .step-content--full { opacity: 0; }
+        body.portal-has-freeform-canvas .step-content--full.is-scale-ready { opacity: 1; }
         body.is-preview .builder-section--freeform {
             margin: 0 auto;
             width: {{ $publishedFreeformCanvasWidth > 0 ? ($publishedFreeformCanvasWidth + $previewFreeformRightInset) . 'px' : '100%' }};
@@ -147,6 +177,10 @@
         .builder-section--freeform .builder-col { overflow: visible; background: transparent; min-width: 0; min-height: 0; padding: 0; margin: 0; }
         .builder-section--freeform .builder-col-inner { overflow: visible; position: relative; }
         .builder-section--freeform .builder-el { margin-top: 0 !important; }
+        .builder-row--section-elements { display:block; gap:0; padding:0; margin:0; background:transparent; }
+        .builder-row--section-elements > .builder-row-inner { display:block; gap:0; width:100%; position:static; }
+        .builder-col--section-elements { display:block; width:100%; flex:none; min-height:0; padding:0; margin:0; background:transparent; position:static; }
+        .builder-col--section-elements > .builder-col-inner--section-elements { display:block; width:100%; max-width:none; overflow:visible; position:static; min-height:0; }
         .builder-section-inner { width: 100%; box-sizing: border-box; position: relative; }
         .builder-row-inner { width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
         .builder-col-inner { width: 100%; box-sizing: border-box; max-width: 100%; overflow: visible; position: relative; min-height: 100%; }
@@ -215,6 +249,19 @@
         .builder-product-media .builder-carousel-arrow.is-right { right: 8px !important; }
         .builder-product-media .builder-carousel-dot { width: 6px; height: 6px; }
         .builder-product-media .builder-carousel-dots { gap: 5px; bottom: 5px; }
+        @media (hover: hover) and (pointer: fine) {
+            .builder-product-media .builder-carousel-arrow {
+                opacity: 0;
+                pointer-events: none;
+                transform: translateY(-50%) scale(.92);
+            }
+            .builder-product-media:hover .builder-carousel-arrow,
+            .builder-product-media:focus-within .builder-carousel-arrow {
+                opacity: 1;
+                pointer-events: auto;
+                transform: translateY(-50%) scale(1);
+            }
+        }
         .builder-product-media__placeholder { width: 100%; min-height: 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #64748b; text-align: center; padding: 8px; font-size: 10px; background: linear-gradient(180deg, #ffffff, #f8fafc); }
         .builder-product-media__placeholder i { font-size: 16px; color: #94a3b8; }
         .product-quick-view-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.58); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
@@ -236,6 +283,7 @@
         .portal-cart-fab { position: fixed; right: 20px; bottom: 20px; z-index: 1900; width: 52px; height: 52px; border-radius: 999px; border: none; background: #240E35; color: #ffffff; display: none; align-items: center; justify-content: center; box-shadow: 0 16px 36px rgba(15, 23, 42, 0.26); cursor: pointer; }
         .portal-cart-fab.is-visible { display: inline-flex; }
         .portal-cart-count { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 999px; background: #ef4444; color: #ffffff; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; padding: 0 5px; }
+        .portal-cart-fly { position: fixed; z-index: 1995; width: 22px; height: 22px; border-radius: 999px; background: radial-gradient(circle at 30% 30%, #a78bfa 0%, #6d28d9 45%, #240E35 100%); box-shadow: 0 10px 22px rgba(36, 14, 53, 0.28); pointer-events: none; will-change: transform, opacity; }
         .portal-cart-backdrop { position: fixed; inset: 0; z-index: 1950; background: rgba(15, 23, 42, 0.42); display: none; }
         .portal-cart-backdrop.is-open { display: block; }
         .portal-cart-drawer { position: fixed; top: 0; right: 0; width: min(380px, 100%); height: 100vh; height: 100dvh; z-index: 1960; background: #ffffff; box-shadow: -18px 0 40px rgba(15, 23, 42, 0.18); transform: translateX(100%); transition: transform .24s ease; display: grid; grid-template-rows: auto 1fr auto; }
@@ -243,16 +291,16 @@
         .portal-cart-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border-bottom:1px solid #e2e8f0; }
         .portal-cart-head h3 { margin:0; font-size:18px; }
         .portal-cart-close { width:36px; height:36px; border-radius:999px; border:1px solid #e2e8f0; background:#fff; cursor:pointer; }
-        .portal-cart-items { overflow:auto; padding:14px 16px; display:grid; gap:12px; }
-        .portal-cart-item { display:grid; grid-template-columns:64px 1fr auto; gap:10px; padding:10px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; }
+        .portal-cart-items { overflow:auto; padding:14px 16px; display:flex; flex-direction:column; gap:12px; align-items:stretch; }
+        .portal-cart-item { display:grid; grid-template-columns:64px minmax(0,1fr) auto; gap:10px; padding:10px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; align-items:start; }
         .portal-cart-thumb { width:64px; height:64px; border-radius:12px; overflow:hidden; background:#f8fafc; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; }
         .portal-cart-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
         .portal-cart-thumb i { color:#94a3b8; font-size:18px; }
-        .portal-cart-meta { min-width:0; display:grid; gap:6px; }
+        .portal-cart-meta { min-width:0; display:grid; grid-template-columns:minmax(0,1fr); gap:4px; align-content:start; }
         .portal-cart-title { font-size:13px; font-weight:800; color:#0f172a; line-height:1.3; }
         .portal-cart-price { font-size:13px; color:#16a34a; font-weight:800; }
         .portal-cart-sub { font-size:11px; color:#64748b; }
-        .portal-cart-qty { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#475569; }
+        .portal-cart-qty { display:inline-flex; align-items:center; gap:6px; font-size:11px; color:#475569; margin-top:4px; }
         .portal-cart-qty-btn { width:26px; height:26px; border-radius:999px; border:1px solid #d7cdea; background:#fff; color:#240E35; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
         .portal-cart-qty-num { min-width:18px; text-align:center; font-weight:800; color:#0f172a; }
         .portal-cart-remove { align-self:start; width:30px; height:30px; border:none; background:#fff1f2; color:#e11d48; border-radius:999px; cursor:pointer; }
@@ -264,35 +312,51 @@
         .portal-cart-btn.primary { background:#240E35; color:#ffffff; }
         .portal-cart-btn.secondary { background:#ffffff; color:#240E35; border:1px solid #d7cdea; }
         .builder-checkout-summary { position: relative; }
-        .checkout-cart-lines { display:grid; gap:8px; }
-        .checkout-cart-line { display:grid; grid-template-columns:48px 1fr auto; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid #eef2f7; }
+        .checkout-cart-lines { display:grid; gap: var(--checkout-physical-lines-gap, 8px); }
+        .checkout-cart-line { display:grid; grid-template-columns: var(--checkout-physical-line-cols, 40px 1fr auto); gap: var(--checkout-physical-line-gap, 10px); align-items:center; padding: var(--checkout-physical-line-pad, 8px) 0; border-bottom:1px solid #eef2f7; }
         .checkout-cart-line:last-child { border-bottom:0; padding-bottom:0; }
-        .checkout-cart-line-thumb { width:48px; height:48px; border-radius:12px; overflow:hidden; background:#f8fafc; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; }
+        .checkout-cart-line-thumb { width: var(--checkout-physical-line-thumb-size, 40px); height: var(--checkout-physical-line-thumb-size, 40px); border-radius: var(--checkout-physical-line-thumb-radius, 12px); overflow:hidden; background:#f8fafc; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; }
         .checkout-cart-line-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+        .checkout-cart-line-thumb i { font-size: var(--checkout-physical-line-thumb-icon, 14px); color:#94a3b8; }
         .checkout-cart-line-meta { min-width:0; display:grid; gap:2px; }
-        .checkout-cart-line-title { font-size:12px; font-weight:800; color:#0f172a; line-height:1.3; }
-        .checkout-cart-line-sub { font-size:11px; color:#64748b; }
-        .checkout-cart-line-total { font-size:12px; font-weight:800; color:#0f172a; }
-        .builder-checkout-summary--physical { gap:14px; padding:18px; }
+        .checkout-cart-line-title { font-size: var(--checkout-physical-line-title-size, 12px); font-weight:800; color:#0f172a; line-height:1.3; }
+        .checkout-cart-line-sub { font-size: var(--checkout-physical-line-sub-size, 11px); color:#64748b; }
+        .checkout-cart-line-total { font-size: var(--checkout-physical-line-total-size, 12px); font-weight:800; color:#0f172a; }
+        .builder-checkout-summary--physical { gap: var(--checkout-physical-gap, 12px); padding: var(--checkout-physical-pad, 16px); }
         .builder-checkout-summary--physical .builder-pricing-badge { background:#eaf2ff; color:#1d4ed8; }
         .checkout-physical-head { display:grid; gap:4px; }
-        .checkout-physical-label { font-size:11px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#64748b; }
-        .checkout-physical-product { display:grid; grid-template-columns:72px minmax(0,1fr); gap:12px; align-items:center; padding:12px; border:1px solid #e6eaf2; border-radius:18px; background:linear-gradient(180deg,#ffffff,#faf8fd); }
-        .checkout-physical-thumb { width:72px; height:72px; border-radius:18px; overflow:hidden; background:#f8fafc; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; }
+        .checkout-physical-label { font-size: var(--checkout-physical-label-size, 11px); font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#64748b; }
+        .checkout-physical-product { display:grid; grid-template-columns: var(--checkout-physical-product-cols, 64px minmax(0,1fr)); gap: var(--checkout-physical-product-gap, 12px); align-items:center; padding: var(--checkout-physical-product-pad, 12px); border:1px solid #e6eaf2; border-radius: var(--checkout-physical-product-radius, 16px); background:linear-gradient(180deg,#ffffff,#faf8fd); }
+        .checkout-physical-thumb { width: var(--checkout-physical-thumb-size, 64px); height: var(--checkout-physical-thumb-size, 64px); border-radius: var(--checkout-physical-thumb-radius, 16px); overflow:hidden; background:#f8fafc; border:1px solid #e2e8f0; display:flex; align-items:center; justify-content:center; }
         .checkout-physical-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-        .checkout-physical-thumb i { font-size:24px; color:#94a3b8; }
+        .checkout-physical-thumb i { font-size: var(--checkout-physical-thumb-icon, 22px); color:#94a3b8; }
         .checkout-physical-meta { min-width:0; display:grid; gap:4px; }
-        .checkout-physical-meta .builder-pricing-title { font-size:18px; line-height:1.2; }
+        .checkout-physical-meta .builder-pricing-title { font-size: var(--checkout-physical-title-size, 16px); line-height:1.2; }
         .checkout-physical-price { display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; }
-        .checkout-physical-price .builder-pricing-price { font-size:30px; }
+        .checkout-physical-price .builder-pricing-price { font-size: var(--checkout-physical-price-size, 24px); }
         .checkout-physical-price .builder-pricing-period { margin-left:0; }
-        .checkout-physical-rows { display:grid; gap:8px; padding:10px 0; border-top:1px solid #eef2f7; border-bottom:1px solid #eef2f7; }
-        .checkout-physical-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:#475569; }
-        .checkout-physical-row strong { color:#0f172a; font-size:13px; }
-        .checkout-physical-row--total strong:last-child { font-size:18px; color:#16a34a; }
-        .builder-checkout-summary--physical .builder-pricing-features { gap:5px; }
-        .builder-checkout-summary--physical .builder-pricing-features li { font-size:11px; }
-        .builder-checkout-summary--physical .builder-pricing-cta { width:100%; padding:11px 14px; border-radius:12px; }
+        .checkout-physical-rows { display:grid; gap: var(--checkout-physical-rows-gap, 8px); padding: var(--checkout-physical-rows-pad, 10px) 0; border-top:1px solid #eef2f7; border-bottom:1px solid #eef2f7; }
+        .checkout-physical-row { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size: var(--checkout-physical-row-size, 12px); color:#475569; }
+        .checkout-physical-row strong { color:#0f172a; font-size: var(--checkout-physical-row-strong-size, 13px); }
+        .checkout-physical-row--total strong:last-child { font-size: var(--checkout-physical-row-total-size, 18px); color:#16a34a; }
+        .builder-checkout-summary--physical .builder-pricing-features { gap: var(--checkout-physical-features-gap, 5px); }
+        .builder-checkout-summary--physical .builder-pricing-features li { font-size: var(--checkout-physical-feature-size, 11px); }
+        .builder-checkout-summary--physical .builder-pricing-cta { width:100%; padding: var(--checkout-physical-cta-pad-y, 10px) var(--checkout-physical-cta-pad-x, 14px); border-radius: var(--checkout-physical-cta-radius, 12px); }
+        .checkout-shipping-modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.54); z-index: 1950; display: none; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 18px; }
+        .checkout-shipping-modal-backdrop.is-open { display: flex; }
+        .checkout-shipping-modal { width: min(500px, 100%); max-height: calc(100vh - 36px); overflow: auto; margin: auto 0; background: #ffffff; border-radius: 22px; box-shadow: 0 28px 70px rgba(15, 23, 42, 0.28); padding: 18px; display: grid; gap: 12px; }
+        .checkout-shipping-modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+        .checkout-shipping-modal-title { margin:0; font-size:24px; line-height:1.1; color:#240E35; }
+        .checkout-shipping-modal-copy { margin:0; color:#64748b; font-size:13px; line-height:1.5; }
+        .checkout-shipping-modal-close { width:36px; height:36px; border-radius:999px; border:1px solid #e2e8f0; background:#ffffff; color:#0f172a; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:0 0 auto; }
+        .checkout-shipping-modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+        .checkout-shipping-modal-field { display:grid; gap:4px; min-width:0; }
+        .checkout-shipping-modal-field.is-full { grid-column: 1 / -1; }
+        .checkout-shipping-modal-field label { margin:0; font-size:11px; font-weight:700; color:#334155; }
+        .checkout-shipping-modal-field input { margin:0; width:100%; min-width:0; padding:10px 12px; border:1px solid #E6E1EF; border-radius:12px; box-sizing:border-box; }
+        .checkout-shipping-modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:4px; }
+        .checkout-shipping-modal-cancel { display:inline-flex; align-items:center; justify-content:center; min-width:120px; padding:11px 16px; border-radius:999px; border:1px solid #d7cdea; background:#ffffff; color:#240E35; font-weight:700; cursor:pointer; }
+        .checkout-shipping-modal-submit { min-width:160px; }
         @media (max-width: 720px) {
             .product-quick-view-modal { padding: 16px; border-radius: 18px; }
             .product-quick-view-layout { grid-template-columns: 1fr; gap: 16px; }
@@ -302,6 +366,12 @@
             .portal-cart-fab { right: 14px; bottom: 14px; }
             .checkout-physical-product { grid-template-columns:60px minmax(0,1fr); gap:10px; padding:10px; }
             .checkout-physical-thumb { width:60px; height:60px; border-radius:16px; }
+            .checkout-shipping-modal { padding: 18px; border-radius: 20px; }
+            .checkout-shipping-modal-title { font-size:24px; }
+            .checkout-shipping-modal-grid { grid-template-columns:1fr; }
+            .checkout-shipping-modal-actions { flex-direction:column-reverse; }
+            .checkout-shipping-modal-cancel,
+            .checkout-shipping-modal-submit { width:100%; }
         }
         .builder-pricing-badge { align-self: flex-start; background: #e2e8f0; color: #0f172a; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
         .builder-pricing-title { font-size: 18px; font-weight: 900; color: #0f172a; }
@@ -524,23 +594,23 @@
             ];
         }
         $editorMeta = is_array($layout['__editor'] ?? null) ? $layout['__editor'] : [];
-        $canvasWidthRaw = (int) ($editorMeta['canvasWidth'] ?? 0);
-        $canvasInnerWidthRaw = (int) ($editorMeta['canvasInnerWidth'] ?? 0);
-        $editorCanvasWidth = $canvasWidthRaw > 0 ? max(0, $canvasWidthRaw) : ($canvasInnerWidthRaw > 0 ? max(0, $canvasInnerWidthRaw) : 0);
-        if ($editorCanvasWidth <= 0) {
-            $derivedCanvasWidth = 0;
-            foreach ($freeformEls as $ffEl) {
-                if (!is_array($ffEl)) continue;
-                $ffStyle = is_array($ffEl['style'] ?? null) ? $ffEl['style'] : [];
-                $ffSettings = is_array($ffEl['settings'] ?? null) ? $ffEl['settings'] : [];
-                $ffLeft = (int) ($ffSettings['freeX'] ?? 0);
-                if ($ffLeft <= 0) $ffLeft = (int) str_replace('px', '', (string) ($ffStyle['left'] ?? '0'));
-                $ffWidth = (int) str_replace('px', '', (string) ($ffStyle['width'] ?? '0'));
-                if ($ffWidth <= 0) $ffWidth = (int) ($ffSettings['fixedWidth'] ?? 0);
-                if ($ffWidth <= 0) $ffWidth = 120;
-                $ffRight = $ffLeft + $ffWidth;
-                if ($ffRight > $derivedCanvasWidth) $derivedCanvasWidth = $ffRight;
-            }
+        $editorCanvasWidth = count($freeformEls) > 0
+            ? $resolveSavedCanvasWidth($editorMeta)
+            : $resolveSavedStageWidth($editorMeta);
+        $derivedCanvasWidth = 0;
+        foreach ($freeformEls as $ffEl) {
+            if (!is_array($ffEl)) continue;
+            $ffStyle = is_array($ffEl['style'] ?? null) ? $ffEl['style'] : [];
+            $ffSettings = is_array($ffEl['settings'] ?? null) ? $ffEl['settings'] : [];
+            $ffLeft = (int) ($ffSettings['freeX'] ?? 0);
+            if ($ffLeft <= 0) $ffLeft = (int) str_replace('px', '', (string) ($ffStyle['left'] ?? '0'));
+            $ffWidth = (int) str_replace('px', '', (string) ($ffStyle['width'] ?? '0'));
+            if ($ffWidth <= 0) $ffWidth = (int) ($ffSettings['fixedWidth'] ?? 0);
+            if ($ffWidth <= 0) $ffWidth = 120;
+            $ffRight = $ffLeft + $ffWidth;
+            if ($ffRight > $derivedCanvasWidth) $derivedCanvasWidth = $ffRight;
+        }
+        if ($derivedCanvasWidth > $editorCanvasWidth) {
             $editorCanvasWidth = $derivedCanvasWidth;
         }
         $hasBuilderLayout = count($renderSections) > 0;
@@ -555,6 +625,10 @@
             return $type !== '' ? $type : 'custom';
         };
         $currentStepType = $normalizeStepType($step->type ?? '');
+        $effectiveFunnelPurpose = strtolower(trim((string) (($funnel->purpose ?? null) ?: ($funnel->template_type ?? 'service'))));
+        if (! in_array($effectiveFunnelPurpose, ['service', 'digital_product', 'physical_product', 'hybrid'], true)) {
+            $effectiveFunnelPurpose = 'service';
+        }
         $currentStepIndex = $activeSteps->search(fn ($s) => (int) $s->id === (int) $step->id);
         if ($currentStepIndex === false) {
             $currentStepIndex = null;
@@ -1016,9 +1090,19 @@
                         $isBareCarouselWrap = (bool) ($section['isBareCarouselWrap'] ?? false);
                         $isFreeformCanvas = (bool) ($section['isFreeformCanvas'] ?? false);
                         $contentWidth = trim((string) ($sectionSettings['contentWidth'] ?? 'full'));
+                        $sectionStageWidth = max(0, (int) ($sectionSettings['stageWidth'] ?? 0));
                         $widthMap = ['full' => '', 'wide' => '1200px', 'medium' => '992px', 'small' => '768px', 'xsmall' => '576px'];
                         $innerMax = $widthMap[$contentWidth] ?? '';
                         $sectionElements = is_array($section['elements'] ?? null) ? $section['elements'] : [];
+                        $hasAbsoluteSectionElement = false;
+                        foreach ($sectionElements as $_sectionEl) {
+                            $_sectionElStyle = is_array($_sectionEl['style'] ?? null) ? $_sectionEl['style'] : [];
+                            $_sectionElSettings = is_array($_sectionEl['settings'] ?? null) ? $_sectionEl['settings'] : [];
+                            if (trim((string) ($_sectionElSettings['positionMode'] ?? '')) === 'absolute' || trim((string) ($_sectionElStyle['position'] ?? '')) === 'absolute') {
+                                $hasAbsoluteSectionElement = true;
+                                break;
+                            }
+                        }
                         $rows = is_array($section['rows'] ?? null) ? $section['rows'] : [];
                         if (!$isBareCarouselWrap && !$isFreeformCanvas && count($rows) === 0 && count($sectionElements) === 1) {
                             $onlyType = strtolower((string) (($sectionElements[0]['type'] ?? '')));
@@ -1031,20 +1115,31 @@
                                 'id' => 'sec_el_row_' . md5((string) ($section['id'] ?? uniqid('', true))),
                                 'style' => ['gap' => '0', 'padding' => '0', 'backgroundColor' => 'transparent'],
                                 'settings' => ['contentWidth' => 'full'],
+                                'isSectionElementCarrier' => true,
                                 'columns' => [[
                                     'id' => 'sec_el_col_' . md5((string) ($section['id'] ?? uniqid('', true))),
                                     'style' => ['flex' => '1 1 auto', 'backgroundColor' => 'transparent', 'minHeight' => '0', 'padding' => '0'],
                                     'settings' => [],
                                     'elements' => $sectionElements,
+                                    'isSectionElementCarrier' => true,
                                 ]],
                             ]);
                         }
                         $sectionInlineStyle = $sectionStyle;
+                        if ($isFreeformCanvas && $editorCanvasWidth > 0) {
+                            $sectionInlineStyle .= ($sectionInlineStyle !== '' ? '; ' : '') . 'width:' . $editorCanvasWidth . 'px;max-width:none;margin-left:auto;margin-right:auto;';
+                        }
                         if ($isBareCarouselWrap) {
                             $sectionInlineStyle .= ($sectionInlineStyle !== '' ? '; ' : '') . 'border:none;';
                         }
                         $sectionInnerStyle = [];
-                        if ($innerMax !== '' && !$isBareCarouselWrap) {
+                        if ($sectionStageWidth > 0 && $hasAbsoluteSectionElement && !$isBareCarouselWrap && !$isFreeformCanvas) {
+                            $sectionInnerStyle[] = 'width:100%';
+                            $sectionInnerStyle[] = 'max-width:' . $sectionStageWidth . 'px';
+                            if ($innerMax !== '') {
+                                $sectionInnerStyle[] = 'margin: 0 auto';
+                            }
+                        } elseif ($innerMax !== '' && !$isBareCarouselWrap) {
                             $sectionInnerStyle[] = 'max-width: ' . $innerMax;
                             $sectionInnerStyle[] = 'margin: 0 auto';
                         }
@@ -1073,8 +1168,9 @@
                                 }
                                 $rowInnerStyleString = implode('; ', $rowInnerStyle);
                                 $columns = is_array($row['columns'] ?? null) ? $row['columns'] : [];
+                                $isSectionElementCarrierRow = (bool) ($row['isSectionElementCarrier'] ?? false);
                             @endphp
-                            <div class="builder-row" style="{{ $rowStyle }}">
+                            <div class="builder-row{{ $isSectionElementCarrierRow ? ' builder-row--section-elements' : '' }}" style="{{ $rowStyle }}">
                                 <div class="builder-row-inner" @if($rowInnerStyleString !== '') style="{{ $rowInnerStyleString }}" @endif>
                                 @foreach($columns as $column)
                                     @php
@@ -1111,11 +1207,11 @@
                                             }
                                         }
                                         $colHeightStyle = $colMinHeight > 0 ? 'min-height:' . $colMinHeight . 'px;' : '';
-                                        $freeformWidth = ($isFreeformCanvas && $editorCanvasWidth > 0) ? $editorCanvasWidth : (($isFreeformCanvas && $colMinWidth > 0) ? $colMinWidth : 0);
-                                        $colWidthStyle = $freeformWidth > 0 ? 'width:' . $freeformWidth . 'px;margin-left:auto;margin-right:auto;' : '';
+                                        $colWidthStyle = $isFreeformCanvas ? 'width:100%;margin-left:0;margin-right:0;' : '';
+                                        $isSectionElementCarrierCol = (bool) ($column['isSectionElementCarrier'] ?? false);
                                     @endphp
-                                    <div class="builder-col{{ $hasAbsEl ? ' builder-col--abs' : '' }}" style="{{ $colStyle }}{{ $colHeightStyle }}{{ $colWidthStyle }}">
-                                        <div class="builder-col-inner" @if($colInnerMax !== '') style="max-width: {{ $colInnerMax }}; margin: 0 auto;" @endif>
+                                    <div class="builder-col{{ $hasAbsEl ? ' builder-col--abs' : '' }}{{ $isSectionElementCarrierCol ? ' builder-col--section-elements' : '' }}" style="{{ $colStyle }}{{ $colHeightStyle }}{{ $colWidthStyle }}">
+                                        <div class="builder-col-inner{{ $isSectionElementCarrierCol ? ' builder-col-inner--section-elements' : '' }}" @if($colInnerMax !== '') style="max-width: {{ $colInnerMax }}; margin: 0 auto;" @endif>
                                         @foreach($elements as $element)
                                             @php
                                                 $elId = trim((string) ($element['id'] ?? ''));
@@ -1212,7 +1308,7 @@
                                                     elseif ($type === 'form') { $elWrapStyle .= $alignStyle; }
                                                 }
                                             @endphp
-                                            <div class="builder-el" @if($elWrapStyle !== '') style="{{ $elWrapStyle }}" @endif>
+                                            <div class="builder-el" data-element-type="{{ $type }}" @if($elWrapStyle !== '') style="{{ $elWrapStyle }}" @endif>
                                                 @if($type === 'heading')
                                                     <h2 class="builder-heading" style="{{ $contentStyle }}">{!! $content !!}</h2>
                                                 @elseif($type === 'text')
@@ -1983,6 +2079,10 @@
                                                         $ctaStyle = 'font-size:' . (int) round(11 * $scale) . 'px;padding:' . (int) round(7 * $scale) . 'px ' . (int) round(8 * $scale) . 'px;';
                                                         $productCarouselId = 'prod_' . md5((string) ($element['id'] ?? uniqid('', true)));
                                                         $productModalId = 'product_quick_view_' . md5((string) ($element['id'] ?? uniqid('', true)));
+                                                        $stockInfo = $productInventory[$elId] ?? null;
+                                                        $hasLimitedStock = is_array($stockInfo) && (int) ($stockInfo['stock_quantity'] ?? 0) > 0;
+                                                        $remainingStock = $hasLimitedStock ? (int) ($stockInfo['remaining_stock'] ?? 0) : null;
+                                                        $isOutOfStock = $hasLimitedStock && $remainingStock <= 0;
                                                     @endphp
                                                     <div class="builder-pricing builder-product-offer" data-pricing-id="{{ $elId }}" data-pricing-plan="{{ $plan }}" data-pricing-sale="{{ $priceVal }}" data-pricing-regular="{{ $regularPrice }}" data-pricing-period="{{ $period }}" data-pricing-subtitle="{{ $subtitle }}" data-pricing-badge="{{ $badge }}" data-pricing-image="{{ $cartImage }}" data-pricing-features="{{ $pricingFeaturesJson }}" style="{{ $scaledContentStyle }}">
                                                         <div class="builder-product-media">
@@ -2040,6 +2140,11 @@
                                                         @if($subtitle !== '')
                                                             <div class="builder-pricing-subtitle" style="{{ $subtitleStyle }}@if($pricingTextColor !== '')color: {{ $pricingTextColor }}; opacity: 0.7;@endif">{{ $subtitle }}</div>
                                                         @endif
+                                                        @if($hasLimitedStock)
+                                                            <div class="builder-pricing-subtitle" style="{{ $subtitleStyle }}font-weight:700;@if($isOutOfStock)color:#b91c1c;@elseif($pricingTextColor !== '')color: {{ $pricingTextColor }};@else color:#0f766e;@endif">
+                                                                {{ $isOutOfStock ? 'Out of stock' : ($remainingStock . ' left in stock') }}
+                                                            </div>
+                                                        @endif
                                                         <ul class="builder-pricing-features" style="{{ $featureGapStyle }}">
                                                             @foreach($features as $fi => $feat)
                                                                 @php $featText = trim((string) $feat); if ($featText === '') $featText = 'Feature ' . ($fi + 1); @endphp
@@ -2048,7 +2153,9 @@
                                                         </ul>
                                                         <div class="builder-product-actions">
                                                             @if($ctaLabel !== '')
-                                                                @if(($pricingCtaAction['kind'] ?? 'link') === 'post')
+                                                                @if($isOutOfStock)
+                                                                    <button type="button" class="builder-pricing-cta" style="{{ $ctaStyle }}background: #94a3b8; color: #ffffff; opacity:0.8;cursor:not-allowed;" disabled>Out of Stock</button>
+                                                                @elseif(($pricingCtaAction['kind'] ?? 'link') === 'post')
                                                                     <form method="POST" action="{{ $pricingCtaAction['action'] }}" style="margin:0;">
                                                                         @csrf
                                                                         @foreach(($pricingCtaAction['fields'] ?? []) as $fieldName => $fieldValue)
@@ -2092,8 +2199,10 @@
                                                                             data-product-badge="{{ $badge }}"
                                                                             data-product-image="{{ $cartImage }}"
                                                                             data-product-step="{{ $step->slug }}"
-                                                                            aria-label="Add {{ $plan !== '' ? $plan : 'product' }} to cart"
-                                                                            title="Add to cart">
+                                                                            data-product-stock-remaining="{{ $hasLimitedStock ? $remainingStock : '' }}"
+                                                                            aria-label="{{ $isOutOfStock ? (($plan !== '' ? $plan : 'Product') . ' is out of stock') : ('Add ' . ($plan !== '' ? $plan : 'product') . ' to cart') }}"
+                                                                            title="{{ $isOutOfStock ? 'Out of stock' : 'Add to cart' }}"
+                                                                            @if($isOutOfStock) disabled @endif>
                                                                             <i class="fas fa-cart-shopping" aria-hidden="true"></i>
                                                                         </button>
                                                                     @endif
@@ -2174,6 +2283,66 @@
                                                 @elseif($type === 'checkout_summary' || $type === 'physical_checkout_summary')
                                                     @php
                                                         $isPhysicalCheckoutSummary = $type === 'physical_checkout_summary';
+                                                        $stepLayoutForShippingCheck = is_array($step->layout_json ?? null) ? $step->layout_json : [];
+                                                        $hideLegacyCheckoutSummary = false;
+                                                        $hideDuplicatePhysicalCheckoutSummary = false;
+                                                        $physicalCheckoutSummaryIds = [];
+                                                        if ($currentStepType === 'checkout' && in_array($effectiveFunnelPurpose, ['physical_product', 'hybrid'], true)) {
+                                                            $entryRoots = is_array($stepLayoutForShippingCheck['root'] ?? null)
+                                                                ? $stepLayoutForShippingCheck['root']
+                                                                : (is_array($stepLayoutForShippingCheck['sections'] ?? null) ? $stepLayoutForShippingCheck['sections'] : []);
+                                                            $collectPhysicalCheckoutSummaries = function ($node) use (&$collectPhysicalCheckoutSummaries, &$physicalCheckoutSummaryIds) {
+                                                                if (! is_array($node)) {
+                                                                    return;
+                                                                }
+                                                                if (isset($node['type']) && strtolower(trim((string) ($node['type'] ?? ''))) === 'physical_checkout_summary') {
+                                                                    $nodeId = trim((string) ($node['id'] ?? ''));
+                                                                    if ($nodeId !== '' && ! in_array($nodeId, $physicalCheckoutSummaryIds, true)) {
+                                                                        $physicalCheckoutSummaryIds[] = $nodeId;
+                                                                    }
+                                                                }
+                                                                foreach (['elements', 'rows', 'columns', 'sections'] as $childrenKey) {
+                                                                    $children = $node[$childrenKey] ?? null;
+                                                                    if (! is_array($children)) {
+                                                                        continue;
+                                                                    }
+                                                                    foreach ($children as $child) {
+                                                                        $collectPhysicalCheckoutSummaries($child);
+                                                                    }
+                                                                }
+                                                            };
+                                                            foreach ($entryRoots as $entryRoot) {
+                                                                $collectPhysicalCheckoutSummaries($entryRoot);
+                                                            }
+                                                            $hideLegacyCheckoutSummary = ! $isPhysicalCheckoutSummary && count($physicalCheckoutSummaryIds) > 0;
+                                                            if ($isPhysicalCheckoutSummary && count($physicalCheckoutSummaryIds) > 1) {
+                                                                $primaryPhysicalCheckoutSummaryId = $physicalCheckoutSummaryIds[0] ?? null;
+                                                                $hideDuplicatePhysicalCheckoutSummary = $primaryPhysicalCheckoutSummaryId && $elId !== $primaryPhysicalCheckoutSummaryId;
+                                                            }
+                                                        }
+                                                        $hasShippingDetailsComponent = false;
+                                                        $walkShippingDetails = function ($node) use (&$walkShippingDetails, &$hasShippingDetailsComponent) {
+                                                            if ($hasShippingDetailsComponent || ! is_array($node)) {
+                                                                return;
+                                                            }
+                                                            if (isset($node['type']) && strtolower(trim((string) $node['type'])) === 'shipping_details') {
+                                                                $hasShippingDetailsComponent = true;
+                                                                return;
+                                                            }
+                                                            foreach (['root', 'sections', 'rows', 'columns', 'elements'] as $childrenKey) {
+                                                                $children = $node[$childrenKey] ?? null;
+                                                                if (! is_array($children)) {
+                                                                    continue;
+                                                                }
+                                                                foreach ($children as $child) {
+                                                                    $walkShippingDetails($child);
+                                                                    if ($hasShippingDetailsComponent) {
+                                                                        return;
+                                                                    }
+                                                                }
+                                                            }
+                                                        };
+                                                        $walkShippingDetails($stepLayoutForShippingCheck);
                                                         $summaryHeading = trim((string) ($settings['heading'] ?? ($isPhysicalCheckoutSummary ? 'Review Your Order' : 'Order Summary')));
                                                         $plan = trim((string) ($settings['plan'] ?? ($isPhysicalCheckoutSummary ? 'Selected Product' : 'Starter')));
                                                         $priceVal = trim((string) ($settings['price'] ?? '₱0'));
@@ -2227,7 +2396,7 @@
                                                         if ($summaryStyle !== '' && substr($summaryStyle, -1) !== ';') {
                                                             $summaryStyle .= ';';
                                                         }
-                                                        $summaryStyle .= 'gap:' . (int) round(12 * $summaryScale) . 'px;';
+                                                        $summaryStyle .= 'gap:' . (int) round(($isPhysicalCheckoutSummary ? 12 : 10) * $summaryScale) . 'px;';
                                                         $summaryPad = trim((string) ($rawStyle['padding'] ?? ''));
                                                         if ($summaryPad !== '') {
                                                             $summaryStyle .= 'padding:' . $scalePaddingValue($summaryPad, $summaryScale) . ';';
@@ -2236,18 +2405,56 @@
                                                         if ($summaryRadius !== '') {
                                                             $summaryStyle .= 'border-radius:' . $scalePxValue($summaryRadius, $summaryScale) . ';';
                                                         }
+                                                        if ($isPhysicalCheckoutSummary) {
+                                                            $physicalThumbSize = max(44, (int) round(64 * $summaryScale));
+                                                            $physicalLineThumbSize = max(30, (int) round(40 * $summaryScale));
+                                                            $summaryStyle .= '--checkout-physical-gap:' . max(6, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-pad:' . max(8, (int) round(16 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-label-size:' . max(8, (int) round(11 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-product-cols:' . $physicalThumbSize . 'px minmax(0,1fr);';
+                                                            $summaryStyle .= '--checkout-physical-product-gap:' . max(8, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-product-pad:' . max(8, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-product-radius:' . max(10, (int) round(16 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-thumb-size:' . $physicalThumbSize . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-thumb-radius:' . max(10, (int) round(16 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-thumb-icon:' . max(14, (int) round(22 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-title-size:' . max(12, (int) round(16 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-price-size:' . max(18, (int) round(24 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-rows-gap:' . max(5, (int) round(8 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-rows-pad:' . max(6, (int) round(10 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-row-size:' . max(9, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-row-strong-size:' . max(10, (int) round(13 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-row-total-size:' . max(14, (int) round(18 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-lines-gap:' . max(5, (int) round(8 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-cols:' . $physicalLineThumbSize . 'px 1fr auto;';
+                                                            $summaryStyle .= '--checkout-physical-line-gap:' . max(6, (int) round(10 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-pad:' . max(5, (int) round(8 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-thumb-size:' . $physicalLineThumbSize . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-thumb-radius:' . max(8, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-thumb-icon:' . max(10, (int) round(14 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-title-size:' . max(9, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-sub-size:' . max(8, (int) round(11 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-line-total-size:' . max(9, (int) round(12 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-features-gap:' . max(3, (int) round(5 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-feature-size:' . max(9, (int) round(11 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-cta-pad-y:' . max(7, (int) round(10 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-cta-pad-x:' . max(10, (int) round(14 * $summaryScale)) . 'px;';
+                                                            $summaryStyle .= '--checkout-physical-cta-radius:' . max(10, (int) round(12 * $summaryScale)) . 'px;';
+                                                        }
                                                         $headingStyle = 'font-size:' . (int) round(11 * $summaryScale) . 'px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;';
-                                                        $titleStyle = 'font-size:' . (int) round(18 * $summaryScale) . 'px;';
-                                                        $priceStyle = 'font-size:' . (int) round(32 * $summaryScale) . 'px;';
+                                                        $titleStyle = 'font-size:' . (int) round(($isPhysicalCheckoutSummary ? 16 : 18) * $summaryScale) . 'px;';
+                                                        $priceStyle = 'font-size:' . (int) round(($isPhysicalCheckoutSummary ? 24 : 32) * $summaryScale) . 'px;';
                                                         $periodStyle = 'font-size:' . (int) round(12 * $summaryScale) . 'px;';
                                                         $subtitleStyle = 'font-size:' . (int) round(12 * $summaryScale) . 'px;';
-                                                        $featureStyle = 'font-size:' . (int) round(12 * $summaryScale) . 'px;gap:' . (int) round(6 * $summaryScale) . 'px;';
-                                                        $featureGapStyle = 'gap:' . (int) round(6 * $summaryScale) . 'px;';
-                                                        $ctaStyle = 'font-size:' . (int) round(16 * $summaryScale) . 'px;padding:' . (int) round(8 * $summaryScale) . 'px ' . (int) round(12 * $summaryScale) . 'px;';
+                                                        $featureStyle = 'font-size:' . (int) round(($isPhysicalCheckoutSummary ? 11 : 12) * $summaryScale) . 'px;gap:' . (int) round(($isPhysicalCheckoutSummary ? 5 : 6) * $summaryScale) . 'px;';
+                                                        $featureGapStyle = 'gap:' . (int) round(($isPhysicalCheckoutSummary ? 5 : 6) * $summaryScale) . 'px;';
+                                                        $ctaStyle = 'font-size:' . (int) round(16 * $summaryScale) . 'px;padding:' . (int) round(($isPhysicalCheckoutSummary ? 10 : 8) * $summaryScale) . 'px ' . (int) round(($isPhysicalCheckoutSummary ? 14 : 12) * $summaryScale) . 'px;';
                                                         $summaryFeaturesJson = json_encode(array_values($features), JSON_UNESCAPED_UNICODE);
                                                         $summaryPricingId = trim((string) ($selectedCheckoutPricing['pricingId'] ?? ''));
                                                         $summarySourceStep = trim((string) ($selectedCheckoutPricing['sourceStepSlug'] ?? ''));
+                                                        $physicalSummaryUsesModal = $isPhysicalCheckoutSummary && in_array($effectiveFunnelPurpose, ['physical_product', 'hybrid'], true);
                                                     @endphp
+                                                    @if(! $hideLegacyCheckoutSummary && ! $hideDuplicatePhysicalCheckoutSummary)
                                                     <div class="builder-pricing builder-checkout-summary {{ $isPhysicalCheckoutSummary ? 'builder-checkout-summary--physical' : '' }}" data-checkout-summary style="{{ $summaryStyle }}">
                                                         @if($badge !== '')
                                                             <div class="builder-pricing-badge" data-checkout-badge>{{ $badge }}</div>
@@ -2352,13 +2559,76 @@
                                                                     <input type="hidden" name="checkout_pricing_badge" value="{{ $badge }}">
                                                                     <input type="hidden" name="checkout_pricing_image" value="{{ $selectedImage }}">
                                                                     <input type="hidden" name="checkout_pricing_features" value="{{ $summaryFeaturesJson }}">
-                                                                    <button type="submit" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
+                                                                    <input type="hidden" name="checkout_cart_items" value="">
+                                                                    @if($physicalSummaryUsesModal)
+                                                                        <button type="button" class="builder-pricing-cta" data-open-shipping-modal style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
+                                                                        <div class="checkout-shipping-modal-backdrop" data-shipping-modal aria-hidden="true">
+                                                                            <div class="checkout-shipping-modal" role="dialog" aria-modal="true" aria-label="Shipping details">
+                                                                                <div class="checkout-shipping-modal-head">
+                                                                                    <div>
+                                                                                        <h3 class="checkout-shipping-modal-title">Shipping Details</h3>
+                                                                                        <p class="checkout-shipping-modal-copy">Enter your delivery and contact information before continuing to payment.</p>
+                                                                                    </div>
+                                                                                    <button type="button" class="checkout-shipping-modal-close" data-close-shipping-modal aria-label="Close"><i class="fas fa-times"></i></button>
+                                                                                </div>
+                                                                                <div class="checkout-shipping-modal-grid" data-checkout-customer-form>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_first_name_{{ $elId }}">First name</label>
+                                                                                        <input id="shipping_first_name_{{ $elId }}" class="builder-form-input" type="text" name="first_name" value="{{ old('first_name') }}" required placeholder="First name">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_last_name_{{ $elId }}">Last name</label>
+                                                                                        <input id="shipping_last_name_{{ $elId }}" class="builder-form-input" type="text" name="last_name" value="{{ old('last_name') }}" required placeholder="Last name">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_email_{{ $elId }}">Email</label>
+                                                                                        <input id="shipping_email_{{ $elId }}" class="builder-form-input" type="email" name="email" value="{{ old('email') }}" required placeholder="Email address">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_phone_{{ $elId }}">Phone number</label>
+                                                                                        <input id="shipping_phone_{{ $elId }}" class="builder-form-input" type="tel" name="phone_number" value="{{ old('phone_number') }}" required pattern="^09\d{9}$" maxlength="11" minlength="11" inputmode="numeric" placeholder="09XXXXXXXXX">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_province_{{ $elId }}">Province</label>
+                                                                                        <input id="shipping_province_{{ $elId }}" class="builder-form-input" type="text" name="province" value="{{ old('province') }}" required placeholder="Province">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_city_{{ $elId }}">City / Municipality</label>
+                                                                                        <input id="shipping_city_{{ $elId }}" class="builder-form-input" type="text" name="city_municipality" value="{{ old('city_municipality') }}" required placeholder="City / Municipality">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_barangay_{{ $elId }}">Barangay</label>
+                                                                                        <input id="shipping_barangay_{{ $elId }}" class="builder-form-input" type="text" name="barangay" value="{{ old('barangay') }}" required placeholder="Barangay">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field is-full">
+                                                                                        <label for="shipping_street_{{ $elId }}">Street address</label>
+                                                                                        <input id="shipping_street_{{ $elId }}" class="builder-form-input" type="text" name="street" value="{{ old('street') }}" required placeholder="House no., street, building">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_postal_{{ $elId }}">Postal code</label>
+                                                                                        <input id="shipping_postal_{{ $elId }}" class="builder-form-input" type="text" name="postal_code" value="{{ old('postal_code') }}" placeholder="Postal code">
+                                                                                    </div>
+                                                                                    <div class="checkout-shipping-modal-field">
+                                                                                        <label for="shipping_notes_{{ $elId }}">Order notes</label>
+                                                                                        <input id="shipping_notes_{{ $elId }}" class="builder-form-input" type="text" name="notes" value="{{ old('notes') }}" placeholder="Optional notes for delivery">
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="checkout-shipping-modal-actions">
+                                                                                    <button type="button" class="checkout-shipping-modal-cancel" data-close-shipping-modal>Cancel</button>
+                                                                                    <button type="submit" class="builder-pricing-cta checkout-shipping-modal-submit" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">Continue to Payment</button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    @else
+                                                                        <button type="submit" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
+                                                                    @endif
                                                                 </form>
                                                             @endif
                                                         @else
                                                             <button type="button" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }}; opacity:0.7;cursor:not-allowed;" disabled>{{ $ctaLabel }}</button>
                                                         @endif
                                                     </div>
+                                                    @endif
                                                 @elseif($type === 'countdown')
                                                     @php
                                                         $cdEnd = trim((string) ($settings['endAt'] ?? ''));
@@ -2554,6 +2824,60 @@
                                                                 <button type="submit" class="builder-form-btn" style="margin-top:2px;background:{{ $formButtonBgColor }};color:{{ $formButtonTextColor }};font-weight:{{ $formButtonFontWeight }};font-style:{{ $formButtonFontStyle }};border-radius:8px;padding:8px 12px;border:1px solid {{ $formButtonBgColor }};line-height:1;">{{ $content !== '' ? $content : 'Submit' }}</button>
                                                             </div>
                 </form>
+                                                    @elseif($step->type === 'checkout' && !$isPreview)
+                                                        <form data-checkout-customer-form onsubmit="return false;" style="{{ $formInlineStyle }}">
+                                                            @foreach($formFields as $f)
+                                                                @php
+                                                                    $ft = strtolower(trim((string) ($f['type'] ?? 'text')));
+                                                                    $lbl = trim((string) ($f['label'] ?? '')) !== '' ? $f['label'] : $ft;
+                                                                    $labelKey = strtolower(trim($lbl));
+                                                                    if ($ft === 'custom') {
+                                                                        if (str_contains($labelKey, 'email')) {
+                                                                            $ft = 'email';
+                                                                        } elseif (str_contains($labelKey, 'phone') || str_contains($labelKey, 'mobile')) {
+                                                                            $ft = 'phone_number';
+                                                                        } elseif ($labelKey === 'name' || $labelKey === 'full name') {
+                                                                            $ft = 'name';
+                                                                        } elseif (str_contains($labelKey, 'first') && str_contains($labelKey, 'name')) {
+                                                                            $ft = 'first_name';
+                                                                        } elseif (str_contains($labelKey, 'last') && str_contains($labelKey, 'name')) {
+                                                                            $ft = 'last_name';
+                                                                        } elseif (str_contains($labelKey, 'province')) {
+                                                                            $ft = 'province';
+                                                                        } elseif (str_contains($labelKey, 'city') || str_contains($labelKey, 'municipality')) {
+                                                                            $ft = 'city_municipality';
+                                                                        } elseif (str_contains($labelKey, 'barangay')) {
+                                                                            $ft = 'barangay';
+                                                                        } elseif (str_contains($labelKey, 'street') || str_contains($labelKey, 'address')) {
+                                                                            $ft = 'street';
+                                                                        } elseif (str_contains($labelKey, 'postal') || str_contains($labelKey, 'zip')) {
+                                                                            $ft = 'postal_code';
+                                                                        } elseif (str_contains($labelKey, 'note')) {
+                                                                            $ft = 'notes';
+                                                                        }
+                                                                    }
+                                                                    $nm = in_array($ft, ['name', 'first_name', 'last_name', 'email', 'phone_number', 'phone', 'province', 'city_municipality', 'barangay', 'street', 'postal_code', 'notes'], true) ? $ft : 'custom_' . $loop->index;
+                                                                    $req = (bool) ($f['required'] ?? false);
+                                                                    $inputType = $ft === 'email' ? 'email' : ($ft === 'phone_number' ? 'tel' : 'text');
+                                                                    $pat = $ft === 'phone_number' ? 'pattern="^09\\d{9}$" maxlength="11" minlength="11" inputmode="numeric"' : '';
+                                                                    $ph = trim((string) ($f['placeholder'] ?? ''));
+                                                                    if ($ph === '') {
+                                                                        if ($ft === 'phone_number') {
+                                                                            $ph = '09XXXXXXXXX';
+                                                                        } elseif ($ft === 'email') {
+                                                                            $ph = 'Email address';
+                                                                        } else {
+                                                                            $ph = $lbl;
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                <label style="display:block;margin-bottom:4px;color:{{ $formLabelColor }};text-align:left;">{{ $lbl }}</label>
+                                                                <input class="builder-form-input" type="{{ $inputType }}" name="{{ $nm }}" {{ $req ? 'required' : '' }} {!! $pat !!} placeholder="{{ $ph }}" style="--fb-placeholder-color:{{ $formPlaceholderColor }};width:100%;padding:8px;border:1px solid #E6E1EF;border-radius:8px;margin-bottom:8px;box-sizing:border-box;text-align:left;">
+                                                            @endforeach
+                                                            <div style="display:flex;justify-content:{{ $formButtonJustify }};">
+                                                                <button type="button" class="builder-form-btn" style="margin-top:2px;background:{{ $formButtonBgColor }};color:{{ $formButtonTextColor }};font-weight:{{ $formButtonFontWeight }};font-style:{{ $formButtonFontStyle }};border-radius:8px;padding:8px 12px;border:1px solid {{ $formButtonBgColor }};line-height:1;opacity:.75;cursor:default;">{{ $content !== '' ? $content : 'Fill out details above' }}</button>
+                                                            </div>
+                                                        </form>
                                                     @else
                                                         <form onsubmit="return false;" style="{{ $formInlineStyle }}">
                                                             @foreach($formFields as $f)
@@ -2572,6 +2896,84 @@
                                                                 <button type="button" class="builder-form-btn" style="margin-top:2px;background:{{ $formButtonBgColor }};color:{{ $formButtonTextColor }};font-weight:{{ $formButtonFontWeight }};font-style:{{ $formButtonFontStyle }};border-radius:8px;padding:8px 12px;border:1px solid {{ $formButtonBgColor }};line-height:1;" @if($isPreview) disabled @endif>{{ $content !== '' ? $content : 'Submit' }}</button>
                                                             </div>
                     </form>
+                                                    @endif
+                                                @elseif($type === 'shipping_details')
+                                                    @php
+                                                        $hideLegacyShippingBlock = false;
+                                                        if ($currentStepType === 'checkout' && in_array($effectiveFunnelPurpose, ['physical_product', 'hybrid'], true)) {
+                                                            $stepLayoutForPhysicalSummaryCheck = is_array($step->layout_json ?? null) ? $step->layout_json : [];
+                                                            $hasPhysicalCheckoutSummary = false;
+                                                            $walkPhysicalCheckoutSummary = function ($node) use (&$walkPhysicalCheckoutSummary, &$hasPhysicalCheckoutSummary) {
+                                                                if ($hasPhysicalCheckoutSummary || ! is_array($node)) {
+                                                                    return;
+                                                                }
+                                                                if (isset($node['type']) && strtolower(trim((string) $node['type'])) === 'physical_checkout_summary') {
+                                                                    $hasPhysicalCheckoutSummary = true;
+                                                                    return;
+                                                                }
+                                                                foreach (['root', 'sections', 'rows', 'columns', 'elements'] as $childrenKey) {
+                                                                    $children = $node[$childrenKey] ?? null;
+                                                                    if (! is_array($children)) {
+                                                                        continue;
+                                                                    }
+                                                                    foreach ($children as $child) {
+                                                                        $walkPhysicalCheckoutSummary($child);
+                                                                        if ($hasPhysicalCheckoutSummary) {
+                                                                            return;
+                                                                        }
+                                                                    }
+                                                                }
+                                                            };
+                                                            $walkPhysicalCheckoutSummary($stepLayoutForPhysicalSummaryCheck);
+                                                            $hideLegacyShippingBlock = $hasPhysicalCheckoutSummary;
+                                                        }
+                                                        $shippingHeading = trim((string) ($settings['heading'] ?? 'Shipping Details'));
+                                                        $shippingSubtitle = trim((string) ($settings['subtitle'] ?? 'Enter your delivery and contact information before placing the order.'));
+                                                        $shippingLabelColor = trim((string) ($settings['labelColor'] ?? '#240E35'));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $shippingLabelColor)) $shippingLabelColor = '#240E35';
+                                                        $shippingPlaceholderColor = trim((string) ($settings['placeholderColor'] ?? '#94a3b8'));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $shippingPlaceholderColor)) $shippingPlaceholderColor = '#94a3b8';
+                                                        $shippingFields = is_array($settings['fields'] ?? null) ? $settings['fields'] : [];
+                                                        if (count($shippingFields) === 0) {
+                                                            $shippingFields = [
+                                                                ['type' => 'first_name', 'label' => 'First name', 'placeholder' => 'First name', 'required' => true],
+                                                                ['type' => 'last_name', 'label' => 'Last name', 'placeholder' => 'Last name', 'required' => true],
+                                                                ['type' => 'email', 'label' => 'Email', 'placeholder' => 'Email address', 'required' => true],
+                                                                ['type' => 'phone_number', 'label' => 'Phone number', 'placeholder' => '09XXXXXXXXX', 'required' => true],
+                                                                ['type' => 'province', 'label' => 'Province', 'placeholder' => 'Province', 'required' => true],
+                                                                ['type' => 'city_municipality', 'label' => 'City / Municipality', 'placeholder' => 'City / Municipality', 'required' => true],
+                                                                ['type' => 'barangay', 'label' => 'Barangay', 'placeholder' => 'Barangay', 'required' => true],
+                                                                ['type' => 'street', 'label' => 'Street address', 'placeholder' => 'House no., street, building', 'required' => true],
+                                                                ['type' => 'postal_code', 'label' => 'Postal code', 'placeholder' => 'Postal code', 'required' => false],
+                                                                ['type' => 'notes', 'label' => 'Order notes', 'placeholder' => 'Optional notes for delivery', 'required' => false],
+                                                            ];
+                                                        }
+                                                    @endphp
+                                                    @if(! $hideLegacyShippingBlock)
+                                                        <div class="builder-form" data-checkout-customer-form style="{{ $style }}">
+                                                            @if($shippingHeading !== '')
+                                                                <div style="font-size:20px;font-weight:800;color:#240E35;margin-bottom:6px;">{{ $shippingHeading }}</div>
+                                                            @endif
+                                                            @if($shippingSubtitle !== '')
+                                                                <div style="font-size:12px;line-height:1.5;color:#64748b;margin-bottom:10px;">{{ $shippingSubtitle }}</div>
+                                                            @endif
+                                                            @foreach($shippingFields as $f)
+                                                                @php
+                                                                    $ft = strtolower(trim((string) ($f['type'] ?? 'text')));
+                                                                    $lbl = trim((string) ($f['label'] ?? '')) !== '' ? trim((string) $f['label']) : 'Field';
+                                                                    $nm = in_array($ft, ['name', 'first_name', 'last_name', 'email', 'phone_number', 'phone', 'province', 'city_municipality', 'barangay', 'street', 'postal_code', 'notes'], true) ? $ft : 'custom_' . $loop->index;
+                                                                    $req = (bool) ($f['required'] ?? false);
+                                                                    $inputType = $ft === 'email' ? 'email' : ($ft === 'phone_number' ? 'tel' : 'text');
+                                                                    $pat = $ft === 'phone_number' ? 'pattern="^09\d{9}$" maxlength="11" minlength="11" inputmode="numeric"' : '';
+                                                                    $ph = trim((string) ($f['placeholder'] ?? ''));
+                                                                    if ($ph === '') {
+                                                                        $ph = $ft === 'phone_number' ? '09XXXXXXXXX' : $lbl;
+                                                                    }
+                                                                @endphp
+                                                                <label style="display:block;margin-bottom:4px;color:{{ $shippingLabelColor }};text-align:left;">{{ $lbl }}</label>
+                                                                <input class="builder-form-input" type="{{ $inputType }}" name="{{ $nm }}" {{ $req ? 'required' : '' }} {!! $pat !!} value="{{ old($nm) }}" placeholder="{{ $ph }}" style="--fb-placeholder-color:{{ $shippingPlaceholderColor }};width:100%;padding:8px;border:1px solid #E6E1EF;border-radius:8px;margin-bottom:8px;box-sizing:border-box;text-align:left;">
+                                                            @endforeach
+                                                        </div>
                                                     @endif
                                                 @else
                                                     <p class="builder-text" style="{{ $style }}">{{ $content }}</p>
@@ -2971,6 +3373,7 @@
         var portalCartClear=document.getElementById("portalCartClearBtn");
         var portalCartCheckout=document.getElementById("portalCartCheckoutBtn");
         var cartButtons=document.querySelectorAll("[data-product-add-to-cart]");
+        var portalCartHistoryOpen=false;
         function parseCartMoney(raw){
             var s=String(raw||"").trim().replace(/[^0-9,.\-]/g,"").replace(/,/g,"");
             if(!s)return 0;
@@ -2993,6 +3396,47 @@
         }
         function writePortalCart(items){
             try{ window.localStorage.setItem(cartStorageKey,JSON.stringify(Array.isArray(items)?items:[])); }catch(_err){}
+        }
+        function productStockLimitFromValue(value){
+            var raw=String(value==null?"":value).trim();
+            if(raw==="")return null;
+            var limit=parseInt(raw,10);
+            if(isNaN(limit))return null;
+            return Math.max(0,limit);
+        }
+        function productStockLimitForButton(btn){
+            if(!btn)return null;
+            return productStockLimitFromValue(btn.getAttribute("data-product-stock-remaining"));
+        }
+        function cartQuantityForProduct(items,id){
+            return (Array.isArray(items)?items:[]).reduce(function(sum,item){
+                return String(item&&item.id||"")===String(id||"").trim() ? sum + Math.max(1,Number(item.quantity||1)) : sum;
+            },0);
+        }
+        function normalizeCartStock(items){
+            var list=Array.isArray(items)?items.slice():[];
+            var changed=false;
+            list=list.reduce(function(out,item){
+                if(!item||typeof item!=="object")return out;
+                var next=Object.assign({},item);
+                var limit=productStockLimitFromValue(next.stockRemaining);
+                var qty=Math.max(1,Number(next.quantity||1));
+                if(limit!==null){
+                    next.stockRemaining=limit;
+                    if(limit<=0){
+                        changed=true;
+                        return out;
+                    }
+                    if(qty>limit){
+                        qty=limit;
+                        changed=true;
+                    }
+                }
+                next.quantity=qty;
+                out.push(next);
+                return out;
+            },[]);
+            return { items:list, changed:changed };
         }
         function summarizeCartItems(items){
             var list=Array.isArray(items)?items:[];
@@ -3022,6 +3466,7 @@
                     period:String(item.period||"").trim(),
                     subtitle:"",
                     badge:String(item.badge||"").trim(),
+                    image:String(item.image||"").trim(),
                     features:[]
                 };
             }
@@ -3034,11 +3479,58 @@
                 period:"",
                 subtitle:summary.quantity+" item"+(summary.quantity===1?"":"s")+" ready for checkout",
                 badge:"Cart",
+                image:String((items[0]&&items[0].image)||"").trim(),
                 features:items.map(function(item){
                     var qty=Math.max(1,Number(item.quantity||1));
                     return String(item.name||"Product")+" x"+qty;
                 })
             };
+        }
+        function serializeCheckoutItems(itemOrItems){
+            var items=Array.isArray(itemOrItems)?itemOrItems:(itemOrItems?[itemOrItems]:[]);
+            return items.map(function(item){
+                if(!item||typeof item!=="object")return null;
+                var name=String(item.name||"").trim();
+                var price=String(item.price||"").trim();
+                var regularPrice=String(item.regularPrice||"").trim();
+                var period=String(item.period||"").trim();
+                var badge=String(item.badge||"").trim();
+                var image=String(item.image||"").trim();
+                var quantity=Math.max(1,parseInt(item.quantity||"1",10)||1);
+                if(!name && !price && !regularPrice && !badge && !image)return null;
+                return {
+                    id:String(item.id||"").trim(),
+                    stepSlug:String(item.stepSlug||"").trim(),
+                    name:name||"Product",
+                    price:price,
+                    regularPrice:regularPrice,
+                    period:period,
+                    badge:badge,
+                    image:image,
+                    quantity:quantity
+                };
+            }).filter(function(item){ return !!item; });
+        }
+        function serializeSelectionAsCheckoutItems(selection){
+            if(!selection||typeof selection!=="object")return [];
+            var name=String(selection.plan||"").trim();
+            var price=String(selection.price||"").trim();
+            var regularPrice=String(selection.regularPrice||"").trim();
+            var period=String(selection.period||"").trim();
+            var badge=String(selection.badge||"").trim();
+            var image=String(selection.image||"").trim();
+            if(!name && !price && !regularPrice && !badge && !image)return [];
+            return serializeCheckoutItems([{
+                id:String(selection.pricingId||"").trim(),
+                stepSlug:String(selection.sourceStepSlug||"").trim(),
+                name:name||"Selected item",
+                price:price,
+                regularPrice:regularPrice,
+                period:period,
+                badge:badge,
+                image:image,
+                quantity:1
+            }]);
         }
         function renderCheckoutSummaryFromCart(){
             if(currentStepType!=="checkout")return;
@@ -3124,31 +3616,76 @@
                     checkout_pricing_subtitle:selection.subtitle,
                     checkout_pricing_badge:selection.badge,
                     checkout_pricing_image:String(selection.image||"").trim(),
-                    checkout_pricing_features:JSON.stringify(selection.features||[])
+                    checkout_pricing_features:JSON.stringify(selection.features||[]),
+                    checkout_cart_items:JSON.stringify(serializeCheckoutItems(items))
                 };
                 Object.keys(map).forEach(function(name){
                     var input=form.querySelector('input[name="'+name+'"]');
                     if(input)input.value=map[name];
                 });
             }
+            if(typeof scheduleAbsoluteLayoutSync==="function"){
+                scheduleAbsoluteLayoutSync();
+            }
+            if(typeof window.__fbSchedulePreviewScale==="function"){
+                window.__fbSchedulePreviewScale();
+            }else if(typeof window.__fbSchedulePublishedScale==="function"){
+                window.__fbSchedulePublishedScale();
+            }
         }
         function updateCartButtonsState(animateId){
             var items=readPortalCart();
             cartButtons.forEach(function(btn){
                 var id=String(btn.getAttribute("data-product-id")||"").trim();
+                var stockLimit=productStockLimitForButton(btn);
+                var cartQty=cartQuantityForProduct(items,id);
                 var inCart=items.some(function(item){ return String(item.id||"")===id && Math.max(0,Number(item.quantity||0))>0; });
                 var icon=btn.querySelector("i");
+                var outOfStock=stockLimit!==null && stockLimit<=0;
+                var stockMaxed=!outOfStock && stockLimit!==null && cartQty>=stockLimit;
                 btn.classList.toggle("is-in-cart",inCart);
-                btn.setAttribute("title",inCart?"Added to cart":"Add to cart");
-                btn.setAttribute("aria-label",inCart?"Added to cart":"Add to cart");
+                btn.disabled=outOfStock || stockMaxed;
+                btn.setAttribute("title",outOfStock?"Out of stock":(stockMaxed?"Stock limit reached":(inCart?"Added to cart":"Add to cart")));
+                btn.setAttribute("aria-label",outOfStock?"Out of stock":(stockMaxed?"Stock limit reached":(inCart?"Added to cart":"Add to cart")));
                 if(icon){
-                    icon.className=inCart?"fas fa-check":"fas fa-cart-shopping";
+                    icon.className=(inCart || stockMaxed)?"fas fa-check":"fas fa-cart-shopping";
                 }
                 if(animateId && animateId===id){
                     btn.style.animation="cartPop .26s ease";
                     setTimeout(function(){ btn.style.animation=""; },280);
                 }
             });
+        }
+        function animateAddToCart(sourceBtn){
+            if(!sourceBtn || !portalCartFab || !portalCartFab.classList.contains("is-visible"))return;
+            var startRect=sourceBtn.getBoundingClientRect();
+            var endRect=portalCartFab.getBoundingClientRect();
+            if(!startRect || !endRect)return;
+            var fly=document.createElement("div");
+            fly.className="portal-cart-fly";
+            var startX=startRect.left + (startRect.width / 2) - 11;
+            var startY=startRect.top + (startRect.height / 2) - 11;
+            var endX=endRect.left + (endRect.width / 2) - 11;
+            var endY=endRect.top + (endRect.height / 2) - 11;
+            fly.style.left=startX+"px";
+            fly.style.top=startY+"px";
+            document.body.appendChild(fly);
+            var dx=endX-startX;
+            var dy=endY-startY;
+            var anim=fly.animate([
+                { transform:"translate(0px,0px) scale(1)", opacity:0.95 },
+                { transform:"translate("+(dx*0.52)+"px,"+(dy*0.42-34)+"px) scale(0.92)", opacity:0.92, offset:0.55 },
+                { transform:"translate("+dx+"px,"+dy+"px) scale(0.42)", opacity:0.05 }
+            ],{
+                duration:780,
+                easing:"cubic-bezier(.2,.8,.2,1)",
+                fill:"forwards"
+            });
+            anim.onfinish=function(){
+                if(fly && fly.parentNode)fly.parentNode.removeChild(fly);
+                portalCartFab.style.animation="cartPop .28s ease";
+                setTimeout(function(){ if(portalCartFab)portalCartFab.style.animation=""; },300);
+            };
         }
         function openPortalCart(){
             if(!portalCartDrawer||!portalCartBackdrop)return;
@@ -3157,25 +3694,44 @@
             portalCartDrawer.setAttribute("aria-hidden","false");
             portalCartBackdrop.setAttribute("aria-hidden","false");
             document.body.style.overflow="hidden";
+            if(!portalCartHistoryOpen && window.history && typeof window.history.pushState==="function"){
+                try{
+                    window.history.pushState(Object.assign({}, window.history.state||{}, { portalCartOpen:true }),"",window.location.href);
+                    portalCartHistoryOpen=true;
+                }catch(_err){}
+            }
         }
-        function closePortalCart(){
+        function closePortalCart(fromHistory){
             if(!portalCartDrawer||!portalCartBackdrop)return;
             portalCartDrawer.classList.remove("is-open");
             portalCartBackdrop.classList.remove("is-open");
             portalCartDrawer.setAttribute("aria-hidden","true");
             portalCartBackdrop.setAttribute("aria-hidden","true");
             document.body.style.overflow="";
+            if(portalCartHistoryOpen){
+                if(fromHistory){
+                    portalCartHistoryOpen=false;
+                }else if(window.history && typeof window.history.back==="function"){
+                    portalCartHistoryOpen=false;
+                    window.history.back();
+                }
+            }
         }
         function renderPortalCart(){
             if(!portalCartFab||!portalCartItems||!portalCartTotal)return;
-            var items=readPortalCart();
+            var normalizedCart=normalizeCartStock(readPortalCart());
+            var items=normalizedCart.items;
+            if(normalizedCart.changed){
+                writePortalCart(items);
+            }
             var quantity=items.reduce(function(sum,item){ return sum + Math.max(1,Number(item.quantity||1)); },0);
-            if(quantity>0){
+            var shouldShowCartFab=quantity>0 && currentStepType!=="checkout";
+            if(shouldShowCartFab){
                 portalCartFab.classList.add("is-visible");
                 portalCartCount.textContent=String(quantity);
             }else{
                 portalCartFab.classList.remove("is-visible");
-                portalCartCount.textContent="0";
+                portalCartCount.textContent=String(quantity>0?quantity:0);
                 closePortalCart();
             }
             portalCartItems.innerHTML="";
@@ -3183,6 +3739,8 @@
                 portalCartItems.innerHTML='<div class="portal-cart-empty">Your cart is empty.</div>';
                 portalCartTotal.textContent=formatCartMoney(0);
                 if(portalCartCheckout)portalCartCheckout.setAttribute("aria-disabled","true");
+                updateCartButtonsState();
+                renderCheckoutSummaryFromCart();
                 return;
             }
             var total=0;
@@ -3233,6 +3791,11 @@
         if(portalCartFab)portalCartFab.addEventListener("click",function(){ renderPortalCart(); openPortalCart(); });
         if(portalCartClose)portalCartClose.addEventListener("click",closePortalCart);
         if(portalCartBackdrop)portalCartBackdrop.addEventListener("click",closePortalCart);
+        window.addEventListener("popstate",function(){
+            if(portalCartDrawer && portalCartDrawer.classList.contains("is-open")){
+                closePortalCart(true);
+            }
+        });
         if(portalCartClear)portalCartClear.addEventListener("click",function(){
             writePortalCart([]);
             renderPortalCart();
@@ -3253,7 +3816,10 @@
                 if(increase){
                     var incIdx=parseInt(increase.getAttribute("data-cart-increase")||"-1",10);
                     if(isNaN(incIdx)||incIdx<0||!items[incIdx])return;
-                    items[incIdx].quantity=Math.max(1,Number(items[incIdx].quantity||1))+1;
+                    var incLimit=productStockLimitFromValue(items[incIdx].stockRemaining);
+                    var nextQty=Math.max(1,Number(items[incIdx].quantity||1))+1;
+                    if(incLimit!==null && nextQty>incLimit)return;
+                    items[incIdx].quantity=nextQty;
                     writePortalCart(items);
                     renderPortalCart();
                     return;
@@ -3278,8 +3844,12 @@
                 if(id==="")return;
                 var items=readPortalCart();
                 var existing=items.find(function(item){ return String(item.id||"")===id; });
+                var stockLimit=productStockLimitForButton(btn);
+                if(stockLimit!==null && stockLimit<=0)return;
                 if(existing){
-                    existing.quantity=Math.max(1,Number(existing.quantity||1))+1;
+                    var nextQty=Math.max(1,Number(existing.quantity||1))+1;
+                    if(stockLimit!==null && nextQty>stockLimit)return;
+                    existing.quantity=nextQty;
                 }else{
                     items.push({
                         id:id,
@@ -3290,13 +3860,14 @@
                         badge:String(btn.getAttribute("data-product-badge")||"").trim(),
                         image:String(btn.getAttribute("data-product-image")||"").trim(),
                         stepSlug:String(btn.getAttribute("data-product-step")||"").trim(),
+                        stockRemaining:stockLimit,
                         quantity:1
                     });
                 }
                 writePortalCart(items);
                 renderPortalCart();
                 updateCartButtonsState(id);
-                openPortalCart();
+                animateAddToCart(btn);
             });
         });
         renderPortalCart();
@@ -3498,7 +4069,8 @@
                             checkout_pricing_subtitle:String(cartSelection.subtitle||"").trim(),
                             checkout_pricing_badge:String(cartSelection.badge||"").trim(),
                             checkout_pricing_image:String(cartSelection.image||"").trim(),
-                            checkout_pricing_features:JSON.stringify(Array.isArray(cartSelection.features)?cartSelection.features:[])
+                            checkout_pricing_features:JSON.stringify(Array.isArray(cartSelection.features)?cartSelection.features:[]),
+                            checkout_cart_items:JSON.stringify(serializeCheckoutItems(cartItems))
                         };
                         Object.keys(cartMap).forEach(function(name){
                             var input=form.querySelector('input[name="'+name+'"]');
@@ -3539,7 +4111,8 @@
                 checkout_pricing_subtitle:String(selection.subtitle||"").trim(),
                 checkout_pricing_badge:String(selection.badge||"").trim(),
                 checkout_pricing_image:String(selection.image||"").trim(),
-                checkout_pricing_features:JSON.stringify(Array.isArray(selection.features)?selection.features:[])
+                checkout_pricing_features:JSON.stringify(Array.isArray(selection.features)?selection.features:[]),
+                checkout_cart_items:JSON.stringify(serializeSelectionAsCheckoutItems(selection))
             };
             Object.keys(fieldMap).forEach(function(name){
                 var input=form.querySelector('input[name="'+name+'"]');
@@ -3550,11 +4123,87 @@
                 amountInput.value=String(amount);
             }
         }
+        function collectCheckoutCustomerInputs(){
+            var forms=Array.from(document.querySelectorAll("[data-checkout-customer-form]")||[]);
+            var inputs=[];
+            forms.forEach(function(form){
+                Array.from(form.querySelectorAll("input, textarea, select")||[]).forEach(function(field){
+                    if(!field || !field.name || field.disabled)return;
+                    inputs.push(field);
+                });
+            });
+            return inputs;
+        }
+        function syncCheckoutCustomerForm(summaryForm){
+            if(!summaryForm)return {ok:true};
+            var physicalPurpose={{ in_array($effectiveFunnelPurpose, ['physical_product','hybrid'], true) ? 'true' : 'false' }};
+            var customerInputs=collectCheckoutCustomerInputs();
+            if(!customerInputs.length)return {ok:true};
+            var requiredNames={
+                email:true,
+                phone_number:physicalPurpose,
+                province:physicalPurpose,
+                city_municipality:physicalPurpose,
+                barangay:physicalPurpose,
+                street:physicalPurpose
+            };
+            var hasName=false;
+            customerInputs.forEach(function(field){
+                var fieldName=String(field.name||"").trim();
+                var fieldValue=String(field.value||"").trim();
+                if(fieldName==="name"||fieldName==="first_name"||fieldName==="last_name"){
+                    if(fieldValue!=="")hasName=true;
+                }
+            });
+            for(var i=0;i<customerInputs.length;i++){
+                var field=customerInputs[i];
+                var fieldName=String(field.name||"").trim();
+                if(!fieldName)continue;
+                var fieldValue=String(field.value||"").trim();
+                if(typeof field.reportValidity==="function" && !field.reportValidity()){
+                    field.focus();
+                    return {ok:false};
+                }
+                if(requiredNames[fieldName] && fieldValue===""){
+                    if(typeof field.reportValidity==="function")field.reportValidity();
+                    field.focus();
+                    return {ok:false};
+                }
+                var hidden=summaryForm.querySelector('input[name="'+fieldName+'"]');
+                if(!hidden){
+                    hidden=document.createElement("input");
+                    hidden.type="hidden";
+                    hidden.name=fieldName;
+                    summaryForm.appendChild(hidden);
+                }
+                hidden.value=fieldValue;
+            }
+            if(physicalPurpose && !hasName){
+                var nameField=customerInputs.find(function(field){
+                    var nm=String(field.name||"").trim();
+                    return nm==="name"||nm==="first_name"||nm==="last_name";
+                });
+                if(nameField){
+                    if(typeof nameField.reportValidity==="function")nameField.reportValidity();
+                    nameField.focus();
+                }
+                return {ok:false};
+            }
+            return {ok:true};
+        }
         document.addEventListener("submit",function(e){
             var form=e.target;
             if(!form||form.tagName!=="FORM")return;
             var method=String(form.getAttribute("method")||"").toLowerCase();
             if(method!=="post")return;
+            if(form.hasAttribute("data-checkout-summary-form")){
+                syncCheckoutPricingForm(form);
+                var syncedCustomer=syncCheckoutCustomerForm(form);
+                if(!syncedCustomer.ok){
+                    e.preventDefault();
+                    return;
+                }
+            }
             if(form.getAttribute("data-submitting")==="1"){
                 e.preventDefault();
                 return;
@@ -3574,36 +4223,151 @@
                 syncCheckoutPricingForm(form);
             }
         },true);
-        function syncAbsoluteColumnHeights(){
-            var cols=document.querySelectorAll(".builder-col.builder-col--abs, .builder-section--freeform .builder-col");
-            cols.forEach(function(col){
-                var inner=col.querySelector(".builder-col-inner")||col;
-                if(!inner)return;
-                var children=Array.from(inner.children||[]).filter(function(node){
-                    return !!(node&&node.classList&&node.classList.contains("builder-el"));
+        function setShippingModalOpen(backdrop,open){
+            if(!backdrop)return;
+            backdrop.classList.toggle("is-open",!!open);
+            backdrop.setAttribute("aria-hidden",open?"false":"true");
+            if(open){
+                document.body.style.overflow="hidden";
+                var firstField=backdrop.querySelector("input, textarea, select, button");
+                if(firstField && typeof firstField.focus==="function"){
+                    setTimeout(function(){ try{ firstField.focus(); }catch(_e){} },20);
+                }
+            }else{
+                document.body.style.overflow="";
+            }
+        }
+        function bindShippingModals(){
+            document.querySelectorAll("[data-checkout-summary-form]").forEach(function(form){
+                if(form.getAttribute("data-shipping-modal-bound")==="1")return;
+                form.setAttribute("data-shipping-modal-bound","1");
+                var openBtn=form.querySelector("[data-open-shipping-modal]");
+                var backdrop=form.querySelector("[data-shipping-modal]");
+                if(!openBtn||!backdrop)return;
+                openBtn.addEventListener("click",function(e){
+                    e.preventDefault();
+                    setShippingModalOpen(backdrop,true);
                 });
-                if(!children.length)return;
-                var maxBottom=0;
-                var maxRight=0;
-                children.forEach(function(node){
-                    var mb=0,mr=0;
-                    try{
-                        var cs=window.getComputedStyle(node);
-                        mb=parseFloat(cs.marginBottom||"0")||0;
-                        mr=parseFloat(cs.marginRight||"0")||0;
-                    }catch(_e){}
+                backdrop.addEventListener("click",function(e){
+                    if(e.target===backdrop){
+                        setShippingModalOpen(backdrop,false);
+                    }
+                });
+                backdrop.querySelectorAll("[data-close-shipping-modal]").forEach(function(btn){
+                    btn.addEventListener("click",function(e){
+                        e.preventDefault();
+                        setShippingModalOpen(backdrop,false);
+                    });
+                });
+                form.addEventListener("submit",function(){
+                    setShippingModalOpen(backdrop,false);
+                });
+            });
+        }
+        bindShippingModals();
+        document.addEventListener("click",function(e){
+            var openBtn=e.target&&e.target.closest?e.target.closest("[data-open-shipping-modal]"):null;
+            if(openBtn){
+                e.preventDefault();
+                var form=openBtn.closest("form");
+                var backdrop=form?form.querySelector("[data-shipping-modal]"):null;
+                setShippingModalOpen(backdrop,true);
+                return;
+            }
+            var closeBtn=e.target&&e.target.closest?e.target.closest("[data-close-shipping-modal]"):null;
+            if(closeBtn){
+                e.preventDefault();
+                var closeBackdrop=closeBtn.closest("[data-shipping-modal]");
+                setShippingModalOpen(closeBackdrop,false);
+                return;
+            }
+            var backdrop=e.target&&e.target.closest?e.target.closest("[data-shipping-modal]"):null;
+            if(backdrop && e.target===backdrop){
+                e.preventDefault();
+                setShippingModalOpen(backdrop,false);
+            }
+        },true);
+        function estimateRightShadowBleed(node){
+            if(!node||!window.getComputedStyle)return 0;
+            try{
+                var shadow=String(window.getComputedStyle(node).boxShadow||"").trim();
+                if(!shadow||shadow==="none")return 0;
+                var nums=(shadow.match(/-?\d+(?:\.\d+)?px/g)||[]).map(function(v){ return parseFloat(v)||0; });
+                if(!nums.length)return 0;
+                var offsetX=nums[0]||0;
+                var blur=nums.length>2?(nums[2]||0):0;
+                var spread=nums.length>3?(nums[3]||0):0;
+                return Math.max(0,Math.ceil(Math.max(0,offsetX)+(blur*0.5)+Math.max(0,spread)));
+            }catch(_e){}
+            return 0;
+        }
+        function syncAbsoluteColumnHeights(){
+            var absNodes=Array.from(document.querySelectorAll(".builder-el")).filter(function(node){
+                if(!node||!node.classList||!node.classList.contains("builder-el"))return false;
+                try{
+                    return String(window.getComputedStyle(node).position||"")==="absolute";
+                }catch(_e){}
+                return false;
+            });
+            var hostMetrics=new Map();
+            absNodes.forEach(function(node){
+                var host=node.offsetParent||node.parentElement;
+                if(!host)return;
+                var hostWidth=Math.max(
+                    host.clientWidth||0,
+                    host.getBoundingClientRect?Math.ceil(host.getBoundingClientRect().width||0):0,
+                    parseFloat(host.style.width||"0")||0
+                );
+                try{
+                    var nodeStyle=window.getComputedStyle(node);
+                    var currentLeft=parseFloat(nodeStyle.left||node.style.left||"0")||0;
+                    var primary=node.firstElementChild||node;
+                    var visualWidth=Math.max(
+                        node.offsetWidth||0,
+                        node.scrollWidth||0,
+                        primary&&primary.scrollWidth?primary.scrollWidth:0,
+                        primary&&primary.getBoundingClientRect?Math.ceil(primary.getBoundingClientRect().width||0):0
+                    );
+                    if(hostWidth>0){
+                        var maxLeft=Math.max(0,hostWidth-visualWidth);
+                        var clampedLeft=Math.min(Math.max(0,currentLeft),maxLeft);
+                        if(Math.abs(clampedLeft-currentLeft)>0.5){
+                            node.style.left=Math.round(clampedLeft)+"px";
+                        }
+                    }
+                    var mb=parseFloat(nodeStyle.marginBottom||"0")||0;
+                    var mr=parseFloat(nodeStyle.marginRight||"0")||0;
+                    var info=hostMetrics.get(host)||{maxBottom:0,maxRight:0};
                     var nodeBottom=(node.offsetTop||0)+Math.max(node.offsetHeight||0,node.scrollHeight||0)+mb+12;
                     var nodeRight=(node.offsetLeft||0)+Math.max(node.offsetWidth||0,node.scrollWidth||0)+mr+12;
-                    if(nodeBottom>maxBottom)maxBottom=nodeBottom;
-                    if(nodeRight>maxRight)maxRight=nodeRight;
-                });
-                if(maxBottom>0){
-                    var currentMinHeight=parseFloat(col.style.minHeight||"0")||0;
-                    if(maxBottom>currentMinHeight)col.style.minHeight=Math.ceil(maxBottom)+"px";
+                    if(nodeBottom>info.maxBottom)info.maxBottom=nodeBottom;
+                    if(nodeRight>info.maxRight)info.maxRight=nodeRight;
+                    hostMetrics.set(host,info);
+                }catch(_e){}
+            });
+            hostMetrics.forEach(function(info,host){
+                if(!host)return;
+                if(info.maxBottom>0){
+                    if(host.classList&&host.classList.contains("builder-col-inner")){
+                        var col=host.closest(".builder-col");
+                        if(col){
+                            var currentColMinHeight=parseFloat(col.style.minHeight||"0")||0;
+                            if(info.maxBottom>currentColMinHeight)col.style.minHeight=Math.ceil(info.maxBottom)+"px";
+                        }
+                    }else if(host.classList&&host.classList.contains("builder-section-inner")){
+                        var section=host.closest(".builder-section");
+                        if(section){
+                            var currentSectionMinHeight=parseFloat(section.style.minHeight||"0")||0;
+                            if(info.maxBottom>currentSectionMinHeight)section.style.minHeight=Math.ceil(info.maxBottom)+"px";
+                        }
+                    }
                 }
-                if(col.closest(".builder-section--freeform")&&maxRight>0){
-                    var currentWidth=parseFloat(col.style.width||"0")||0;
-                    if(currentWidth<=0)col.style.width=Math.ceil(maxRight)+"px";
+                if(info.maxRight>0){
+                    if(host.closest&&host.closest(".builder-section--freeform")){
+                        var freeformSection=host.closest(".builder-section--freeform");
+                        var currentSectionWidth=parseFloat(freeformSection.style.width||"0")||0;
+                        if(currentSectionWidth<=0)freeformSection.style.width=Math.ceil(info.maxRight)+"px";
+                    }
                 }
             });
         }
@@ -3704,6 +4468,21 @@
             });
             return Math.ceil(maxBottom);
         };
+        var measurePreviewContentWidth=function(content){
+            if(!content||!content.getBoundingClientRect)return 0;
+            var rootRect=content.getBoundingClientRect();
+            var maxRight=Math.max(content.scrollWidth||0,content.offsetWidth||0);
+            Array.from(content.querySelectorAll("*")||[]).forEach(function(node){
+                if(!node||!node.getBoundingClientRect)return;
+                var tag=String(node.tagName||"").toLowerCase();
+                if(tag==="script"||tag==="style")return;
+                var rect=node.getBoundingClientRect();
+                if((rect.width<=0&&rect.height<=0)||!isFinite(rect.right))return;
+                var right=rect.right-rootRect.left;
+                if(right>maxRight)maxRight=right;
+            });
+            return Math.ceil(maxRight);
+        };
         var useZoom=function(){
             try{
                 var test=document.createElement("div");
@@ -3712,7 +4491,7 @@
             }catch(_e){}
             return false;
         }();
-        function applyCanvasScalePublished(){
+       function applyCanvasScalePublished(){
             var content=document.querySelector(".step-content--full");
             if(!content)return;
             syncAbsoluteColumnHeights();
@@ -3721,40 +4500,54 @@
             document.body.style.flexDirection="";
             document.body.style.alignItems="";
             document.body.style.minHeight="";
+            content.style.zoom="";
             content.style.transform="none";
             content.style.height="auto";
             content.style.width=editorCanvasWidth+"px";
             content.style.maxWidth="none";
             content.style.boxSizing="border-box";
-            content.style.marginLeft="auto";
-            content.style.marginRight="auto";
+            content.style.marginLeft="0";
+            content.style.marginRight="0";
             content.style.display="block";
+            content.style.position="relative";
+            content.style.left="0";
             var targetPad=10;
+            content.style.padding=targetPad+"px";
             var viewportW=document.documentElement?document.documentElement.clientWidth:window.innerWidth;
+            var measuredW=measurePreviewContentWidth(content);
+            var baseCanvasWidth=Math.max(editorCanvasWidth||0,measuredW||0);
+            if(baseCanvasWidth>0){
+                content.style.width=baseCanvasWidth+"px";
+            }
             var availW=viewportW-(targetPad*2);
             if(availW<200)availW=viewportW;
-            var scale=availW/editorCanvasWidth;
+            var scale=availW/baseCanvasWidth;
             if(scale<=0)scale=1;
+            // Let desktop preview/test fill the available viewport again so
+            // edge-aligned builder layouts do not look artificially centered.
             if(scale>3.0)scale=3.0;
             content.style.padding=(targetPad/scale)+"px";
             if(useZoom){
-                content.style.zoom=String(scale);
-                content.style.transform="none";
-                content.style.height="auto";
-            }else{
-                content.style.zoom="";
-                var h=measurePreviewContentHeight(content);
-                content.style.transformOrigin="top left";
-                content.style.transform="scale("+scale+")";
-                content.style.height=(h*scale)+"px";
-            }
-            document.body.style.overflowX="hidden";
-        }
+        content.style.zoom=String(scale);
+        content.style.transform="none";
+        content.style.transformOrigin="top left";
+        content.style.height="auto";
+    }else{
+        content.style.zoom="";
+        var h=measurePreviewContentHeight(content);
+        content.style.transformOrigin="top left";
+        content.style.transform="scale("+scale+")";
+        content.style.height=(h*scale)+"px";
+    }
+    document.body.style.overflowX="hidden";
+    content.classList.add("is-scale-ready");
+}
         if(isPreview&&editorCanvasWidth>0){
             var applyCanvasScale=function(){
                 var content=document.querySelector(".step-content--full");
                 if(!content)return;
                 syncAbsoluteColumnHeights();
+                content.style.zoom="";
                 content.style.transform="none";
                 content.style.height="auto";
                 content.style.width=editorCanvasWidth+"px";
@@ -3762,15 +4555,25 @@
                 content.style.marginLeft="auto";
                 content.style.marginRight="auto";
                 content.style.display="block";
+                content.style.position="relative";
+                content.style.left="0";
                 var targetPad=10;
+                content.style.padding=targetPad+"px";
                 var viewportW=document.documentElement?document.documentElement.clientWidth:window.innerWidth;
                 var deviceW=previewDeviceWidths[previewDevice];
                 var baseW=(deviceW&&deviceW>0)?deviceW:viewportW;
+                var measuredW=measurePreviewContentWidth(content);
+                var baseCanvasWidth=Math.max(editorCanvasWidth||0,measuredW||0);
+                if(baseCanvasWidth>0){
+                    content.style.width=baseCanvasWidth+"px";
+                }
                 var availW=baseW-(targetPad*2);
                 if(availW<200)availW=viewportW-(targetPad*2);
                 if(availW<200)availW=viewportW;
-                var scale=availW/editorCanvasWidth;
+                var scale=availW/baseCanvasWidth;
                 if(scale<=0)scale=1;
+                // Let desktop preview/test fill the available viewport again so
+                // edge-aligned builder layouts do not look artificially centered.
                 if(scale>3.0)scale=3.0;
                 content.style.padding=(targetPad/scale)+"px";
                 // Using `zoom` makes the browser reflow based on scaled layout, which is
@@ -3788,6 +4591,7 @@
                     content.style.height=(h*scale)+"px";
                 }
                 document.body.style.overflowX="hidden";
+                content.classList.add("is-scale-ready");
             };
             var scheduleCanvasScale=function(){
                 window.requestAnimationFrame(function(){
@@ -3816,6 +4620,7 @@
                     });
                 });
             };
+            window.__fbSchedulePublishedScale=schedulePublishedScale;
             schedulePublishedScale();
             window.addEventListener("resize",function(){schedulePublishedScale();});
             window.addEventListener("load",function(){schedulePublishedScale();});
@@ -3832,8 +4637,3 @@
     </script>
 </body>
 </html>
-
-
-
-
-
