@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 @section('title', 'Funnel Builder')
 @section('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7,602 +7,7 @@
 @endsection
 
 @section('content')
-<style>
-.fb-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#240E35;color:#fff;padding:12px;border-radius:12px}
-.fb-actions{display:flex;gap:8px;flex-wrap:wrap}
-.fb-actions form{margin:0}
-.fb-actions .fb-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:42px;padding:0 14px;line-height:1;white-space:nowrap}
-.fb-btn{padding:8px 12px;border-radius:8px;border:1px solid #E6E1EF;background:#fff;color:#240E35;font-weight:700;text-decoration:none;cursor:pointer}
-.fb-btn.primary{background:#240E35;color:#fff;border-color:#2E1244}.fb-btn.success{background:#16a34a;color:#fff;border-color:#15803d}.fb-btn.danger{background:#dc2626;color:#fff;border-color:#b91c1c}
-#saveBtn.fb-btn{background:#16a34a;border-color:#15803d}
-#saveBtn.fb-btn:hover{background:#15803d;border-color:#15803d}
-.fb-grid{margin-top:12px;display:grid;grid-template-columns:260px 1fr;gap:12px;transition:grid-template-columns .2s ease}
-.fb-grid.components-hidden{grid-template-columns:0 1fr}
-.fb-grid > .fb-canvas-col{min-width:0;overflow-x:auto}
-.fb-grid.components-hidden .fb-components-col{overflow:visible;pointer-events:none}
-.fb-grid.components-hidden .fb-components-col .fb-panel-tab{pointer-events:auto}
-.fb-components-col{position:sticky;top:12px;align-self:start;min-width:0;overflow-x:visible}
-.fb-components-col .fb-panel-toggle{position:fixed;top:50%;transform:translateY(-50%);z-index:100;width:28px;height:28px;border-radius:50%;border:1px solid #E7D8F0;background:#fff;color:#240E35;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.fb-components-col .fb-panel-toggle:hover{background:#E7D8F0;color:#240E35}
-.fb-components-col .fb-panel-toggle--hide{left:288px;margin-left:-14px}
-.fb-components-col .fb-panel-tab{display:none;left:8px;width:28px;height:28px;border-radius:50%;padding:0}
-.fb-grid.components-hidden .fb-components-col .fb-left-tabs{display:none}
-.fb-grid.components-hidden .fb-components-col .fb-card{display:none}
-.fb-grid.components-hidden .fb-components-col .fb-panel-toggle--hide{display:none}
-.fb-grid.components-hidden .fb-components-col .fb-left-panel{display:none}
-.fb-grid.components-hidden .fb-components-col .fb-panel-tab{display:flex;align-items:center;justify-content:center;left:8px;top:50%;transform:translateY(-50%);position:fixed;z-index:100}
-.fb-left-tabs{display:flex;gap:2px;margin-bottom:8px}
-.fb-left-tabs .fb-tab{padding:8px 12px;border:1px solid #E7D8F0;background:#F3EEF7;color:#240E35;font-weight:700;font-size:12px;cursor:pointer;border-radius:8px;flex:1}
-.fb-left-tabs .fb-tab:hover{background:#E7D8F0}
-.fb-left-tabs .fb-tab.active{background:#240E35;color:#fff;border-color:#2E1244}
-.fb-left-panel{display:block}
-.fb-left-panel.hidden{display:none}
-.fb-card{background:#fff;border:1px solid #E7D8F0;border-radius:12px;padding:10px;min-width:0;max-width:100%;box-sizing:border-box}
-#fbLeftPanelComponents .fb-card{max-height:calc(100vh - 120px);overflow-y:auto;overflow-x:hidden}
-#fbLeftPanelComponents .fb-card::-webkit-scrollbar{width:8px}
-#fbLeftPanelComponents .fb-card::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
-#fbLeftPanelComponents .fb-card::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
-#fbLeftPanelComponents .fb-card::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-#fbLeftPanelTemplates .fb-card{max-height:calc(100vh - 120px);overflow-y:auto;overflow-x:hidden}
-#fbLeftPanelTemplates .fb-card::-webkit-scrollbar{width:8px}
-#fbLeftPanelTemplates .fb-card::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
-#fbLeftPanelTemplates .fb-card::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
-#fbLeftPanelTemplates .fb-card::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-.fb-grid > *{min-width:0}
-.fb-grid .fb-card{overflow-x:hidden}
-.fb-canvas-col > .fb-card{overflow-x:visible}
-#canvas{overflow-x:hidden;overflow-y:auto;box-sizing:border-box}
-#canvas .sec,#canvas .row,#canvas .col,#canvas .el,#canvas .sec-inner,#canvas .row-inner,#canvas .col-inner{max-width:100%;box-sizing:border-box}
-#canvas img,#canvas video,#canvas iframe{max-width:100%;height:auto}
-.fb-image-placeholder{width:100%;min-height:140px;border:2px solid #6ea0ff;border-radius:12px;background:linear-gradient(180deg,#ffffff,#fbfcff);display:block;position:relative;box-sizing:border-box;overflow:hidden}
-.fb-image-placeholder--compact{min-height:84px;border-width:1px;border-style:dashed;border-color:#b9c9ea;border-radius:10px;background:#fcfdff}
-.fb-image-placeholder__center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px}
-.fb-image-placeholder__plus{width:58px;height:58px;border-radius:999px;background:#d9d9d9;color:#5f6368;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:300;line-height:1;box-shadow:0 6px 18px rgba(15,23,42,.16);border:none}
-.fb-image-placeholder__center .fb-image-placeholder__plus{cursor:pointer}
-.fb-image-placeholder--compact .fb-image-placeholder__center{justify-content:flex-start;gap:12px;position:static;padding:18px;height:100%}
-.fb-image-placeholder--compact .fb-image-placeholder__plus{width:34px;height:34px;font-size:26px;box-shadow:none;background:#ffffff;border:1px solid #240E35;color:#240E35;cursor:default}
-.fb-image-placeholder__label{position:absolute;left:16px;right:16px;bottom:18px;text-align:center;font-size:14px;font-weight:600;color:#5f6368;letter-spacing:.01em;pointer-events:none}
-.fb-image-placeholder--compact .fb-image-placeholder__label{position:static;text-align:left;font-size:13px;color:#1f2937;font-weight:500}
-.fb-image-placeholder--actionable{cursor:pointer}
-.fb-image-placeholder__menu{position:fixed;left:0;top:0;transform:none;margin-top:0;display:flex;flex-direction:column;gap:10px;min-width:230px;padding:14px;border:2px solid #240E35;border-radius:16px;background:rgba(255,255,255,.98);box-shadow:0 22px 48px rgba(36,14,53,.26);z-index:2200;backdrop-filter:blur(8px)}
-.fb-image-placeholder__menu[hidden]{display:none}
-.fb-image-placeholder__menu::before{content:"Choose image";font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#6B4A7A}
-.fb-image-placeholder__menu button{width:100%;min-height:46px;border:2px solid #D8C8EA;border-radius:12px;background:#ffffff;color:#240E35;padding:12px 14px;text-align:left;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 6px 14px rgba(36,14,53,.08);transition:transform .12s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}
-.fb-image-placeholder__menu button:hover{background:#F8F5FB;border-color:#240E35;box-shadow:0 10px 22px rgba(36,14,53,.14);transform:translateY(-1px)}
-#fbSettingsCard{display:flex;flex-direction:column;max-height:calc(100vh - 120px);min-height:0}
-#fbSettingsCard .fb-h{flex-shrink:0}
-#fbSettingsCard #settings{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding-right:4px}
-#fbSettingsCard #settings::-webkit-scrollbar{width:8px}
-#fbSettingsCard #settings::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
-#fbSettingsCard #settings::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
-#fbSettingsCard #settings::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-#fbLeftPanelHistory .fb-card{display:flex;flex-direction:column;max-height:calc(100vh - 120px);min-height:0}
-#fbHistoryContainer{overflow-y:auto;overflow-x:hidden;flex:1;min-height:0;padding-right:4px}
-#fbHistoryContainer::-webkit-scrollbar{width:8px}
-#fbHistoryContainer::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
-#fbHistoryContainer::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
-#fbHistoryContainer::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-.fb-history-shell{display:flex;flex-direction:column;gap:10px;padding-bottom:6px}
-.fb-history-status{border-radius:12px;padding:12px}
-.fb-history-label{padding:2px 2px 0;font-size:11px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
-.fb-history-note{padding:0 2px 2px;color:#64748b;font-size:12px;line-height:1.45}
-.fb-history-accordion{display:flex;flex-direction:column;border-top:1px solid #EEE7F5}
-.fb-history-group{border-bottom:1px solid #EEE7F5}
-.fb-history-group-toggle{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 20px;align-items:center;gap:10px;padding:12px 2px;border:none;background:transparent;cursor:pointer;text-align:left}
-.fb-history-group-main{min-width:0;display:flex;flex-direction:column;gap:2px}
-.fb-history-group-title{font-size:14px;font-weight:800;color:#240E35;line-height:1.2}
-.fb-history-group-meta{font-size:12px;color:#6B7280;line-height:1.25}
-.fb-history-group-arrow{width:20px;height:20px;display:flex;align-items:center;justify-content:center;color:#6B4A7A;font-size:13px}
-.fb-history-group-panel{padding:0 0 8px}
-.fb-history-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 0 10px 12px;margin-left:6px;border-left:2px solid #EEE7F5}
-.fb-history-entry + .fb-history-entry{border-top:1px solid #F6F1FA}
-.fb-history-entry.is-open{border-left-color:#10B981;background:linear-gradient(90deg,rgba(16,185,129,.08),rgba(255,255,255,0));border-radius:0 12px 12px 0}
-.fb-history-entry-text{min-width:0;display:flex;flex-direction:column;gap:4px}
-.fb-history-entry-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
-.fb-history-entry-title{font-size:14px;font-weight:800;color:#240E35;line-height:1.2}
-.fb-history-entry-meta{font-size:12px;color:#64748b;line-height:1.25}
-.fb-history-tag{display:inline-flex;align-items:center;justify-content:center;padding:2px 7px;border-radius:999px;background:#ECFDF5;color:#047857;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
-.fb-history-action{min-height:32px;padding:7px 12px;border:none;border-radius:999px;background:#240E35;color:#fff;white-space:nowrap;box-shadow:none;font-size:12px}
-.fb-history-pill{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:#F3EEF7;color:#240E35;font-size:11px;font-weight:800;white-space:nowrap;border:1px solid #E6E1EF}
-.fb-h{font-size:16px;font-weight:900;color:#240E35;margin:2px 0 10px}
-.fb-lib button{display:block;width:100%;text-align:left;margin-bottom:7px;padding:9px;border:1px solid #E7D8F0;border-radius:8px;background:#F3EEF7;font-weight:700;cursor:grab}
-.fb-lib button.fb-template-btn{cursor:pointer;background:#ffffff;border-style:dashed}
-.fb-lib button.fb-template-btn:hover{background:#F8F5FB}
-.fb-lib i{width:18px;margin-right:6px;color:#2E1244}
-.fb-comp-drag-ghost{width:240px;padding:12px;border:1px solid #E7D8F0;border-radius:14px;background:linear-gradient(180deg,#ffffff,#FBF8FE);box-shadow:0 18px 38px rgba(36,14,53,.18);display:flex;flex-direction:column;gap:10px;position:fixed;top:-1000px;left:-1000px;pointer-events:none;z-index:2000}
-.fb-comp-drag-ghost__head{display:flex;align-items:flex-start;gap:10px}
-.fb-comp-drag-ghost__icon{width:34px;height:34px;border-radius:10px;background:#F3EEF7;border:1px solid #E7D8F0;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
-.fb-comp-drag-ghost__icon i{width:auto;margin-right:0;font-size:14px;color:#240E35}
-.fb-comp-drag-ghost__copy{min-width:0;display:grid;gap:3px}
-.fb-comp-drag-ghost__label{display:block;font-size:14px;line-height:1.15;font-weight:800;color:#240E35}
-.fb-comp-drag-ghost__desc{display:block;font-size:11px;line-height:1.35;color:#6B7280;font-weight:600}
-.fb-comp-drag-ghost__preview{display:block;padding:10px;border-radius:12px;border:1px solid #ECE4F3;background:linear-gradient(180deg,#ffffff,#FAF7FD);overflow:hidden}
-.fb-comp-preview-stack{display:grid;gap:5px}
-.fb-comp-preview-line{display:block;height:6px;border-radius:999px;background:#DACDEA}
-.fb-comp-preview-line.is-dark{background:#240E35}
-.fb-comp-preview-line.sm{width:42%}
-.fb-comp-preview-line.md{width:62%}
-.fb-comp-preview-line.lg{width:80%}
-.fb-comp-preview-line.full{width:100%}
-.fb-comp-preview-pill{display:inline-flex;align-items:center;justify-content:center;height:14px;padding:0 8px;border-radius:999px;background:#E9DCF4;color:#5B2A79;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-.fb-comp-preview-btn{display:inline-flex;align-items:center;justify-content:center;height:16px;padding:0 12px;border-radius:999px;background:#240E35;color:#fff;font-size:9px;font-weight:800;white-space:nowrap;align-self:flex-start}
-.fb-comp-preview-frame{height:42px;border:1px dashed #D8C8E9;border-radius:10px;background:linear-gradient(180deg,#fff,#F8F5FB);padding:6px;display:flex;align-items:center;justify-content:center}
-.fb-comp-preview-shell{width:100%;height:100%;border-radius:8px;border:1px dashed #D8C8E9;background:rgba(243,238,247,.85)}
-.fb-comp-preview-grid{display:grid;gap:6px;height:42px}
-.fb-comp-preview-grid--two{grid-template-columns:repeat(2,minmax(0,1fr))}
-.fb-comp-preview-grid--three{grid-template-columns:repeat(3,minmax(0,1fr))}
-.fb-comp-preview-cell{border-radius:8px;border:1px solid #E7D8F0;background:#F3EEF7}
-.fb-comp-preview-spacer{height:42px;border-radius:10px;border:1px dashed #D8C8E9;background:linear-gradient(180deg,#fff,#F8F5FB);position:relative}
-.fb-comp-preview-spacer::before,.fb-comp-preview-spacer::after{content:"";position:absolute;top:8px;bottom:8px;width:1px;background:#B99FD2}
-.fb-comp-preview-spacer::before{left:28%}
-.fb-comp-preview-spacer::after{right:28%}
-.fb-comp-preview-spacer-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:3px 8px;border-radius:999px;background:#EFE7F7;color:#6B4A7A;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
-.fb-comp-preview-button-wrap{height:42px;border-radius:10px;border:1px solid #ECE4F3;background:linear-gradient(180deg,#fff,#FAF7FD);display:flex;align-items:center;justify-content:center}
-.fb-comp-preview-icon-wrap{height:42px;border-radius:10px;border:1px solid #ECE4F3;background:linear-gradient(180deg,#fff,#FAF7FD);display:flex;align-items:center;gap:8px;padding:0 10px}
-.fb-comp-preview-icon-chip{width:22px;height:22px;border-radius:999px;background:#F3EEF7;border:1px solid #E7D8F0;display:flex;align-items:center;justify-content:center;color:#240E35;font-size:11px}
-.fb-comp-preview-nav{display:flex;gap:6px;align-items:center;flex-wrap:nowrap}
-.fb-comp-preview-nav-item{height:14px;border-radius:999px;background:#F3EEF7;border:1px solid #E7D8F0}
-.fb-comp-preview-nav-item.is-wide{width:48px}
-.fb-comp-preview-nav-item.is-mid{width:34px}
-.fb-comp-preview-nav-item.is-cta{width:44px;background:#240E35;border-color:#240E35}
-.fb-comp-preview-media{height:42px;border-radius:10px;border:1px solid #E7D8F0;background:linear-gradient(135deg,#F9F6FC,#E8DDF3);position:relative;overflow:hidden}
-.fb-comp-preview-media-sun{position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:999px;background:#fff;opacity:.95}
-.fb-comp-preview-media-ridge{position:absolute;left:7px;right:7px;bottom:7px;height:15px;background:linear-gradient(180deg,#D6C4E7,#C4ACDD);clip-path:polygon(0 100%,22% 35%,40% 68%,64% 16%,100% 100%)}
-.fb-comp-preview-media-play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:999px;background:rgba(36,14,53,.86);display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;box-shadow:0 4px 10px rgba(36,14,53,.18)}
-.fb-comp-preview-carousel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;align-items:end}
-.fb-comp-preview-slide{height:28px;border-radius:8px;border:1px solid #E7D8F0;background:#F3EEF7}
-.fb-comp-preview-slide.is-tall{height:38px;background:linear-gradient(135deg,#F8F4FC,#E8DDF3)}
-.fb-comp-preview-form{display:grid;gap:5px}
-.fb-comp-preview-input{height:8px;border-radius:999px;background:#EFE7F7;border:1px solid #E7D8F0}
-.fb-comp-preview-card{display:grid;gap:6px;padding:8px;border-radius:12px;background:#fff;border:1px solid #E6E1EF;box-shadow:0 6px 14px rgba(36,14,53,.06)}
-.fb-comp-preview-card--pricing{gap:5px}
-.fb-comp-preview-price-row{display:flex;align-items:flex-end;gap:4px}
-.fb-comp-preview-price{font-size:18px;line-height:1;font-weight:900;color:#16A34A}
-.fb-comp-preview-period{font-size:9px;line-height:1.2;color:#64748B;font-weight:700}
-.fb-comp-preview-avatar-row{display:flex;align-items:center;gap:8px}
-.fb-comp-preview-avatar{width:20px;height:20px;border-radius:999px;background:#E7D8F0;border:1px solid #D8C8E9}
-.fb-comp-preview-faq-item{display:flex;align-items:center;gap:7px}
-.fb-comp-preview-faq-badge{width:16px;height:16px;border-radius:999px;background:#F3EEF7;border:1px solid #E7D8F0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#240E35}
-.fb-comp-preview-timer{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.fb-comp-preview-timer-box{height:34px;border-radius:8px;background:#F3EEF7;border:1px solid #E7D8F0;display:grid;place-items:center}
-.fb-comp-preview-timer-num{font-size:11px;font-weight:900;color:#240E35;line-height:1}
-.fb-comp-preview-timer-unit{font-size:8px;font-weight:800;color:#64748B;line-height:1;text-transform:uppercase}
-.fb-lib-group{margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #E6E1EF}
-.fb-lib-group:last-child{margin-bottom:0;padding-bottom:0;border-bottom:0}
-.fb-lib-group-title{font-size:12px;font-weight:900;letter-spacing:.02em;text-transform:uppercase;color:#2E1244;margin:0 0 8px}
-.fb-template-grid{display:grid;grid-template-columns:1fr;gap:12px}
-.fb-template-card{border:1px solid #E6E1EF;border-radius:14px;background:#fff;padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 10px 20px rgba(36,14,53,.06);transition:transform .16s ease,box-shadow .2s ease,border-color .2s ease}
-.fb-template-card:hover{transform:translateY(-1px);border-color:#D8C8EA;box-shadow:0 16px 28px rgba(36,14,53,.10)}
-.fb-template-status{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
-.fb-template-pill{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:#F3EEF7;color:#240E35;font-size:11px;font-weight:800;white-space:nowrap;border:1px solid #E6E1EF}
-.fb-template-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px}
-.fb-template-mode-btn{min-height:38px;border:1px solid #E6E1EF;border-radius:12px;background:#ffffff;color:#6B4A7A;font-size:12px;font-weight:800;letter-spacing:.01em;cursor:pointer;transition:background .18s ease,color .18s ease,border-color .18s ease,box-shadow .18s ease}
-.fb-template-mode-btn.active{background:#240E35;color:#ffffff;border-color:#240E35;box-shadow:0 10px 20px rgba(36,14,53,.18)}
-.fb-template-mode-btn:not(.active):hover{background:#F8F5FB;border-color:#D8C8EA}
-.fb-template-current{margin:0 0 12px;font-size:12px;color:#64748b;line-height:1.45}
-.fb-template-pane.hidden{display:none}
-.fb-template-preview{height:92px;border-radius:10px;border:1px dashed #E6E1EF;background:linear-gradient(135deg,#F8F5FB,#F3EEF7);position:relative;overflow:hidden}
-.fb-template-title{font-size:13px;font-weight:800;color:#240E35;margin:0}
-.fb-template-desc{font-size:12px;color:#64748b;line-height:1.4;margin:0}
-.fb-template-actions{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
-.fb-template-tags{display:flex;flex-wrap:wrap;gap:6px}
-.fb-template-tag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:800;color:#6B4A7A;background:#F3EEF7;border:1px solid #E6E1EF;border-radius:999px;padding:2px 6px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-.fb-template-preview .tp-line{height:6px;background:#E6E1EF;border-radius:999px;margin:6px 8px}
-.fb-template-preview .tp-line-lg{height:10px;width:70%;background:#D6C6E2}
-.fb-template-preview .tp-line-md{width:88%}
-.fb-template-preview .tp-line-sm{width:56%}
-.fb-template-preview .tp-btn{height:10px;width:38%;background:#240E35;border-radius:999px;margin:8px 8px}
-.fb-template-preview .tp-img{position:absolute;right:8px;top:10px;width:40%;height:72%;border-radius:10px;background:linear-gradient(135deg,#E7D8F0,#F8F5FB);border:1px solid #E6E1EF}
-.fb-template-preview .tp-form{margin:6px 8px;border-radius:8px;background:#ffffff;border:1px solid #E6E1EF;height:48px}
-.fb-template-preview .tp-card{margin:8px;border-radius:10px;background:#ffffff;border:1px solid #E6E1EF;height:62px;box-shadow:0 6px 16px rgba(36,14,53,.08)}
-#canvas{
-    width:100%;
-    max-width:1400px;
-    margin:0 auto;
-    height:calc(100vh - 220px);
-    min-height:520px;
-    max-height:calc(100vh - 220px);
-    border:1px solid #E6E1EF;
-    border-radius:12px;
-    padding:10px;
-    background:#ffffff;
-    box-shadow:0 14px 36px rgba(15,23,42,.08);
-    position:relative;
-    overflow-x:hidden;
-    overflow-y:auto
-}
-.sec{border:1px dashed #64748b !important;border-radius:0;padding:8px;margin-bottom:9px;background:#fff}
-.sec.sec--bare-carousel{border:0;background:transparent;padding:0}
-.sec.sec--bare-wrap{border:0;background:transparent;padding:0}
-.sec.sec--freeform-canvas{border:0 !important;background:transparent !important;padding:0;margin:0;position:relative}
-.row{display:flex;flex-wrap:wrap;gap:8px;border:1px dashed #E6E1EF !important;border-radius:0 !important;padding:6px}
-.row.row--bare-wrap{border:0;background:transparent;padding:0}
-.row-inner{display:flex;flex-wrap:wrap;gap:8px;position:relative}
-.col{flex:1 1 0;min-height:120px;min-width:0;border:1px dashed #E6E1EF !important;border-radius:0;padding:6px;background:#ffffff;position:relative;overflow:visible}
-.row-resize-handle-y{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);z-index:4;width:42px;height:10px;border-radius:999px;border:1px solid #E7D8F0;background:#E7D8F0;cursor:ns-resize;opacity:.9}
-.section-resize-handle-y{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);z-index:4;width:46px;height:10px;border-radius:999px;border:1px solid #E7D8F0;background:#E7D8F0;cursor:ns-resize;opacity:.95}
-.media-resize-dot{position:absolute;z-index:5;width:18px;height:18px;border-radius:999px;border:2px solid #ffffff;background:#6B4A7A;box-shadow:0 1px 2px rgba(15,23,42,.24)}
-.media-resize-dot-left{left:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.media-resize-dot-right{right:-9px;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.media-resize-dot-bl{left:-9px;bottom:-9px;cursor:nesw-resize}
-.media-resize-dot-b{left:50%;bottom:-9px;transform:translateX(-50%);cursor:ns-resize}
-.media-resize-dot-br{right:-9px;bottom:-9px;cursor:nwse-resize}
-.carousel-resize-dot{position:absolute;z-index:50;width:22px;height:22px;border-radius:999px;border:2px solid #ffffff;background:#240E35;box-shadow:0 2px 6px rgba(15,23,42,.28);pointer-events:auto}
-.carousel-resize-dot-left{left:6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.carousel-resize-dot-right{right:6px;top:50%;transform:translateY(-50%);cursor:ew-resize}
-.carousel-resize-dot-bl{left:6px;bottom:6px;cursor:nesw-resize}
-.carousel-resize-dot-b{left:50%;bottom:6px;transform:translateX(-50%);cursor:ns-resize}
-.carousel-resize-dot-br{right:6px;bottom:6px;cursor:nwse-resize}
-.el{border:0 !important;border-style:none !important;border-width:0 !important;border-radius:0 !important;padding:0;background:transparent;margin-bottom:0;min-width:0;overflow-wrap:break-word;word-break:break-word;cursor:move;position:absolute;box-sizing:border-box;pointer-events:none}
-.el>*{pointer-events:auto}
-.el--editing [contenteditable='true']{cursor:text!important}
-.el input,.el textarea,.el select{cursor:auto}
-.el:hover:not(.sel):not(.el--dragging){outline:1px solid #E7D8F0;outline-offset:0}
-.el.sel{outline:2px solid #240E35;outline-offset:0;pointer-events:auto;background:rgba(255,255,255,0.02)}
-.el.el--abs{margin-bottom:0 !important}
-.el.el--dragging{opacity:.85;z-index:9999 !important;box-shadow:0 8px 32px rgba(37,99,235,.18);pointer-events:none}
-.el-rh{position:absolute;pointer-events:auto;z-index:100;box-sizing:border-box;display:none}
-.el.sel .el-rh{display:block}
-.el-rh-corner{width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #240E35;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.el-rh-side{background:#fff;border:2px solid #240E35;border-radius:3px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.el-rh-nw{left:-5px;top:-5px;cursor:nwse-resize}
-.el-rh-ne{right:-5px;top:-5px;cursor:nesw-resize}
-.el-rh-sw{left:-5px;bottom:-5px;cursor:nesw-resize}
-.el-rh-se{right:-5px;bottom:-5px;cursor:nwse-resize}
-.el-rh-n{left:50%;top:-4px;transform:translateX(-50%);width:20px;height:8px;cursor:ns-resize}
-.el-rh-s{left:50%;bottom:-4px;transform:translateX(-50%);width:20px;height:8px;cursor:ns-resize}
-.el-rh-w{left:-4px;top:50%;transform:translateY(-50%);width:8px;height:20px;cursor:ew-resize}
-.el-rh-e{right:-4px;top:50%;transform:translateY(-50%);width:8px;height:20px;cursor:ew-resize}
-.fb-snap-guide{position:absolute;pointer-events:none;z-index:90;display:none}
-.fb-snap-guide-v{top:0;bottom:0;width:1px;background:#6B4A7A;box-shadow:0 0 0 1px rgba(168,85,247,.18)}
-.fb-snap-guide-h{left:0;right:0;height:1px;background:#6B4A7A;box-shadow:0 0 0 1px rgba(168,85,247,.18)}
-.fb-snap-label{position:absolute;background:#6B4A7A;color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px;white-space:nowrap;pointer-events:none;z-index:91}
-.el.el--carousel{border:0 !important;background:transparent !important;padding:0 !important}
-.el.el--form{border:0 !important;background:transparent !important;padding:0 !important}
-#canvas .el.el--menu ul{flex-wrap:nowrap !important;white-space:nowrap}
-#canvas.canvas-outline-mode .sec,#canvas.canvas-outline-mode .row,#canvas.canvas-outline-mode .col,#canvas.canvas-outline-mode .el{position:relative;border:1px dashed #E7D8F0 !important;border-radius:0;box-shadow:none !important}
-#canvas.canvas-outline-mode .sec.sec--bare-wrap,#canvas.canvas-outline-mode .sec.sec--bare-carousel{border:0 !important;background:transparent !important;padding:0 !important;margin-bottom:0 !important}
-#canvas.canvas-outline-mode .sec.sec--freeform-canvas{border:0 !important;background:transparent !important;padding:0 !important;margin:0 !important}
-#canvas.canvas-outline-mode .sec{padding:5px !important;margin-bottom:6px}
-#canvas.canvas-outline-mode .row{padding:4px !important}
-#canvas.canvas-outline-mode .col{padding:4px !important;min-height:72px;overflow:visible !important}
-#canvas.canvas-outline-mode .col-inner{overflow:visible !important}
-#canvas.canvas-outline-mode .el{padding:2px !important;margin-bottom:3px;min-height:26px;overflow:visible !important}
-#canvas.canvas-outline-mode .sec::before,#canvas.canvas-outline-mode .row::before,#canvas.canvas-outline-mode .col::before,#canvas.canvas-outline-mode .el::before{content:attr(data-outline-label);position:absolute;left:7px;top:0;transform:translateY(-100%);display:none;background:#E7D8F0;color:#2E1244;border:1px solid #E7D8F0;border-bottom:0;font-size:10px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;line-height:1;padding:3px 6px;white-space:nowrap;pointer-events:none;z-index:6}
-#canvas.canvas-outline-mode .sec.sec--bare-wrap::before,#canvas.canvas-outline-mode .sec.sec--bare-carousel::before{display:none !important;content:""}
-#canvas.canvas-outline-mode .sec.fb-outline-target,#canvas.canvas-outline-mode .row.fb-outline-target,#canvas.canvas-outline-mode .col.fb-outline-target,#canvas.canvas-outline-mode .el.fb-outline-target{border-color:#9E7BB5 !important;border-width:2px !important}
-#canvas.canvas-outline-mode .sec.fb-outline-target::before,#canvas.canvas-outline-mode .row.fb-outline-target::before,#canvas.canvas-outline-mode .col.fb-outline-target::before,#canvas.canvas-outline-mode .el.fb-outline-target::before{display:inline-flex;align-items:center}
-#canvas.canvas-outline-mode .sec.sel,#canvas.canvas-outline-mode .row.sel,#canvas.canvas-outline-mode .col.sel,#canvas.canvas-outline-mode .el.sel{border-color:#9E7BB5 !important;border-width:2px !important;outline:none !important}
-#canvas.canvas-outline-mode:not(.fb-outline-has-target) .sec.sel::before,#canvas.canvas-outline-mode:not(.fb-outline-has-target) .row.sel::before,#canvas.canvas-outline-mode:not(.fb-outline-has-target) .col.sel::before,#canvas.canvas-outline-mode:not(.fb-outline-has-target) .el.sel::before{display:inline-flex;align-items:center}
-.el h2,.el p,.el button{overflow-wrap:break-word;word-break:break-word;min-width:0;max-width:100%}
-@keyframes el-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-.el-loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(248,250,252,0.85);z-index:10;border-radius:inherit;pointer-events:none}
-.el-loading-spinner{width:28px;height:28px;border:3px solid #E6E1EF;border-top-color:#240E35;border-radius:50%;animation:el-spin .7s linear infinite}
-#canvas .el.el--button:not(.el--abs){width:100%;box-sizing:border-box}
-#canvas .el.el--button>button{display:inline-flex;width:auto;align-items:center;justify-content:center}
-#canvas .el.el--button-fill:not(.el--abs){display:flex;width:100%;box-sizing:border-box}
-#canvas .el.el--button-fill>button{display:flex;width:100%;align-items:center;justify-content:center;box-sizing:border-box}
-.sec.sel,.row.sel,.col.sel{outline:2px solid #240E35;outline-offset:2px}
-.settings label{font-size:12px;font-weight:800;color:#2E1244;display:block;margin:0 0 4px}
-.settings input,.settings select,.settings textarea{width:100%;padding:8px;border:1px solid #E6E1EF;border-radius:8px;margin-bottom:8px}
-.settings input[type="checkbox"]{width:auto;padding:0;margin:0;border:1px solid #E6E1EF;border-radius:4px}
-.settings label.inline-check{display:flex;align-items:center;gap:8px;font-weight:700;color:#240E35;margin:0 0 10px}
-.settings .meta{font-size:12px;color:#475569;font-weight:700;margin-bottom:8px}
-.fb-link-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.fb-link-row select{flex:1;min-width:0;margin-bottom:0}
-.fb-link-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
-.fb-link-actions{display:flex;gap:8px;margin-bottom:8px}
-.fb-link-banner{position:sticky;top:8px;z-index:120;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#240E35;color:#fff;border-radius:999px;padding:8px 12px;margin:6px auto 10px;max-width:360px;font-size:12px;font-weight:700;box-shadow:0 10px 24px rgba(36,14,53,.25)}
-.fb-link-banner button{background:#fff;color:#240E35;border:0;border-radius:999px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer}
-.fb-link-layer{position:absolute;left:0;top:0;pointer-events:none;z-index:70;overflow:visible}
-#canvas.fb-link-pick .el[data-el-type="pricing"]{outline:2px dashed #9E7BB5;outline-offset:2px}
-.el.el--link-target:not(.sel){outline:2px solid #240E35;outline-offset:1px;box-shadow:0 0 0 2px rgba(36,14,53,.15)}
-.el.el--link-source:not(.sel){outline:2px dashed #240E35;outline-offset:1px}
-.settings-delete-wrap{margin-top:14px;padding-top:12px;border-top:1px solid #E6E1EF}
-.settings-delete-wrap .fb-btn{width:100%;justify-content:center;gap:6px}
-.px-wrap{display:flex;align-items:center;gap:6px;margin-bottom:8px}
-.px-wrap input[type="number"]{margin-bottom:0}
-.px-unit{font-size:12px;font-weight:800;color:#334155;min-width:18px}
-.size-position{margin-bottom:12px}
-.size-position .size-label{font-size:12px;font-weight:800;color:#2E1244;display:block;margin:0 0 6px}
-.size-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-bottom:8px;align-items:center}
-.size-grid .fld{display:flex;align-items:center;gap:4px}
-.size-grid .fld label{font-size:11px;color:#64748b;min-width:18px}
-.size-grid .fld input{width:100%;padding:6px 8px;border:1px solid #E6E1EF;border-radius:6px}
-.size-link{grid-column:1/-1;display:flex;align-items:center;gap:6px;margin-top:2px}
-.size-link button{width:34px;height:34px;padding:0;border:1px solid #E6E1EF;border-radius:8px;background:#F3EEF7;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#64748b}
-.size-link button.linked{background:#e0e7ff;border-color:#6366f1}
-.size-link button:hover{background:#E6E1EF}
-.size-link span{font-size:12px;color:#64748b}
-.row-border-card{border:1px solid #E6E1EF;border-radius:10px;padding:10px;margin:10px 0;background:#fff}
-.row-border-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.row-border-head strong{font-size:13px;color:#240E35}
-.row-border-head button{border:1px solid #E6E1EF;background:#F3EEF7;border-radius:8px;padding:4px 8px;font-size:12px;color:#475569;cursor:pointer}
-.row-radius-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.row-radius-field{display:flex;align-items:center;gap:6px}
-.row-radius-field span{font-size:11px;color:#64748b;min-width:16px}
-.row-radius-field input{margin-bottom:0}
-.img-radius-panel{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.img-radius-link{width:34px;height:34px;border:1px solid #E6E1EF;border-radius:8px;background:#F3EEF7;color:#64748b;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.img-radius-link.linked{border-color:#6B4A7A;background:#E7D8F0;color:#2E1244}
-.img-radius-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;flex:1}
-.img-radius-row input{margin-bottom:0;text-align:center}
-.col-layout-wrap{border:1px solid #E6E1EF;border-radius:10px;padding:10px;margin:10px 0;background:#fff}
-.col-layout-title{font-size:13px;font-weight:800;color:#240E35;margin:0 0 8px}
-.col-layout-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.col-layout-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border:1px solid #E6E1EF;border-radius:10px;background:#F3EEF7;color:#334155;font-weight:700;cursor:pointer}
-.col-layout-btn i{font-size:13px;color:#64748b}
-.col-layout-btn.active{border-color:#6B4A7A;background:#E7D8F0;color:#2E1244}
-.col-layout-btn:hover{background:#F3EEF7}
-.menu-panel-title{font-size:16px;font-weight:900;color:#240E35;margin:2px 0 10px}
-.menu-section-title{font-size:13px;font-weight:900;color:#240E35;margin:8px 0}
-.menu-item-card{border:1px solid #E6E1EF;border-radius:10px;padding:10px;background:#fff;margin-bottom:10px}
-.menu-item-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.menu-item-head strong{font-size:13px;color:#240E35}
-.menu-item-actions{display:flex;align-items:center;gap:6px}
-.menu-item-actions button{border:1px solid #E6E1EF;background:#F3EEF7;border-radius:8px;padding:4px 8px;color:#64748b;cursor:pointer}
-.menu-item-actions .menu-del{color:#ef4444}
-.menu-item-card label{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-weight:700}
-.menu-item-card label input[type="checkbox"]{width:auto;margin:0}
-.menu-split{height:1px;background:#E6E1EF;margin:12px 0}
-.menu-typo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.menu-align-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
-.menu-align-btn{border:1px solid #E6E1EF;background:#F3EEF7;border-radius:8px;padding:7px 8px;color:#64748b;cursor:pointer}
-.menu-align-btn.active{border-color:#6B4A7A;background:#E7D8F0;color:#2E1244}
-.menu-style-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
-.menu-slider-row{display:grid;grid-template-columns:1fr 96px;gap:8px;align-items:center;margin-bottom:8px}
-.menu-slider-row input{margin-bottom:0}
-#canvas .fb-form-input::placeholder{color:var(--fb-ph-color,#94a3b8);opacity:1}
-.carousel-slide-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.carousel-slide-btn{flex:1;border:1px solid #E6E1EF;background:#F3EEF7;border-radius:8px;padding:8px 10px;text-align:left;font-weight:700;color:#334155;cursor:pointer}
-.carousel-slide-btn.active{background:#6B4A7A;border-color:#0284c7;color:#fff}
-.carousel-icon-btn{width:34px;height:34px;border:1px solid #E6E1EF;border-radius:8px;background:#fff;color:#64748b;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.carousel-icon-btn.active{border-color:#6B4A7A;background:#E7D8F0;color:#2E1244}
-.carousel-icon-btn.danger{color:#ef4444}
-.carousel-comp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px}
-.carousel-comp-btn{border:1px solid #E6E1EF;background:#F3EEF7;border-radius:8px;padding:8px 10px;color:#334155;font-weight:700;cursor:pointer}
-.carousel-comp-btn:hover{background:#F3EEF7}
-.carousel-comp-btn[draggable="true"]{cursor:grab}
-.carousel-group-title{font-size:11px;font-weight:900;color:#475569;letter-spacing:.02em;text-transform:uppercase;margin:6px 0}
-.fb-testimonial{display:grid;gap:10px}
-.fb-testimonial-quote{font-style:italic;color:#334155;line-height:1.5}
-.fb-testimonial-author{display:flex;align-items:center;gap:10px}
-.fb-testimonial-avatar{width:40px;height:40px;border-radius:999px;object-fit:cover;background:#E6E1EF;flex-shrink:0}
-.fb-testimonial-name{font-weight:800;color:#240E35}
-.fb-testimonial-role{font-size:12px;color:#64748b}
-.fb-faq{display:grid;gap:10px}
-.fb-faq-item{border-bottom:1px solid #E6E1EF;padding-bottom:8px}
-.fb-faq-item:last-child{border-bottom:0;padding-bottom:0}
-.fb-faq-q{font-weight:800;color:#240E35}
-.fb-faq-a{color:#475569;font-size:13px;margin-top:4px;white-space:pre-wrap}
-.fb-pricing{display:grid;gap:10px}
-.fb-product-offer{display:grid;gap:4px}
-.fb-product-offer .fb-pricing-badge{padding:2px 6px;font-size:9px}
-.fb-product-offer .fb-pricing-title{font-size:13px;line-height:1.25}
-.fb-product-offer .fb-pricing-price{font-size:20px;line-height:1}
-.fb-product-offer .fb-pricing-period{font-size:10px}
-.fb-product-offer .fb-pricing-subtitle{font-size:10px;line-height:1.3}
-.fb-product-offer .fb-pricing-features{gap:4px}
-.fb-product-offer .fb-pricing-features li{font-size:10px;gap:4px}
-.fb-product-offer .fb-product-actions{display:grid;gap:6px}
-.fb-product-offer .fb-product-utility{display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:6px}
-.fb-product-offer .fb-pricing-cta{width:100%;padding:7px 8px;font-size:11px}
-.fb-product-offer .fb-product-secondary{width:100%;padding:6px 8px;font-size:10px;border-radius:999px;border:1px solid #d7cdea;background:#fff;color:#240E35;font-weight:700;text-align:center}
-.fb-product-offer .fb-product-cart{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;border:1px solid #d7cdea;background:#fff;color:#240E35;font-size:12px;font-weight:700}
-.fb-product-media{position:relative;border:1px solid #E6E1EF;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#ffffff,#F8FAFC);min-height:88px}
-.fb-product-media-stage{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;min-height:88px;background:#fff}
-.fb-product-media-stage img,.fb-product-media-stage video{width:100%;height:100%;display:block;object-fit:cover;background:#fff}
-.fb-product-media-placeholder{width:100%;height:100%;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#64748b;text-align:center;padding:8px;font-size:10px;cursor:pointer}
-.fb-product-media-placeholder i{font-size:16px}
-.fb-product-media-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:1px solid rgba(255,255,255,.72);border-radius:999px;background:rgba(15,23,42,.6);color:#fff;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
-.fb-product-media-nav.is-left{left:10px}
-.fb-product-media-nav.is-right{right:10px}
-.fb-product-media-nav[disabled]{opacity:.45;cursor:default}
-.fb-product-media:hover .fb-product-media-nav,.fb-product-media:focus-within .fb-product-media-nav{opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1)}
-@media (hover:hover) and (pointer:fine){
-  .fb-product-media .fb-product-media-nav{opacity:0;pointer-events:none;transform:translateY(-50%) scale(.92);transition:opacity .18s ease,transform .18s ease}
-}
-.fb-product-media-dots{display:flex;align-items:center;justify-content:center;gap:6px}
-.fb-product-media-dot{width:8px;height:8px;border-radius:999px;background:#CBD5E1}
-.fb-product-media-dot.is-active{width:22px;background:#240E35}
-.fb-pricing-badge{align-self:flex-start;background:#E7D8F0;color:#2E1244;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
-.fb-pricing-title{font-size:18px;font-weight:900;color:#240E35}
-.fb-pricing-price{font-size:30px;font-weight:900;color:#16a34a}
-.fb-pricing-period{font-size:12px;color:#64748b;margin-left:4px}
-.fb-pricing-subtitle{font-size:12px;color:#64748b}
-.fb-pricing-features{list-style:none;padding:0;margin:0;display:grid;gap:6px}
-.fb-pricing-features li{display:flex;align-items:flex-start;gap:6px;font-size:12px;color:#334155}
-.fb-pricing-cta{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:8px;font-weight:700;text-decoration:none;border:0;cursor:pointer}
-.fb-physical-checkout{display:grid;gap:12px;padding:16px}
-.fb-physical-checkout .fb-pricing-badge{background:#eaf2ff;color:#1d4ed8}
-.fb-physical-checkout-head{display:grid;gap:4px}
-.fb-physical-checkout-label{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b}
-.fb-physical-checkout-product{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center;padding:12px;border:1px solid #e6eaf2;border-radius:16px;background:linear-gradient(180deg,#ffffff,#faf8fd)}
-.fb-physical-checkout-thumb{width:64px;height:64px;border-radius:16px;border:1px solid #dbe3f0;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.fb-physical-checkout-thumb i{font-size:22px;color:#94a3b8}
-.fb-physical-checkout-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.fb-physical-checkout-meta{display:grid;gap:4px;min-width:0}
-.fb-physical-checkout-meta .fb-pricing-title{font-size:16px;line-height:1.2}
-.fb-physical-checkout-meta .fb-pricing-subtitle{font-size:11px;line-height:1.35}
-.fb-physical-checkout-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.fb-physical-checkout-price .fb-pricing-price{font-size:24px}
-.fb-physical-checkout-price .fb-pricing-period{margin-left:0}
-.fb-physical-checkout-rows{display:grid;gap:8px;padding:10px 0;border-top:1px solid #eef2f7;border-bottom:1px solid #eef2f7}
-.fb-physical-checkout-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#475569}
-.fb-physical-checkout-row strong{color:#0f172a;font-size:13px}
-.fb-physical-checkout-row--total strong:last-child{font-size:18px;color:#16a34a}
-.fb-physical-checkout-lines{display:grid;gap:8px}
-.fb-physical-checkout-line{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #eef2f7}
-.fb-physical-checkout-line:last-child{border-bottom:0;padding-bottom:0}
-.fb-physical-checkout-line-thumb{width:40px;height:40px;border-radius:12px;border:1px solid #dbe3f0;background:#f8fafc;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.fb-physical-checkout-line-thumb i{font-size:14px;color:#94a3b8}
-.fb-physical-checkout-line-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.fb-physical-checkout-line-meta{min-width:0;display:grid;gap:2px}
-.fb-physical-checkout-line-title{font-size:12px;font-weight:800;color:#0f172a;line-height:1.25}
-.fb-physical-checkout-line-sub{font-size:11px;color:#64748b;line-height:1.25}
-.fb-physical-checkout-line-total{font-size:12px;font-weight:800;color:#0f172a}
-.fb-physical-checkout .fb-pricing-features{gap:5px}
-.fb-physical-checkout .fb-pricing-features li{font-size:11px}
-.fb-physical-checkout .fb-pricing-cta{width:100%;padding:10px 14px;border-radius:12px}
-.fb-countdown{display:grid;gap:8px}
-.fb-countdown-label{font-size:12px;font-weight:800;color:#334155;text-transform:uppercase;letter-spacing:.08em}
-.fb-countdown-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
-.fb-countdown-box{background:#F3EEF7;border-radius:10px;padding:8px;text-align:center}
-.fb-countdown-num{font-size:20px;font-weight:900;color:#240E35}
-.fb-countdown-unit{font-size:10px;font-weight:800;color:#64748b;text-transform:uppercase;letter-spacing:.08em}
-.rt-box{border:1px solid #E6E1EF;border-radius:8px;background:#fff;margin-bottom:8px}
-.rt-tools{display:flex;gap:6px;padding:6px;border-bottom:1px solid #E6E1EF}
-.rt-tools button{padding:5px 8px;border:1px solid #E6E1EF;border-radius:6px;background:#F3EEF7;font-weight:800;cursor:pointer}
-.rt-editor{min-height:90px;padding:8px;outline:none}
-.icon-preview-box{display:flex;align-items:center;justify-content:center;min-height:68px;border:1px dashed #E6E1EF;border-radius:10px;background:#F3EEF7;margin-bottom:8px}
-.icon-picker-btn{width:100%;margin-bottom:8px}
-.icon-picker-modal{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:1400;padding:14px}
-.icon-picker-modal.open{display:flex}
-.icon-picker-card{width:min(760px,96vw);max-height:86vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #E6E1EF;border-radius:12px;box-shadow:0 16px 42px rgba(30,64,175,.22)}
-.icon-picker-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border-bottom:1px solid #E6E1EF}
-.icon-picker-head h4{margin:0;font-size:14px;color:#240E35}
-.icon-picker-close{border:1px solid #E6E1EF;background:#F3EEF7;border-radius:8px;padding:6px 10px;cursor:pointer}
-.icon-picker-tools{display:grid;grid-template-columns:1fr 170px;gap:8px;padding:10px 12px;border-bottom:1px solid #E6E1EF}
-.icon-picker-tools input,.icon-picker-tools select{margin:0}
-.icon-picker-grid{padding:10px 12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:8px;overflow:auto}
-.icon-picker-item{border:1px solid #E7D8F0;background:#fff;border-radius:10px;min-height:72px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer}
-.icon-picker-item i{font-size:19px;color:#240E35}
-.icon-picker-item span{font-size:11px;color:#334155;text-align:center;line-height:1.2}
-.icon-picker-item:hover{background:#F3EEF7;border-color:#E7D8F0}
-.icon-picker-empty{padding:16px;color:#64748b;font-size:12px}
-.page-mgr-modal{position:fixed;inset:0;background:rgba(15,23,42,.56);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:1450;padding:18px}
-.page-mgr-modal.open{display:flex}
-.page-mgr-card{width:min(980px,96vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #E7D8F0;border-radius:18px;box-shadow:0 24px 56px rgba(15,23,42,.34)}
-.fb-modal{position:fixed;inset:0;background:rgba(15,23,42,.56);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:1500;padding:18px}
-.fb-modal.open{display:flex}
-.fb-modal-card{width:min(520px,92vw);background:#fff;border-radius:16px;border:1px solid #E6E1EF;box-shadow:0 24px 60px rgba(15,23,42,.2);padding:18px}
-.fb-modal-title{font-size:16px;font-weight:900;color:#240E35;margin:0 0 8px}
-.fb-modal-desc{font-size:13px;color:#475569;line-height:1.5;margin:0 0 16px}
-.fb-modal-actions{display:flex;justify-content:flex-end;gap:8px}
-.page-mgr-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:18px 20px;border-bottom:1px solid #E6E1EF;background:linear-gradient(180deg,#ffffff,#F3EEF7)}
-.page-mgr-head h4{margin:0;font-size:21px;line-height:1.2;font-weight:900;color:#240E35;letter-spacing:-.01em}
-.page-mgr-close{width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #E6E1EF;background:#F3EEF7;border-radius:12px;padding:0;font-weight:800;color:#334155;cursor:pointer}
-.page-mgr-close:hover{background:#F3EEF7;border-color:#E7D8F0;color:#240E35}
-.page-mgr-body{padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;overflow:auto;background:#F3EEF7}
-.page-mgr-col{border:1px solid #E7D8F0;border-radius:14px;background:#ffffff;padding:14px}
-.page-mgr-col h5{margin:0 0 10px;font-size:16px;font-weight:900;color:#2E1244;line-height:1.2}
-.page-mgr-list{width:100%;height:350px;border:1px solid #E6E1EF;border-radius:12px;background:#fff;padding:8px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8);overflow:auto}
-.page-mgr-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid transparent;border-radius:10px;font-size:14px;color:#240E35;cursor:pointer;user-select:none}
-.page-mgr-item + .page-mgr-item{margin-top:4px}
-.page-mgr-item:hover{background:#F3EEF7}
-.page-mgr-item.is-selected{background:#240E35;color:#fff}
-.page-mgr-item.is-dragging{opacity:.55}
-.page-mgr-item.drag-before{box-shadow:inset 0 2px 0 #2E1244}
-.page-mgr-item.drag-after{box-shadow:inset 0 -2px 0 #2E1244}
-.page-mgr-item-copy{display:grid;gap:2px;min-width:0}
-.page-mgr-item-title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.page-mgr-item-meta{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#64748b}
-.page-mgr-item-handle{font-size:12px;color:#64748b}
-.page-mgr-item.is-selected .page-mgr-item-handle{color:rgba(255,255,255,.85)}
-.page-mgr-item.is-selected .page-mgr-item-meta{color:rgba(255,255,255,.78)}
-.page-mgr-section{margin-bottom:14px;padding:12px;border:1px solid #E6E1EF;border-radius:12px;background:#F3EEF7}
-.version-modal-card{width:min(460px,96vw)}
-.version-modal-body{padding:18px 20px;background:#F3EEF7;display:flex;flex-direction:column;gap:12px}
-.version-modal-body label{font-size:12px;font-weight:900;color:#2E1244;margin:0}
-.version-modal-body input{width:100%;padding:10px 12px;border:1px solid #E6E1EF;border-radius:10px;background:#fff;font-size:14px}
-.version-modal-note{font-size:12px;color:#64748b;line-height:1.5}
-.version-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
-.version-modal-actions .fb-btn{min-height:40px}
-.page-mgr-section:last-child{margin-bottom:0}
-.page-mgr-section label{display:block;margin:0 0 6px;font-size:13px;font-weight:800;color:#334155}
-.page-mgr-section input,.page-mgr-section select{width:100%;padding:11px 12px;border:1px solid #E6E1EF;border-radius:10px;background:#fff;font-size:14px;color:#240E35;margin-bottom:10px}
-.page-mgr-section input:focus,.page-mgr-section select:focus{outline:none;border-color:#6B4A7A;box-shadow:0 0 0 3px rgba(59,130,246,.15)}
-.page-mgr-create-btn{width:100%;margin-top:2px}
-.page-mgr-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.page-mgr-actions .fb-btn{min-height:40px}
-.page-mgr-note{font-size:12px;color:#475569;font-weight:700;margin-top:8px}
-.asset-library-modal{position:fixed;inset:0;background:rgba(15,23,42,.56);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:1460;padding:18px}
-.asset-library-modal.open{display:flex}
-.asset-library-card{width:min(900px,96vw);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;background:#fff;border:1px solid #E7D8F0;border-radius:18px;box-shadow:0 24px 56px rgba(15,23,42,.34)}
-.asset-library-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px 8px}
-.asset-library-head h4{margin:0;font-size:20px;font-weight:900;color:#240E35}
-.asset-library-close{border:1px solid #E6E1EF;background:#F3EEF7;color:#240E35;width:32px;height:32px;border-radius:10px;cursor:pointer}
-.asset-library-sub{padding:0 18px 12px;color:#64748b;font-size:13px;line-height:1.45;border-bottom:1px solid #EEE7F5}
-.asset-library-body{padding:16px 18px 18px;display:grid;grid-template-rows:auto 1fr;gap:14px;min-height:0}
-.asset-library-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.asset-library-upload{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.asset-library-upload input{display:none}
-.asset-library-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.asset-library-status{font-size:12px;color:#64748b}
-.asset-library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;overflow:auto;padding:2px 4px 4px 0;min-height:180px;align-content:start}
-.asset-library-grid::-webkit-scrollbar{width:8px}
-.asset-library-grid::-webkit-scrollbar-track{background:#F3EEF7;border-radius:4px}
-.asset-library-grid::-webkit-scrollbar-thumb{background:#E6E1EF;border-radius:4px}
-.asset-library-grid::-webkit-scrollbar-thumb:hover{background:#94a3b8}
-.asset-library-item{border:1px solid #E6E1EF;border-radius:16px;background:#fff;overflow:hidden;display:flex;flex-direction:column;min-width:0;min-height:238px;padding:0;cursor:pointer;text-align:left;transition:border-color .15s ease,transform .15s ease,box-shadow .15s ease;box-shadow:0 8px 20px rgba(36,14,53,.06)}
-.asset-library-item:hover{border-color:#6B4A7A;transform:translateY(-1px);box-shadow:0 14px 28px rgba(36,14,53,.12)}
-.asset-library-item:focus-visible{outline:3px solid rgba(107,74,122,.18);outline-offset:2px}
-.asset-library-item.is-selection-mode{cursor:default}
-.asset-library-item.is-selected{border-color:#6B4A7A;box-shadow:0 0 0 3px rgba(107,74,122,.16),0 14px 28px rgba(36,14,53,.12)}
-.asset-library-preview{position:relative;height:148px;min-height:148px;background:#F8F5FB;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid #F1EBF6}
-.asset-library-preview img,.asset-library-preview video{width:100%;height:100%;object-fit:cover;display:block}
-.asset-library-preview.is-empty{background:linear-gradient(180deg,#F8F5FB,#F3EEF7)}
-.asset-library-preview-icon{font-size:28px;color:#6B4A7A}
-.asset-library-check{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:999px;border:1px solid #D8CCE5;background:rgba(255,255,255,.96);color:#6B4A7A;display:inline-flex;align-items:center;justify-content:center;font-size:12px;box-shadow:0 6px 14px rgba(36,14,53,.14);z-index:2}
-.asset-library-check.is-selected{background:#240E35;border-color:#240E35;color:#fff}
-.asset-library-info{padding:12px;display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
-.asset-library-name{font-size:13px;font-weight:800;color:#240E35;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.asset-library-meta{font-size:12px;color:#64748b}
-.asset-library-action{display:inline-flex;align-items:center;gap:6px;margin-top:auto;padding-top:8px;font-size:12px;font-weight:800;color:#2E1244}
-.asset-library-empty{display:flex;align-items:center;justify-content:center;border:1px dashed #D8CCE5;border-radius:14px;padding:18px;color:#64748b;font-size:13px;text-align:center;background:#FCFBFD;min-height:180px}
-.asset-library-launch{width:100%;margin-top:8px}
-@media (max-width: 860px){
-    .page-mgr-body{grid-template-columns:1fr}
-    .page-mgr-head h4{font-size:20px}
-    .asset-library-grid{grid-template-columns:1fr 1fr}
-    .asset-library-item{min-height:214px}
-    .asset-library-preview{height:128px;min-height:128px}
-}
-.setting-label-help{display:flex;align-items:center;gap:8px;margin:0 0 6px}
-.setting-help-icon{width:22px;height:22px;border-radius:999px;border:1px solid #E7D8F0;background:#eaf2ff;color:#240E35;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;line-height:1;cursor:pointer;padding:0}
-.setting-help-icon:hover{background:#E7D8F0}
-.menu-section-title.fb-help-row{display:flex;align-items:center;gap:8px}
-.setting-label-help .menu-section-title{margin:0}
-.fb-help-modal{position:fixed;inset:0;background:rgba(37,99,235,.16);display:none;align-items:center;justify-content:center;z-index:1200;padding:16px}
-.fb-help-modal.open{display:flex}
-.fb-help-card{width:min(520px,92vw);background:#ffffff;color:#334155;border:1px solid #D9D2F3;border-radius:14px;box-shadow:0 18px 44px rgba(64,64,120,.18);padding:16px;position:relative}
-.fb-help-close{position:absolute;top:10px;right:10px;border:1px solid #D9D2F3;background:#F3EEF7;color:#2E1244;width:28px;height:28px;border-radius:999px;cursor:pointer}
-.fb-help-close:hover{background:#E7D8F0}
-.fb-help-title{margin:0 0 8px;font-size:16px;font-weight:900;color:#240E35}
-.fb-help-text{font-size:13px;line-height:1.55;color:#334155;margin-bottom:10px}
-.fb-radius-demo{height:92px;border:1px solid #E6E1EF;border-radius:8px;background:linear-gradient(180deg,#F3EEF7,#eaf2ff);display:flex;align-items:center;justify-content:center}
-.fb-radius-demo-box{width:120px;height:56px;background:#240E35;animation:radiusMorph 2.2s ease-in-out infinite}
-.fb-dim-tip{position:fixed;left:0;top:0;transform:translate(12px,12px);z-index:1300;pointer-events:none;display:none;padding:5px 8px;border:1px solid #E7D8F0;border-radius:8px;background:#F3EEF7;color:#2E1244;font-size:11px;font-weight:800;line-height:1.2;white-space:nowrap;box-shadow:0 6px 18px rgba(30,64,175,.18)}
-.fb-ctx-menu{position:fixed;z-index:1500;min-width:150px;background:#ffffff;border:1px solid #E6E1EF;border-radius:10px;box-shadow:0 12px 30px rgba(30,64,175,.22);padding:6px;display:none}
-.fb-ctx-item{width:100%;text-align:left;border:1px solid transparent;background:#fff;border-radius:8px;padding:8px 10px;color:#240E35;font-weight:700;cursor:pointer}
-.fb-ctx-item:hover{background:#F3EEF7;border-color:#E6E1EF}
-.fb-ctx-item[disabled]{opacity:.45;cursor:not-allowed}
-.fb-space-demo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.fb-space-box{height:90px;border:1px solid #E6E1EF;border-radius:10px;background:#F3EEF7;position:relative;overflow:hidden}
-.fb-space-pad{position:absolute;inset:12px;border:2px dashed #240E35;animation:paddingPulse 1.8s ease-in-out infinite}
-.fb-space-mar{position:absolute;inset:18px;background:#E7D8F0;border-radius:8px;animation:marginPulse 1.8s ease-in-out infinite}
-.fb-drop-guide-v,.fb-drop-guide-h{position:absolute;pointer-events:none;z-index:60;display:none;background:#6B4A7A;opacity:.85}
-.fb-drop-guide-v{top:0;bottom:0;width:1px;box-shadow:0 0 0 1px rgba(168,85,247,.15)}
-.fb-drop-guide-h{left:0;right:0;height:1px;box-shadow:0 0 0 1px rgba(168,85,247,.15)}
-.fb-drop-preview{position:absolute;pointer-events:none;z-index:65;border:2px dashed #6B4A7A;background:rgba(107,74,122,.08);box-shadow:0 10px 24px rgba(36,14,53,.12);border-radius:10px;display:none}
-.fb-drop-insert{position:absolute;left:6px;right:6px;height:3px;background:#6B4A7A;box-shadow:0 0 0 1px rgba(168,85,247,.25);z-index:65;pointer-events:none;border-radius:3px;display:none}
-@keyframes paddingPulse{
-    0%{inset:12px}
-    50%{inset:20px}
-    100%{inset:12px}
-}
-@keyframes marginPulse{
-    0%{transform:scale(1)}
-    50%{transform:scale(.82)}
-    100%{transform:scale(1)}
-}
-@keyframes radiusMorph{
-    0%{border-radius:0}
-    50%{border-radius:18px}
-    100%{border-radius:999px}
-}
-@media(max-width:1080px){.fb-grid,.fb-grid.components-hidden{grid-template-columns:1fr}.fb-components-col .fb-panel-toggle{display:none!important}.fb-grid.components-hidden .fb-components-col .fb-left-panel{display:block!important}.fb-left-panel.hidden{display:none!important}}
-</style>
+<link rel="stylesheet" href="{{ asset('css/extracted/funnels-edit-style1.css') }}">
 
 <div class="fb-top">
     <div><strong>{{ $funnel->name }}</strong> <span style="font-size:12px;opacity:.9;">({{ ucfirst($funnel->status) }})</span></div>
@@ -1246,7 +651,7 @@ function makePhysicalCheckoutSummaryEl(opts,style){
     },style||{}),{
         heading:opts.heading||"Cart Summary",
         plan:opts.plan||"3 items",
-        price:opts.price||"₱4,000",
+        price:opts.price||"â‚±4,000",
         period:opts.period||"",
         subtitle:opts.subtitle||"Review the products in your cart before paying.",
         badge:opts.badge||"Cart",
@@ -1308,7 +713,7 @@ function templatePricingFaqLayout(){
             makeEl("text","Start today and upgrade anytime.",{fontSize:"16px",color:"#64748b",lineHeight:"1.6",textAlign:"center"},{})
         ],{textAlign:"center"})],{gap:"10px"})]
     });
-    var pricing=makePricingCardEl({plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],badge:"Popular"},makeBareCardStyle());
+    var pricing=makePricingCardEl({plan:"Pro",price:"â‚±49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],badge:"Popular"},makeBareCardStyle());
     var faq=makeFaqCardEl([{q:"Can I cancel anytime?",a:"Yes, cancel anytime from your account settings."},{q:"Do you offer a free trial?",a:"Yes, you get a 14-day free trial."}],makeBareCardStyle());
     var gridSection=makeSection({
         style:{padding:"28px 24px 64px",backgroundColor:"#ffffff"},
@@ -1509,7 +914,7 @@ function makePricingCardEl(opts,style){
         boxShadow:"0 12px 24px rgba(36,14,53,.08)"
     },style||{}),{
         plan:opts.plan||"Growth",
-        price:opts.price||"₱49",
+        price:opts.price||"â‚±49",
         period:opts.period||"/month",
         subtitle:opts.subtitle||"Best for growing teams",
         features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Unlimited funnels","Priority support","Conversion analytics"],
@@ -1891,7 +1296,7 @@ function templateSalesOfferStackLayout(){
         makePanelColumn([
             makePricingCardEl({
                 plan:"Signature Offer",
-                price:"₱1,500",
+                price:"â‚±1,500",
                 period:"",
                 subtitle:"Ideal for clients who want faster implementation",
                 features:["Strategy kickoff","Custom build","Launch support"],
@@ -1951,7 +1356,7 @@ function templateVideoSalesLetterLayout(){
         columns:[
             makePanelColumn([makePricingCardEl({
                 plan:"Launch Intensive",
-                price:"₱497",
+                price:"â‚±497",
                 period:"",
                 subtitle:"Fast-start program with templates and support",
                 features:["Video training","Templates","Q and A session"],
@@ -1977,9 +1382,9 @@ function templateComparisonSalesLayout(){
         padding:"0 24px 32px",
         backgroundColor:"#ffffff",
         columns:[
-            makePanelColumn([makePricingCardEl({plan:"Starter",price:"₱49",period:"/month",subtitle:"For getting started",features:["Core pages","Email capture","Basic support"]},makeBareCardStyle())]),
-            makePanelColumn([makePricingCardEl({plan:"Growth",price:"₱99",period:"/month",subtitle:"For serious launches",features:["Unlimited funnels","Priority support","Analytics"],badge:"Best Value"},makeBareCardStyle())]),
-            makePanelColumn([makePricingCardEl({plan:"Scale",price:"₱199",period:"/month",subtitle:"For advanced teams",features:["Advanced insights","Team access","Hands-on onboarding"]},makeBareCardStyle())])
+            makePanelColumn([makePricingCardEl({plan:"Starter",price:"â‚±49",period:"/month",subtitle:"For getting started",features:["Core pages","Email capture","Basic support"]},makeBareCardStyle())]),
+            makePanelColumn([makePricingCardEl({plan:"Growth",price:"â‚±99",period:"/month",subtitle:"For serious launches",features:["Unlimited funnels","Priority support","Analytics"],badge:"Best Value"},makeBareCardStyle())]),
+            makePanelColumn([makePricingCardEl({plan:"Scale",price:"â‚±199",period:"/month",subtitle:"For advanced teams",features:["Advanced insights","Team access","Hands-on onboarding"]},makeBareCardStyle())])
         ]
     });
     var faq=makeCardGridSection({
@@ -2002,7 +1407,7 @@ function templatePremiumCheckoutLayout(){
     var summary=makeSplitInfoSection(
         makePanelColumn([makePricingCardEl({
             plan:"Premium Access",
-            price:"₱299",
+            price:"â‚±299",
             period:"",
             subtitle:"Everything needed to launch with confidence",
             features:["Templates included","Priority email support","Bonus training vault"],
@@ -2043,7 +1448,7 @@ function templateWorkshopTicketCheckoutLayout(){
         ]),
         makePanelColumn([makePricingCardEl({
             plan:"Workshop Ticket",
-            price:"₱97",
+            price:"â‚±97",
             period:"",
             subtitle:"Live training plus replay and workbook",
             features:["90-minute workshop","Replay access","Action workbook"],
@@ -2081,8 +1486,8 @@ function templateWorkshopTicketCheckoutDiscountLayout(){
         ]),
         makePanelColumn([makePricingCardEl({
             plan:"Workshop Ticket",
-            price:"₱97",
-            regularPrice:"₱117",
+            price:"â‚±97",
+            regularPrice:"â‚±117",
             period:"",
             subtitle:"Live training plus replay and workbook",
             features:["90-minute workshop","Replay access","Action workbook"],
@@ -2110,7 +1515,7 @@ function templateBundleCheckoutLayout(){
         )),
         makePanelColumn([makePricingCardEl({
             plan:"Launch Bundle",
-            price:"₱149",
+            price:"â‚±149",
             period:"",
             subtitle:"Core offer plus valuable bonuses",
             features:["Main product","Bonus template pack","Private Q and A","Quick-start checklist"],
@@ -2143,7 +1548,7 @@ function templateMembershipCheckoutLayout(){
     var section=makeSplitInfoSection(
         makePanelColumn([makePricingCardEl({
             plan:"Membership Access",
-            price:"₱39",
+            price:"â‚±39",
             period:"/month",
             subtitle:"Ongoing training, resources, and support",
             features:["New sessions monthly","Resource vault","Member-only updates"],
@@ -2188,7 +1593,7 @@ function templateUpsellVipUpgradeLayout(){
         makePanelColumn([
             makePricingCardEl({
                 plan:"VIP Upgrade",
-                price:"₱19",
+                price:"â‚±19",
                 period:"",
                 subtitle:"Extra support, premium resources, and a faster path to results",
                 features:["Priority Q and A","Bonus implementation guide","VIP-only template pack"],
@@ -2225,7 +1630,7 @@ function templateDownsellLiteLayout(){
         makePanelColumn([
             makePricingCardEl({
                 plan:"Lite Bonus Pack",
-                price:"₱9",
+                price:"â‚±9",
                 period:"",
                 subtitle:"A smaller add-on for buyers who want one practical extra",
                 features:["Quick-start checklist","Bonus worksheet","Mini resource pack"],
@@ -3882,9 +3287,9 @@ const componentTemplates=[
             style:{padding:"56px 24px",backgroundColor:"#ffffff"},
             settings:{contentWidth:"wide"},
             rows:[makeRow([
-                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Starter",price:"₱19",period:"/month",subtitle:"For new teams",features:["1 funnel","Basic support","Email capture"],ctaLabel:"Choose Starter",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"}),
-                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Growth",price:"₱49",period:"/month",subtitle:"For growing teams",features:["Unlimited funnels","Custom domains","Priority support"],ctaLabel:"Choose Growth",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"})],{flex:"1"}),
-                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Scale",price:"₱99",period:"/month",subtitle:"For scale-ups",features:["Advanced analytics","SLA support","Custom onboarding"],ctaLabel:"Choose Scale",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"})
+                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Starter",price:"â‚±19",period:"/month",subtitle:"For new teams",features:["1 funnel","Basic support","Email capture"],ctaLabel:"Choose Starter",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"}),
+                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Growth",price:"â‚±49",period:"/month",subtitle:"For growing teams",features:["Unlimited funnels","Custom domains","Priority support"],ctaLabel:"Choose Growth",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"})],{flex:"1"}),
+                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Scale",price:"â‚±99",period:"/month",subtitle:"For scale-ups",features:["Advanced analytics","SLA support","Custom onboarding"],ctaLabel:"Choose Scale",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"})
             ],{gap:"18px",alignItems:"stretch"})]
         });
     }},
@@ -7119,9 +6524,9 @@ function renderCarouselPreviewItem(item,onDelete,onSelect,isSelected){
         var vidBody=document.createElement("div");
         if(vurl){
             const label=vurl.length>50?vurl.slice(0,47)+"...":vurl;
-            vidBody.innerHTML='<div style="'+wrapStyle+'"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.9);padding:12px;text-align:center;"><span style="font-size:32px;margin-bottom:8px;opacity:0.9;">▶</span><span style="font-size:12px;font-weight:700;">Video</span><span style="font-size:11px;opacity:0.8;word-break:break-all;max-width:100%;">'+label.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span></div></div>';
+            vidBody.innerHTML='<div style="'+wrapStyle+'"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.9);padding:12px;text-align:center;"><span style="font-size:32px;margin-bottom:8px;opacity:0.9;">â–¶</span><span style="font-size:12px;font-weight:700;">Video</span><span style="font-size:11px;opacity:0.8;word-break:break-all;max-width:100%;">'+label.replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</span></div></div>';
         } else {
-            vidBody.innerHTML='<div style="'+wrapStyle+'"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.8);padding:12px;"><span style="font-size:28px;margin-bottom:6px;">▶</span><span style="font-size:12px;">Video URL placeholder</span><span style="font-size:11px;margin-top:4px;">Paste link or upload</span></div></div>';
+            vidBody.innerHTML='<div style="'+wrapStyle+'"><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,0.8);padding:12px;"><span style="font-size:28px;margin-bottom:6px;">â–¶</span><span style="font-size:12px;">Video URL placeholder</span><span style="font-size:11px;margin-top:4px;">Paste link or upload</span></div></div>';
         }
         wrap.appendChild(vidBody);
     }else if(type==="button"){
@@ -7225,7 +6630,7 @@ function createDefaultElement(type){
     var _cd=new Date(Date.now()+7*24*60*60*1000);
     var _pad=n=>String(n).padStart(2,"0");
     var countdownEndVal=_cd.getFullYear()+"-"+_pad(_cd.getMonth()+1)+"-"+_pad(_cd.getDate())+"T"+_pad(_cd.getHours())+":"+_pad(_cd.getMinutes());
-const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},shipping_details:{content:"",style:{width:"420px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Shipping Details",subtitle:"Enter your delivery and contact information before placing the order.",labelColor:"#240E35",placeholderColor:"#94a3b8",fields:[{type:"first_name",label:"First name",placeholder:"First name",required:true},{type:"last_name",label:"Last name",placeholder:"Last name",required:true},{type:"email",label:"Email",placeholder:"Email address",required:true},{type:"phone_number",label:"Phone number",placeholder:"09XXXXXXXXX",required:true},{type:"province",label:"Province",placeholder:"Province",required:true},{type:"city_municipality",label:"City / Municipality",placeholder:"City / Municipality",required:true},{type:"barangay",label:"Barangay",placeholder:"Barangay",required:true},{type:"street",label:"Street address",placeholder:"House no., street, building",required:true},{type:"postal_code",label:"Postal code",placeholder:"Postal code",required:false},{type:"notes",label:"Order notes",placeholder:"Optional notes for delivery",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"₱49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},product_offer:{content:"",style:{width:"160px",padding:"8px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Starter Bundle",price:"₱299",regularPrice:"₱499",period:"",subtitle:"",description:"Add a fuller product description here for your quick-view modal.",features:[],ctaLabel:"Buy",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Best Seller",stockQuantity:"",quickViewEnabled:true,quickViewLabel:"Details",cartEnabled:true,activeMedia:0,media:[{type:"image",src:"",alt:"Main product image",poster:""}]}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},physical_checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Cart Summary",plan:"3 items",price:"₱4,000",period:"",subtitle:"Review the products in your cart before paying.",features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are collected before payment"],ctaLabel:"Place Order",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Cart"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
+const d={heading:{content:"Heading",style:{fontSize:"32px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},text:{content:"Text",style:{fontSize:"16px",color:"#000000",position:"absolute"},settings:{positionMode:"absolute"}},menu:{content:"",style:{fontSize:"16px",width:"400px",position:"absolute"},settings:{positionMode:"absolute",items:[{label:"Home",url:"#",newWindow:false,hasSubmenu:false},{label:"Contact",url:"/contact",newWindow:false,hasSubmenu:false}],itemGap:13,activeIndex:0,menuAlign:"left",underlineColor:""}},carousel:{content:"",style:{width:"200px",height:"200px",padding:"0px",position:"absolute"},settings:{positionMode:"absolute",slides:[defaultCarouselSlide("Slide #1")],activeSlide:0,vAlign:"center",alignment:"left",showArrows:true,slideshowMode:"manual",controlsColor:"#64748b",arrowColor:"#ffffff",fixedWidth:200,fixedHeight:200}},image:{content:"",style:{width:"300px",position:"absolute"},settings:{positionMode:"absolute",src:"",alt:"Image",alignment:"left"}},button:{content:"Click Me",style:{backgroundColor:"#240E35",color:"#fff",borderRadius:"999px",padding:"10px 18px",textAlign:"center",position:"absolute"},settings:{positionMode:"absolute",actionType:"next_step",actionStepSlug:"",link:"#"}},icon:{content:"",style:{fontSize:"36px",color:"#2E1244",padding:"0px",borderRadius:"0px",position:"absolute"},settings:{positionMode:"absolute",iconName:"star",iconStyle:"solid",alignment:"center",link:""}},form:{content:"Submit",style:{width:"350px",position:"absolute"},settings:{positionMode:"absolute",alignment:"left",width:"350px",buttonAlign:"left",buttonBold:false,buttonItalic:false,labelColor:"#240E35",placeholderColor:"#94a3b8",buttonBgColor:"#240E35",buttonTextColor:"#ffffff",fields:[{type:"text",label:"First name",placeholder:"First name",required:false}]}},shipping_details:{content:"",style:{width:"420px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Shipping Details",subtitle:"Enter your delivery and contact information before placing the order.",labelColor:"#240E35",placeholderColor:"#94a3b8",fields:[{type:"first_name",label:"First name",placeholder:"First name",required:true},{type:"last_name",label:"Last name",placeholder:"Last name",required:true},{type:"email",label:"Email",placeholder:"Email address",required:true},{type:"phone_number",label:"Phone number",placeholder:"09XXXXXXXXX",required:true},{type:"province",label:"Province",placeholder:"Province",required:true},{type:"city_municipality",label:"City / Municipality",placeholder:"City / Municipality",required:true},{type:"barangay",label:"Barangay",placeholder:"Barangay",required:true},{type:"street",label:"Street address",placeholder:"House no., street, building",required:true},{type:"postal_code",label:"Postal code",placeholder:"Postal code",required:false},{type:"notes",label:"Order notes",placeholder:"Optional notes for delivery",required:false}]}},video:{content:"",style:{width:"400px",position:"absolute"},settings:{positionMode:"absolute",src:"",alignment:"left"}},spacer:{content:"",style:{height:"24px",width:"200px",position:"absolute"},settings:{positionMode:"absolute"}},testimonial:{content:"",style:{width:"320px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",quote:"This product changed how we work.",name:"Alex Johnson",role:"Founder, Startify",avatar:""}},faq:{content:"",style:{width:"420px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",items:[{q:"How does it work?",a:"Choose a template, customize, and publish."},{q:"Is there a free trial?",a:"Yes, you can start with a 14-day trial."}],itemGap:10,questionColor:"#240E35",answerColor:"#475569"}},pricing:{content:"",style:{width:"320px",padding:"18px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"18px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Pro",price:"â‚±49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],ctaLabel:"Get Started",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"}},product_offer:{content:"",style:{width:"160px",padding:"8px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",plan:"Starter Bundle",price:"â‚±299",regularPrice:"â‚±499",period:"",subtitle:"",description:"Add a fuller product description here for your quick-view modal.",features:[],ctaLabel:"Buy",ctaActionType:"next_step",ctaActionStepSlug:"",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Best Seller",stockQuantity:"",quickViewEnabled:true,quickViewLabel:"Details",cartEnabled:true,activeMedia:0,media:[{type:"image",src:"",alt:"Main product image",poster:""}]}},checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Complete Your Order",plan:"Chosen Plan",price:"Selected price",period:"/billing cycle",subtitle:"This summary updates from the pricing selected earlier in the funnel.",features:["Unlimited steps","Custom domains","Email support"],ctaLabel:"Pay Now",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Selected Plan"}},physical_checkout_summary:{content:"",style:{width:"360px",padding:"22px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"20px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",heading:"Cart Summary",plan:"3 items",price:"â‚±4,000",period:"",subtitle:"Review the products in your cart before paying.",features:["Product subtotal updates automatically","Cart items show here before payment","Shipping details are collected before payment"],ctaLabel:"Place Order",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Cart"}},countdown:{content:"",style:{width:"300px",padding:"16px",backgroundColor:"#ffffff",border:"1px solid #E6E1EF",borderRadius:"16px",boxShadow:"0 12px 24px rgba(15,23,42,.08)",position:"absolute"},settings:{positionMode:"absolute",endAt:countdownEndVal,label:"Offer ends in",expiredText:"Offer ended",numberColor:"#240E35",labelColor:"#64748b",itemGap:8}}}[type]||null;
     if(!d)return null;
     return {id:uid("el"),type:type,content:d.content,style:clone(d.style),settings:clone(d.settings)};
 }
@@ -7701,7 +7106,7 @@ function autoPlaceElement(it,container){
     it.settings.freeY=cy;
 }
 
-/* ─── Z-order / layering helpers ─── */
+/* â”€â”€â”€ Z-order / layering helpers â”€â”€â”€ */
 function getElZIndex(item){return Number(item&&item.style&&item.style.zIndex)||0;}
 function getSiblingElements(ctx){
     if(!ctx)return [];
@@ -7722,7 +7127,7 @@ function layerToBack(item,ctx){
     item.style=item.style||{};item.style.zIndex=String(Math.max(0,(min===Infinity?0:min)-1));
 }
 
-/* ─── Universal resize handles for all elements ─── */
+/* â”€â”€â”€ Universal resize handles for all elements â”€â”€â”€ */
 function attachElResizeHandles(w,item){
     if(!w||!item)return;
     function parsePx(v){var n=Number(String(v||"0").replace("px","").trim());return isNaN(n)?0:n;}
@@ -7959,7 +7364,7 @@ function applySectionMinHeight(sectionNode,nextMin){
     }
 }
 
-/* ─── Canva-style drag-to-move system ─── */
+/* â”€â”€â”€ Canva-style drag-to-move system â”€â”€â”€ */
 const elDrag={active:false,el:null,item:null,ctx:null,startX:0,startY:0,origX:0,origY:0,host:null,moved:false,snapGuides:[],justFinished:false};
 const DRAG_THRESHOLD=4;
 const SNAP_THRESHOLD=6;
@@ -8195,7 +7600,7 @@ document.addEventListener("mouseup",function(e){
     queueAutoSave();
     setTimeout(function(){elDrag.justFinished=false;},0);
 });
-/* ─── end drag-to-move system ─── */
+/* â”€â”€â”€ end drag-to-move system â”€â”€â”€ */
 
 function addComponentAt(type,target,place){
     var freePlacement=(place&&typeof place==="object"&&place.mode==="free")?place:null;
@@ -8922,7 +8327,7 @@ function renderElement(item,ctx){
         var plan=String(item.settings.plan||"Plan");
         var salePrice=normalizeTemplateCurrencyValue(item.settings.price||"");
         var regularPrice=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
-        var price=(salePrice!==""?salePrice:(regularPrice!==""?regularPrice:"₱0"));
+        var price=(salePrice!==""?salePrice:(regularPrice!==""?regularPrice:"â‚±0"));
         var period=String(item.settings.period||"");
         var subtitle=String(item.settings.subtitle||"");
         var badge=String(item.settings.badge||"");
@@ -9002,7 +8407,7 @@ function renderElement(item,ctx){
         var productName=String(item.settings.plan||"Product");
         var productSale=normalizeTemplateCurrencyValue(item.settings.price||"");
         var productRegular=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
-        var productPrice=(productSale!==""?productSale:(productRegular!==""?productRegular:"₱0"));
+        var productPrice=(productSale!==""?productSale:(productRegular!==""?productRegular:"â‚±0"));
         var productPeriod=String(item.settings.period||"");
         var productSubtitle=String(item.settings.subtitle||"");
         var productBadge=String(item.settings.badge||"");
@@ -9194,7 +8599,7 @@ function renderElement(item,ctx){
         var summaryBg=String(item.settings.ctaBgColor||"#240E35");
         var summaryText=String(item.settings.ctaTextColor||"#ffffff");
         var customSummaryColor=(item.style&&item.style.color)?String(item.style.color):"";
-        var priceText=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"₱0");
+        var priceText=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"â‚±0");
         var card=document.createElement("div");
         card.className=isPhysicalCheckoutSummary?"fb-pricing fb-physical-checkout":"fb-pricing";
         if(summaryBadge){
@@ -9235,7 +8640,7 @@ function renderElement(item,ctx){
             priceWrap.className="fb-physical-checkout-price";
             var sPrice=document.createElement("span");
             sPrice.className="fb-pricing-price";
-            sPrice.textContent="₱4,000";
+            sPrice.textContent="â‚±4,000";
             if(customSummaryColor)sPrice.style.color=customSummaryColor;
             priceWrap.appendChild(sPrice);
             if(summaryPeriod){
@@ -9253,13 +8658,13 @@ function renderElement(item,ctx){
             rows.className="fb-physical-checkout-rows";
             var row1=document.createElement("div");
             row1.className="fb-physical-checkout-row";
-            row1.innerHTML='<span>Items subtotal</span><strong>₱4,000</strong>';
+            row1.innerHTML='<span>Items subtotal</span><strong>â‚±4,000</strong>';
             var row2=document.createElement("div");
             row2.className="fb-physical-checkout-row";
             row2.innerHTML='<span>Shipping</span><strong>Calculated at checkout</strong>';
             var row3=document.createElement("div");
             row3.className="fb-physical-checkout-row fb-physical-checkout-row--total";
-            row3.innerHTML='<strong>Order total</strong><strong>₱4,000</strong>';
+            row3.innerHTML='<strong>Order total</strong><strong>â‚±4,000</strong>';
             rows.appendChild(row1);
             rows.appendChild(row2);
             rows.appendChild(row3);
@@ -9268,8 +8673,8 @@ function renderElement(item,ctx){
             var placeholderLines=document.createElement("div");
             placeholderLines.className="fb-physical-checkout-lines";
             [
-                {name:"Product one",sub:"Qty: 1 • Best Seller",total:"₱500"},
-                {name:"Product two",sub:"Qty: 1 • Featured",total:"₱1,500"}
+                {name:"Product one",sub:"Qty: 1 â€¢ Best Seller",total:"â‚±500"},
+                {name:"Product two",sub:"Qty: 1 â€¢ Featured",total:"â‚±1,500"}
             ].forEach(function(line){
                 var row=document.createElement("div");
                 row.className="fb-physical-checkout-line";
@@ -11483,7 +10888,7 @@ function helpContentForKey(key){
         case "textAlignment":
             return {title:"Alignment",text:"Aligns text/content <strong>inside</strong> the element. It does not move the element itself."};
         case "mediaAlignment":
-            return {title:"Alignment",text:"Controls how the image/video aligns inside its container (left, center, right). It doesn’t change the container position."};
+            return {title:"Alignment",text:"Controls how the image/video aligns inside its container (left, center, right). It doesnâ€™t change the container position."};
         case "formAlignment":
             return {title:"Form Alignment",text:"Positions the whole form block within its column/section. Pair with Form width for precise placement."};
         case "buttonAlignment":
@@ -11501,7 +10906,7 @@ function helpContentForKey(key){
         case "carouselBehavior":
             return {title:"Carousel Behavior",text:"<strong>Manual</strong> uses arrows. <strong>Automatic</strong> auto-plays and hides arrows."};
         case "carouselSize":
-            return {title:"Carousel Size",text:"Sets a fixed frame size. Content inside will adapt to the carousel’s width/height."};
+            return {title:"Carousel Size",text:"Sets a fixed frame size. Content inside will adapt to the carouselâ€™s width/height."};
         default:
             return null;
     }
@@ -12683,7 +12088,7 @@ function renderSettings(){
             var productActionSection=isCheckoutProductEditor
                 ? '<div class="menu-split"></div><div class="menu-section-title">Payment Action</div><div class="meta" style="margin:0 0 10px;">Checkout-step product buttons automatically submit payment.</div><label>Payment button label</label><input id="poCtaLabel"><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">'
                 : '<div class="menu-split"></div><div class="menu-section-title">Call to Actions</div><label>Button label</label><input id="poCtaLabel"><label>Button link</label><input id="poCtaLink" placeholder="https://..."><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">';
-            settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="₱299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="₱499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
+            settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="â‚±299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="â‚±499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
             var poDescriptionField=document.getElementById("poDescription");
             if(poDescriptionField){
                 poDescriptionField.insertAdjacentHTML("afterend",'<div class="menu-split"></div><div class="menu-section-title">Inventory</div><label>Available stock</label><input id="poStock" type="number" min="0" step="1" placeholder="Leave blank for unlimited"><div class="meta" style="margin:6px 0 0;">Set a stock count to cap cart quantity and stop checkout once paid orders consume the remaining inventory.</div>');
@@ -12807,7 +12212,7 @@ function renderSettings(){
             var pricingActionSection=isCheckoutPricingEditor
                 ? '<div class="menu-split"></div><div class="menu-section-title">Payment Action</div><div class="meta" style="margin:0 0 10px;">This checkout pricing card is automatically the Pay Now button. Buyers do not need any extra action setup here.</div><label>Payment button label</label><input id="priceCtaLabel"><label>Button color</label><input id="priceCtaBg" type="color"><label>Button text color</label><input id="priceCtaText" type="color">'
                 : '<div class="menu-split"></div><div class="menu-section-title">Call to Actions</div><label>Button label</label><input id="priceCtaLabel"><label>Button link</label><input id="priceCtaLink" placeholder="https://..."><label>Button color</label><input id="priceCtaBg" type="color"><label>Button text color</label><input id="priceCtaText" type="color">';
-            settings.innerHTML='<div class="menu-section-title">Content</div>'+pricingContentMeta+'<label>Plan name</label><input id="pricePlan"><label>'+(isCheckoutPricingEditor?'Fallback sale price':'Sale price')+'</label><input id="priceValue" placeholder="₱49"><label>'+(isCheckoutPricingEditor?'Fallback regular price (after countdown)':'Regular price (after countdown)')+'</label><input id="priceRegular" placeholder="₱79"><label>Period</label><input id="pricePeriod" placeholder="/month"><label>Subtitle</label><input id="priceSubtitle"><label>Badge</label><input id="priceBadge" placeholder="Popular"><label>Promo key (legacy)</label><input id="pricePromo" placeholder="spring-sale"><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featCards+'<button type="button" id="addPriceFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+pricingActionSection+'<div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="priceTextColor" type="color"><label>Background color</label><input id="priceBg" type="color"><label>Border</label><input id="priceBorder">'+radiusHelpLabelHtml("priceRadiusHelp","Border radius")+'<div class="px-wrap"><input id="priceRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="priceShadow">'+posControls+moveControls+remove;
+            settings.innerHTML='<div class="menu-section-title">Content</div>'+pricingContentMeta+'<label>Plan name</label><input id="pricePlan"><label>'+(isCheckoutPricingEditor?'Fallback sale price':'Sale price')+'</label><input id="priceValue" placeholder="â‚±49"><label>'+(isCheckoutPricingEditor?'Fallback regular price (after countdown)':'Regular price (after countdown)')+'</label><input id="priceRegular" placeholder="â‚±79"><label>Period</label><input id="pricePeriod" placeholder="/month"><label>Subtitle</label><input id="priceSubtitle"><label>Badge</label><input id="priceBadge" placeholder="Popular"><label>Promo key (legacy)</label><input id="pricePromo" placeholder="spring-sale"><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featCards+'<button type="button" id="addPriceFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+pricingActionSection+'<div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="priceTextColor" type="color"><label>Background color</label><input id="priceBg" type="color"><label>Border</label><input id="priceBorder">'+radiusHelpLabelHtml("priceRadiusHelp","Border radius")+'<div class="px-wrap"><input id="priceRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="priceShadow">'+posControls+moveControls+remove;
             var priceCtaLabelField=document.getElementById("priceCtaLabel");
             var priceCtaLinkField=document.getElementById("priceCtaLink");
             if(priceCtaLabelField&&priceCtaLinkField){
@@ -13009,7 +12414,7 @@ function renderSettings(){
                 var val=String(f||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
                 return '<div class="menu-item-card" data-idx="'+idx+'"><div class="menu-item-head"><strong>Summary item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="csMoveUp" data-idx="'+idx+'" title="Move up"><i class="fas fa-arrow-up"></i></button><button type="button" class="csMoveDown" data-idx="'+idx+'" title="Move down"><i class="fas fa-arrow-down"></i></button><button type="button" class="csDelete menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button></div></div><label>Text</label><input class="csFeature" data-idx="'+idx+'" value="'+val+'"></div>';
             }).join("");
-            settings.innerHTML='<div class="menu-section-title">'+(isPhysicalSummary?'Physical Checkout Summary':'Checkout Summary')+'</div><div class="meta" style="margin:0 0 10px;">'+(isPhysicalSummary?'Best used on physical-product checkout pages. Selected product images, cart items, and totals will replace these fallback values on the live page.':'Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.')+'</div><label>Eyebrow</label><input id="csHeading"><label>'+(isPhysicalSummary?'Fallback product name':'Fallback plan name')+'</label><input id="csPlan"><label>'+(isPhysicalSummary?'Fallback total':'Fallback price')+'</label><input id="csPrice" placeholder="₱29"><label>Fallback regular price</label><input id="csRegular" placeholder="₱49"><label>Period</label><input id="csPeriod" placeholder="'+(isPhysicalSummary?'':'/month')+'"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="'+(isPhysicalSummary?'Order Summary':'Selected Plan')+'"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
+            settings.innerHTML='<div class="menu-section-title">'+(isPhysicalSummary?'Physical Checkout Summary':'Checkout Summary')+'</div><div class="meta" style="margin:0 0 10px;">'+(isPhysicalSummary?'Best used on physical-product checkout pages. Selected product images, cart items, and totals will replace these fallback values on the live page.':'Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.')+'</div><label>Eyebrow</label><input id="csHeading"><label>'+(isPhysicalSummary?'Fallback product name':'Fallback plan name')+'</label><input id="csPlan"><label>'+(isPhysicalSummary?'Fallback total':'Fallback price')+'</label><input id="csPrice" placeholder="â‚±29"><label>Fallback regular price</label><input id="csRegular" placeholder="â‚±49"><label>Period</label><input id="csPeriod" placeholder="'+(isPhysicalSummary?'':'/month')+'"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="'+(isPhysicalSummary?'Order Summary':'Selected Plan')+'"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
             bind("csHeading",(t.settings&&t.settings.heading)||(isPhysicalSummary?"Review Your Order":"Order Summary"),v=>{t.settings=t.settings||{};t.settings.heading=v;renderCanvas();},{undo:true});
             bind("csPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings=t.settings||{};t.settings.plan=v;renderCanvas();},{undo:true});
             bindCurrency("csPrice",(t.settings&&t.settings.price)||"",v=>{t.settings=t.settings||{};t.settings.price=v;renderCanvas();},{undo:true});
@@ -13209,7 +12614,7 @@ function renderSettings(){
         var textTypographyControls=(t.type==="text"||t.type==="heading")
             ? '<label>Line height</label><input id="lh" placeholder="1.5"><label>Letter spacing</label><div class="px-wrap"><input id="ls" type="number" step="0.1"><span class="px-unit">px</span></div>'
             : '';
-        var sizeBlock='<div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>↔</span></button><span>Link</span></div></div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>↔</span></button><span>Link</span></div></div></div>';
+        var sizeBlock='<div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>â†”</span></button><span>Link</span></div></div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>â†”</span></button><span>Link</span></div></div></div>';
         var buttonBgControl=(t.type==="button")?'<label>Button color</label><input id="btnBg" type="color">':'';
         var buttonWrapBgControl=(t.type==="button")?'<label>Background color</label><input id="btnWrapBg" type="color">':'';
         var buttonTextStyleControl=(t.type==="button")?'<label>Text style</label><div class="menu-style-row"><button type="button" id="btnBold" class="menu-align-btn" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button><button type="button" id="btnItalic" class="menu-align-btn" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button></div>':'';
@@ -13431,7 +12836,7 @@ function renderSettings(){
     } else {
         var padDef=[0,0,0,0],marDef=[0,0,0,0];
         var pad=parseSpacing(t.style&&t.style.padding,padDef),mar=parseSpacing(t.style&&t.style.margin,marDef);
-        settings.innerHTML='<label>Background color</label><input id="bg" type="color"><div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>↔</span></button><span>Link</span></div></div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>↔</span></button><span>Link</span></div></div></div><label>Gap</label><div class="px-wrap"><input id="g" type="number" step="1"><span class="px-unit">px</span></div>'+remove;
+        settings.innerHTML='<label>Background color</label><input id="bg" type="color"><div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>â†”</span></button><span>Link</span></div></div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>â†”</span></button><span>Link</span></div></div></div><label>Gap</label><div class="px-wrap"><input id="g" type="number" step="1"><span class="px-unit">px</span></div>'+remove;
         bind("bg",(t.style&&t.style.backgroundColor)||"#ffffff",v=>sty().backgroundColor=v,{undo:true});
         var paddingLinked=false,marginLinked=false;
         function syncPadding(){saveToHistory();var pt=Number(document.getElementById("pTop").value)||0,pr=Number(document.getElementById("pRight").value)||0,pb=Number(document.getElementById("pBottom").value)||0,pl=Number(document.getElementById("pLeft").value)||0;if(paddingLinked){document.getElementById("pRight").value=pt;document.getElementById("pBottom").value=pt;document.getElementById("pLeft").value=pt;sty().padding=spacingToCss([pt,pt,pt,pt]);}else sty().padding=spacingToCss([pt,pr,pb,pl]);renderCanvas();}
@@ -13531,11 +12936,11 @@ function sidebarPreviewMarkup(type){
         case "faq":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line md'></span></span><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line lg'></span></span></span></span>";
         case "pricing":
-            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Popular</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>₱49</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Popular</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±49</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
         case "product_offer":
-            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-media'></span><span class='fb-comp-preview-pill'>Best Seller</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>₱299</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-media'></span><span class='fb-comp-preview-pill'>Best Seller</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±299</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
         case "checkout_summary":
-            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Selected</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±29</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Pay Now</span></span></span>";
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Selected</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>Ã¢â€šÂ±29</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Pay Now</span></span></span>";
         case "countdown":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-timer'><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>12</span><br><span class='fb-comp-preview-timer-unit'>Hr</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>08</span><br><span class='fb-comp-preview-timer-unit'>Min</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>43</span><br><span class='fb-comp-preview-timer-unit'>Sec</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>05</span><br><span class='fb-comp-preview-timer-unit'>Day</span></span></span></span></span>";
         default:
@@ -13892,6 +13297,7 @@ loadStep(state.sid);
 })();
 </script>
 @endsection
+
 
 
 
