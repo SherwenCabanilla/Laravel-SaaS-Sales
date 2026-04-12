@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Funnel Builder')
 @section('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14055,6 +14055,20 @@ function persistCurrentStep(){
         t.settings.height="";t.settings.maxWidth="";t.settings.minHeight="";
         var fa=document.getElementById("formAlign");
         if(fa){var aval=(fa.value||"left");t.settings=t.settings||{};t.settings.alignment=aval;t.style=t.style||{};t.style.textAlign=aval;}
+    }
+    if(_canvasLockedWidth<=0 && canvas){
+        var liveW=canvas.offsetWidth;
+        if(liveW>200){
+            _canvasLockedWidth=liveW;
+            var liveInnerW=canvas.clientWidth||0;
+            if(liveInnerW>0)_canvasInnerWidth=liveInnerW;
+            var liveCS=window.getComputedStyle?window.getComputedStyle(canvas):null;
+            var livePadX=liveCS?((parseFloat(liveCS.paddingLeft)||0)+(parseFloat(liveCS.paddingRight)||0)):0;
+            var liveBorderX=liveCS?((parseFloat(liveCS.borderLeftWidth)||0)+(parseFloat(liveCS.borderRightWidth)||0)):0;
+            var liveContentW=Math.round(liveW-livePadX-liveBorderX);
+            if(liveContentW<=0 && liveInnerW>0)liveContentW=Math.round(liveInnerW-livePadX);
+            if(liveContentW>0)_canvasContentWidth=liveContentW;
+        }
     }
     var prefs=editorPrefs();
     if(_canvasLockedWidth>0)prefs.canvasWidth=_canvasLockedWidth;
