@@ -170,7 +170,8 @@
         .builder-form-input::placeholder { color: var(--fb-placeholder-color, #94a3b8); opacity: 1; }
         .price { font-size: 34px; font-weight: 800; color: #047857; margin: 0 0 12px; }
         .row { display: flex; gap: 10px; flex-wrap: wrap; }
-        .builder-section { border-radius: 14px; margin-bottom: 14px; border: none; }
+        .builder-section { border-radius: 14px; margin-bottom: 14px; border: none; padding: 8px; }
+        .builder-section:last-child { margin-bottom: 0; }
         .builder-section--freeform { border-radius: 0; padding: 0; margin: 0 -2rem; background: transparent; border: none; width: calc(100% + 4rem); max-width: none; }
         .builder-section--freeform .builder-row { padding: 0; gap: 0; margin: 0; display: block; }
         .builder-section--freeform .builder-row-inner { display: block; gap: 0; }
@@ -185,14 +186,14 @@
         .builder-row-inner { width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; position: relative; }
         .builder-col-inner { width: 100%; box-sizing: border-box; max-width: 100%; overflow: visible; position: relative; min-height: 100%; }
         .builder-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px; }
-        .builder-col { min-width: 0; min-height: 120px; flex: 1 1 0; position: relative; overflow: visible; background: #ffffff; }
+        .builder-col { min-width: 0; min-height: 80px; flex: 1 1 0; position: relative; overflow: visible; background: #ffffff; padding: 4px; }
         .builder-col > .builder-col-inner > .builder-el { max-width: 100%; overflow: visible; }
         .builder-col.builder-col--abs { overflow: visible; }
         .builder-col.builder-col--abs > .builder-col-inner { overflow: visible; position: relative; }
         .builder-col.builder-col--abs > .builder-col-inner > .builder-el { max-width: none; overflow: visible; }
         .builder-col.builder-col--abs .builder-el + .builder-el { margin-top: 0; }
-        .builder-el + .builder-el { margin-top: 10px; }
-        .builder-heading { margin: 0; font-size: 32px; line-height: 1.2; overflow-wrap: break-word; word-break: break-word; }
+        .builder-el + .builder-el { margin-top: 6px; }
+        .builder-heading { margin: 0; font-size: 32px; line-height: 1.2; overflow-wrap: break-word; word-break: break-word; color: #000000; }
         .builder-text { margin: 0; color: #334155; line-height: normal; white-space: pre-wrap; overflow-wrap: break-word; word-break: break-word; }
         .builder-text p,
         .builder-text div,
@@ -548,6 +549,280 @@
         }
         /* Preview device buttons should emulate viewport width only.
            Structural layout must stay on the same render path as publish mode. */
+        /* ═══════════════════════════════════════════════════════════
+           Device-aware layout overrides for Preview Mode.
+           We key off `body[data-preview-device="..."]` so it works
+           regardless of the actual browser viewport width.
+           ═══════════════════════════════════════════════════════════ */
+
+        /* ── TABLET (768px viewport) ── */
+        body[data-preview-device="tablet"] .builder-row-inner{
+            flex-direction: column !important;
+        }
+        body[data-preview-device="tablet"] .builder-col{
+            flex: 0 0 100% !important;
+            width: 100% !important;
+        }
+        body[data-preview-device="tablet"] .builder-carousel-content-row{
+            flex-direction: column !important;
+        }
+        body[data-preview-device="tablet"] .builder-carousel-content-col{
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        body[data-preview-device="tablet"] .step-content--full{
+            padding: 20px 1.25rem 32px !important;
+        }
+        body[data-preview-device="tablet"] .builder-section{
+            padding: 6px !important;
+        }
+        body[data-preview-device="tablet"] .builder-heading{
+            font-size: clamp(18px, 4vw, 28px) !important;
+        }
+        body[data-preview-device="tablet"] .builder-pricing{
+            max-width: 100% !important;
+        }
+        body[data-preview-device="tablet"] .builder-pricing-grid{
+            grid-template-columns: 1fr !important;
+        }
+        body[data-preview-device="tablet"] .builder-el[data-element-type="image"] img{
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        body[data-preview-device="tablet"] .builder-video-wrap{
+            max-width: 100% !important;
+        }
+        body[data-preview-device="tablet"] .builder-video-wrap iframe,
+        body[data-preview-device="tablet"] .builder-video-wrap video{
+            max-width: 100% !important;
+        }
+        body[data-preview-device="tablet"] .builder-section--freeform{
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            overflow-x: auto !important;
+        }
+        body[data-preview-device="tablet"] .builder-menu-list{
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+        }
+
+        /* ── MOBILE (375px viewport) ── */
+        body[data-preview-device="mobile"] .builder-row-inner{
+            flex-direction: column !important;
+        }
+        body[data-preview-device="mobile"] .builder-col{
+            flex: 0 0 100% !important;
+            width: 100% !important;
+        }
+        body[data-preview-device="mobile"] .builder-carousel-content-row{
+            flex-direction: column !important;
+        }
+        body[data-preview-device="mobile"] .builder-carousel-content-col{
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        body[data-preview-device="mobile"] .step-content--full{
+            padding: 12px 0.75rem 24px !important;
+        }
+        body[data-preview-device="mobile"] .builder-section{
+            padding: 4px !important;
+            margin-bottom: 8px !important;
+            border-radius: 8px !important;
+        }
+        body[data-preview-device="mobile"] .builder-row{
+            padding: 2px !important;
+            gap: 4px !important;
+        }
+        body[data-preview-device="mobile"] .builder-col{
+            padding: 2px !important;
+            min-height: 40px !important;
+        }
+        body[data-preview-device="mobile"] .builder-heading{
+            font-size: clamp(16px, 5vw, 22px) !important;
+            line-height: 1.3 !important;
+        }
+        body[data-preview-device="mobile"] .builder-text{
+            font-size: clamp(12px, 3.5vw, 15px) !important;
+            line-height: 1.5 !important;
+        }
+        body[data-preview-device="mobile"] .btn{
+            padding: 8px 14px !important;
+            font-size: clamp(12px, 3.5vw, 15px) !important;
+        }
+        body[data-preview-device="mobile"] .builder-pricing{
+            max-width: 100% !important;
+        }
+        body[data-preview-device="mobile"] .builder-pricing-grid{
+            grid-template-columns: 1fr !important;
+        }
+        body[data-preview-device="mobile"] .builder-pricing-card{
+            padding: 12px !important;
+        }
+        body[data-preview-device="mobile"] .builder-pricing-price{
+            font-size: clamp(22px, 6vw, 32px) !important;
+        }
+        body[data-preview-device="mobile"] .builder-el[data-element-type="image"] img{
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        body[data-preview-device="mobile"] .builder-video-wrap{
+            max-width: 100% !important;
+        }
+        body[data-preview-device="mobile"] .builder-video-wrap iframe,
+        body[data-preview-device="mobile"] .builder-video-wrap video{
+            max-width: 100% !important;
+            height: auto !important;
+        }
+        body[data-preview-device="mobile"] .builder-section--freeform{
+            width: 100% !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            overflow-x: auto !important;
+        }
+        body[data-preview-device="mobile"] .builder-faq-question{
+            font-size: 14px !important;
+        }
+        body[data-preview-device="mobile"] .builder-faq-answer{
+            font-size: 12px !important;
+        }
+        body[data-preview-device="mobile"] .builder-testimonial-quote{
+            font-size: 13px !important;
+        }
+        body[data-preview-device="mobile"] .builder-form-input{
+            padding: 8px !important;
+            font-size: 14px !important;
+        }
+        body[data-preview-device="mobile"] .builder-menu-list{
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 4px !important;
+        }
+        body[data-preview-device="mobile"] .builder-menu-link{
+            display: block !important;
+            text-align: center !important;
+            padding: 8px !important;
+        }
+        body[data-preview-device="mobile"] .builder-countdown{
+            gap: 6px !important;
+        }
+        body[data-preview-device="mobile"] .builder-countdown-unit{
+            min-width: 50px !important;
+            padding: 8px 4px !important;
+        }
+        body[data-preview-device="mobile"] .builder-countdown-number{
+            font-size: clamp(18px, 5vw, 26px) !important;
+        }
+        body[data-preview-device="mobile"] .builder-el + .builder-el{
+            margin-top: 4px !important;
+        }
+        body[data-preview-device="mobile"] .builder-review-card{
+            padding: 10px !important;
+        }
+        body[data-preview-device="mobile"] .builder-review-card-text{
+            font-size: 12px !important;
+        }
+        body[data-preview-device="mobile"] .builder-product-offer{
+            gap: 3px !important;
+        }
+
+        /* ── REAL VIEWPORT responsive (published mode) ── */
+        @media (max-width: 768px) {
+            body.is-published .builder-row-inner{
+                flex-direction: column;
+            }
+            body.is-published .builder-col{
+                flex: 0 0 100%;
+                width: 100%;
+            }
+            body.is-published .builder-carousel-content-row{
+                flex-direction: column;
+            }
+            body.is-published .builder-carousel-content-col{
+                min-width: 0;
+                width: 100%;
+            }
+            body.is-published .step-content--full{
+                padding: 20px 1rem 32px;
+            }
+            body.is-published .builder-heading{
+                font-size: clamp(18px, 5vw, 28px);
+            }
+            body.is-published .builder-pricing-grid{
+                grid-template-columns: 1fr;
+            }
+            body.is-published .builder-section--freeform{
+                width: 100% !important;
+                margin-left: 0;
+                margin-right: 0;
+                overflow-x: auto;
+            }
+            body.is-published .builder-menu-list{
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+        }
+        @media (max-width: 480px) {
+            body.is-published .step-content--full{
+                padding: 12px 0.75rem 24px;
+            }
+            body.is-published .builder-section{
+                padding: 4px;
+                margin-bottom: 8px;
+            }
+            body.is-published .builder-row{
+                padding: 2px;
+                gap: 4px;
+            }
+            body.is-published .builder-col{
+                padding: 2px;
+                min-height: 40px;
+            }
+            body.is-published .builder-heading{
+                font-size: clamp(16px, 5vw, 22px);
+                line-height: 1.3;
+            }
+            body.is-published .builder-text{
+                font-size: clamp(12px, 3.5vw, 15px);
+                line-height: 1.5;
+            }
+            body.is-published .btn{
+                padding: 8px 14px;
+                font-size: clamp(12px, 3.5vw, 15px);
+            }
+            body.is-published .builder-pricing-card{
+                padding: 12px;
+            }
+            body.is-published .builder-pricing-price{
+                font-size: clamp(22px, 6vw, 32px);
+            }
+            body.is-published .builder-faq-question{
+                font-size: 14px;
+            }
+            body.is-published .builder-faq-answer{
+                font-size: 12px;
+            }
+            body.is-published .builder-testimonial-quote{
+                font-size: 13px;
+            }
+            body.is-published .builder-form-input{
+                padding: 8px;
+                font-size: 14px;
+            }
+            body.is-published .builder-menu-list{
+                flex-direction: column;
+                align-items: stretch;
+                gap: 4px;
+            }
+            body.is-published .builder-menu-link{
+                display: block;
+                text-align: center;
+                padding: 8px;
+            }
+            body.is-published .builder-el + .builder-el{
+                margin-top: 4px;
+            }
+        }
         .preview-toolbar {
             position: fixed;
             display: flex;
@@ -1305,11 +1580,34 @@
                                                     !empty(trim((string) ($rawStyle['width'] ?? '')))
                                                     || !empty(trim((string) ($rawStyle['height'] ?? '')))
                                                 );
-                                                $btnWrapStyle = ($type === 'button' ? (($style !== '' ? ($style . ';') : '') . $alignStyle . ($buttonContainerBg !== '' ? 'background-color:' . $buttonContainerBg . ';' : '')) : '');
+                                                $btnWrapMargin = trim((string) ($rawStyle['margin'] ?? ''));
+                                                $btnWrapWidth = trim((string) ($rawStyle['width'] ?? ''));
+                                                $btnWrapHeight = trim((string) ($rawStyle['height'] ?? ''));
+                                                $btnWrapLayoutStyle = '';
+                                                if ($btnWrapMargin !== '' && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', $btnWrapMargin)) {
+                                                    $btnWrapLayoutStyle .= 'margin:' . $btnWrapMargin . ';';
+                                                }
+                                                if ($btnWrapWidth !== '' && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', $btnWrapWidth)) {
+                                                    $btnWrapLayoutStyle .= 'width:' . $btnWrapWidth . ';';
+                                                }
+                                                if ($btnWrapHeight !== '' && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', $btnWrapHeight)) {
+                                                    $btnWrapLayoutStyle .= 'height:' . $btnWrapHeight . ';align-items:stretch;';
+                                                }
+                                                $btnWrapStyle = ($type === 'button' ? ($btnWrapLayoutStyle . $alignStyle . ($buttonContainerBg !== '' ? 'background-color:' . $buttonContainerBg . ';' : '')) : '');
                                                 $iconWrapStyle = ($type === 'icon' ? $alignStyle : '');
                                                 $imageWrapStyle = ($style !== '' ? ($style . ';') : '');
                                                 $mediaWrapStyle = ($style !== '' ? ($style . ';') : '') . $alignStyle;
                                                 $btnInnerStyle = $contentStyle;
+                                                if ($type === 'button') {
+                                                    $btnHasBg = !empty(trim((string) ($rawStyle['backgroundColor'] ?? ($rawStyle['background-color'] ?? ''))));
+                                                    $btnHasColor = !empty(trim((string) ($rawStyle['color'] ?? '')));
+                                                    $btnHasPadding = !empty(trim((string) ($rawStyle['padding'] ?? '')));
+                                                    $btnHasRadius = !empty(trim((string) ($rawStyle['borderRadius'] ?? ($rawStyle['border-radius'] ?? ''))));
+                                                    if (!$btnHasBg) { $btnInnerStyle .= ($btnInnerStyle !== '' ? ';' : '') . 'background-color:#240E35'; }
+                                                    if (!$btnHasColor) { $btnInnerStyle .= ($btnInnerStyle !== '' ? ';' : '') . 'color:#fff'; }
+                                                    if (!$btnHasPadding) { $btnInnerStyle .= ($btnInnerStyle !== '' ? ';' : '') . 'padding:10px 18px'; }
+                                                    if (!$btnHasRadius) { $btnInnerStyle .= ($btnInnerStyle !== '' ? ';' : '') . 'border-radius:999px'; }
+                                                }
                                                 if ($type === 'button' && ($widthBehavior === 'fill' || $hasButtonBoxSizing)) {
                                                     $btnInnerStyle .= ($btnInnerStyle !== '' ? ';' : '') . 'width:100%;display:flex;align-items:center;justify-content:center;box-sizing:border-box;text-align:center;';
                                                 }
@@ -1366,7 +1664,19 @@
                                                         }
                                                     }
                                                     elseif ($type === 'video') { $elWrapStyle .= $mediaWrapStyle; }
-                                                    elseif ($type === 'form') { $elWrapStyle .= $alignStyle; }
+                                                    elseif ($type === 'form') {
+                                                        $formWidth = trim((string) ($rawStyle['width'] ?? ''));
+                                                        $formFormWidth = trim((string) ($settings['formWidth'] ?? ($settings['width'] ?? '')));
+                                                        $formEffectiveWidth = $formWidth !== '' ? $formWidth : ($formFormWidth !== '' ? $formFormWidth : '');
+                                                        $formWrapLayoutStyle = '';
+                                                        if ($formEffectiveWidth !== '' && preg_match('/^[#(),.%\-\sA-Za-z0-9]+$/u', $formEffectiveWidth)) {
+                                                            $formWrapLayoutStyle .= 'width:' . $formEffectiveWidth . ';';
+                                                        }
+                                                        $elWrapStyle .= $formWrapLayoutStyle . $alignStyle;
+                                                    }
+                                                    elseif (in_array($type, ['heading', 'text', 'spacer', 'divider', 'testimonial', 'faq', 'pricing', 'countdown', 'product_offer', 'review_form', 'review_list', 'reviews', 'carousel', 'menu', 'checkout_summary', 'physical_checkout_summary', 'shipping_details'], true)) {
+                                                        $elWrapStyle .= $style;
+                                                    }
                                                 }
                                             @endphp
                                             <div class="builder-el" data-element-type="{{ $type }}" @if($elWrapStyle !== '') style="{{ $elWrapStyle }}" @endif>
@@ -1423,10 +1733,17 @@
                                                         $iconClass = $iconPrefix . ' fa-' . $iconName;
                                                         $iconLink = trim((string) ($settings['link'] ?? ''));
                                                     @endphp
+                                                    @php
+                                                        $iconFontSize = trim((string) ($rawStyle['fontSize'] ?? ($rawStyle['font-size'] ?? '')));
+                                                        $iconColor = trim((string) ($rawStyle['color'] ?? ''));
+                                                        $iconComputedStyle = '';
+                                                        $iconComputedStyle .= 'font-size:' . ($iconFontSize !== '' ? $iconFontSize : '36px') . ';';
+                                                        $iconComputedStyle .= 'color:' . ($iconColor !== '' ? $iconColor : '#2E1244') . ';';
+                                                    @endphp
                                                     @if($iconLink !== '')
-                                                        <a href="{{ $iconLink }}" style="{{ $style !== '' ? $style : 'font-size:36px;color:#1d4ed8;' }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></a>
+                                                        <a href="{{ $iconLink }}" style="{{ $iconComputedStyle }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></a>
                                                     @else
-                                                        <span style="{{ $style !== '' ? $style : 'font-size:36px;color:#1d4ed8;' }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></span>
+                                                        <span style="{{ $iconComputedStyle }}"><i class="{{ $iconClass }}" aria-hidden="true"></i></span>
                                                     @endif
                                                 @elseif($type === 'video')
                                                     @php
@@ -5020,3 +5337,4 @@
     </script>
 </body>
 </html>
+
