@@ -1,0 +1,842 @@
+{
+  "name": "Last Chance Wildlife Landing",
+  "description": "Single-page wildlife advocacy landing inspired by the provided HTML/CSS.",
+  "template_type": "service",
+  "template_tags": ["Single Page", "Landing", "Wildlife", "__single_scroll"],
+  "steps": [
+    {
+      "title": "Landing",
+      "slug": "landing",
+      "type": "landing",
+      "layout_json": {
+        "root": [
+          {
+            "kind": "section",
+            "id": "sec_nav",
+            "style": {
+              "padding": "16px 48px",
+              "backgroundColor": "#ffffff",
+              "borderBottom": "1px solid #eeeeee"
+            },
+            "settings": { "contentWidth": "full" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_nav",
+                "style": { "gap": "18px", "alignItems": "center" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_nav_logo",
+                    "style": { "flex": "0 0 auto" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_nav_logo",
+                        "type": "image",
+                        "content": "",
+                        "style": { "width": "42px", "height": "42px" },
+                        "settings": {
+                          "src": "https://dummyimage.com/84x84/e84c1e/ffffff&text=LC",
+                          "alt": "Last Chance",
+                          "alignment": "left"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_nav_links",
+                    "style": { "flex": "1 1 auto", "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_nav_links",
+                        "type": "text",
+                        "content": "<a href=\"#\" style=\"text-decoration:none;color:#222;margin:0 18px;\">About</a><a href=\"#\" style=\"text-decoration:none;color:#222;margin:0 18px;\">What We Do</a><a href=\"#\" style=\"text-decoration:none;color:#222;margin:0 18px;\">Who We Are</a><a href=\"#\" style=\"text-decoration:none;color:#222;margin:0 18px;\">Events</a><a href=\"#\" style=\"text-decoration:none;color:#222;margin:0 18px;\">News</a><a href=\"#\" style=\"text-decoration:none;color:#222;margin:0 18px;\">Contact</a>",
+                        "style": {
+                          "fontSize": "15px",
+                          "fontWeight": "500",
+                          "color": "#222222"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_nav_cta",
+                    "style": { "flex": "0 0 auto", "textAlign": "right" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_nav_cta",
+                        "type": "button",
+                        "content": "Donate Now",
+                        "style": {
+                          "backgroundColor": "#e84c1e",
+                          "color": "#ffffff",
+                          "padding": "12px 28px",
+                          "borderRadius": "4px",
+                          "fontWeight": "700"
+                        },
+                        "settings": {
+                          "actionType": "link",
+                          "link": "#",
+                          "alignment": "right"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_hero",
+            "style": {
+              "padding": "80px 80px",
+              "backgroundImage": "linear-gradient(135deg, rgba(184,205,216,0.88) 0%, rgba(200,216,228,0.88) 40%, rgba(208,221,232,0.9) 100%), url('https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=1400&q=80')",
+              "backgroundSize": "cover",
+              "backgroundPosition": "center",
+              "minHeight": "520px"
+            },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_hero",
+                "style": { "gap": "16px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_hero",
+                    "style": { "maxWidth": "620px" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_hero_accent",
+                        "type": "text",
+                        "content": "&nbsp;",
+                        "style": {
+                          "width": "60px",
+                          "height": "10px",
+                          "backgroundColor": "#e84c1e",
+                          "margin": "0 0 20px"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_hero_heading",
+                        "type": "heading",
+                        "content": "PROTECT OUR<br><span style=\"color:#e84c1e;\">WILDLIFE</span>",
+                        "style": {
+                          "fontSize": "72px",
+                          "fontWeight": "900",
+                          "lineHeight": "1",
+                          "textTransform": "uppercase",
+                          "letterSpacing": "-1px",
+                          "color": "#222222"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_hero_text",
+                        "type": "text",
+                        "content": "Lorem ipsum dolor sit amet, consect adipisicing elit. Autem dolore, alias, numquam enim ab voluptate id quam harum ducimus cupiditate similique.",
+                        "style": {
+                          "margin": "24px 0 0",
+                          "fontSize": "16px",
+                          "lineHeight": "1.7",
+                          "color": "#333333",
+                          "maxWidth": "440px"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_stats",
+            "style": {
+              "padding": "80px 48px",
+              "backgroundColor": "#ffffff"
+            },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_stats",
+                "style": { "gap": "16px", "alignItems": "center" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_stat_1",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_stat_1_num",
+                        "type": "heading",
+                        "content": "40K",
+                        "style": {
+                          "fontSize": "64px",
+                          "fontWeight": "900",
+                          "color": "#e84c1e",
+                          "lineHeight": "1"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_stat_1_label",
+                        "type": "text",
+                        "content": "Endangered<br>Species",
+                        "style": {
+                          "fontSize": "15px",
+                          "fontWeight": "700",
+                          "color": "#222222",
+                          "margin": "12px 0 0"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_stat_2",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_stat_2_num",
+                        "type": "heading",
+                        "content": "800",
+                        "style": {
+                          "fontSize": "64px",
+                          "fontWeight": "900",
+                          "color": "#e84c1e",
+                          "lineHeight": "1"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_stat_2_label",
+                        "type": "text",
+                        "content": "Brave and Kind<br>Volunteers",
+                        "style": {
+                          "fontSize": "15px",
+                          "fontWeight": "700",
+                          "color": "#222222",
+                          "margin": "12px 0 0"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_stat_3",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_stat_3_num",
+                        "type": "heading",
+                        "content": "140",
+                        "style": {
+                          "fontSize": "64px",
+                          "fontWeight": "900",
+                          "color": "#e84c1e",
+                          "lineHeight": "1"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_stat_3_label",
+                        "type": "text",
+                        "content": "Conservation<br>Programs",
+                        "style": {
+                          "fontSize": "15px",
+                          "fontWeight": "700",
+                          "color": "#222222",
+                          "margin": "12px 0 0"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_stat_4",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_stat_4_num",
+                        "type": "heading",
+                        "content": "1",
+                        "style": {
+                          "fontSize": "64px",
+                          "fontWeight": "900",
+                          "color": "#e84c1e",
+                          "lineHeight": "1"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_stat_4_label",
+                        "type": "text",
+                        "content": "Earth for Us to<br>Protect",
+                        "style": {
+                          "fontSize": "15px",
+                          "fontWeight": "700",
+                          "color": "#222222",
+                          "margin": "12px 0 0"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_cards_images",
+            "style": { "padding": "0", "backgroundColor": "#ffffff" },
+            "settings": { "contentWidth": "full" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_cards_images",
+                "style": { "gap": "0" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_card_img_1",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_card_img_1",
+                        "type": "image",
+                        "content": "",
+                        "style": { "width": "100%", "height": "300px" },
+                        "settings": {
+                          "src": "https://images.unsplash.com/photo-1474511320723-9a56873867b5?w=600&q=80",
+                          "alt": "About Last Chance",
+                          "alignment": "center"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_card_img_2",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_card_img_2",
+                        "type": "image",
+                        "content": "",
+                        "style": { "width": "100%", "height": "300px" },
+                        "settings": {
+                          "src": "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=600&q=80",
+                          "alt": "Upcoming Projects",
+                          "alignment": "center"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_card_img_3",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_card_img_3",
+                        "type": "image",
+                        "content": "",
+                        "style": { "width": "100%", "height": "300px" },
+                        "settings": {
+                          "src": "https://images.unsplash.com/photo-1535082623926-b39352a03fb7?w=600&q=80",
+                          "alt": "How You Can Help",
+                          "alignment": "center"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_cards_body",
+            "style": { "padding": "0", "backgroundColor": "#ffffff" },
+            "settings": { "contentWidth": "full" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_cards_body",
+                "style": { "gap": "0" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_card_body_1",
+                    "style": { "backgroundColor": "#222222", "color": "#ffffff", "padding": "36px 32px 48px" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_card_1_heading",
+                        "type": "heading",
+                        "content": "About Last Chance",
+                        "style": { "fontSize": "32px", "fontWeight": "800", "margin": "0 0 16px", "color": "#ffffff" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_card_1_text",
+                        "type": "text",
+                        "content": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Autem dolore, alias, numquam enim ab voluptate id quam harum ducimus.",
+                        "style": { "fontSize": "15px", "lineHeight": "1.65", "color": "#ffffff", "opacity": "0.9" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_card_1_btn",
+                        "type": "button",
+                        "content": "Learn More",
+                        "style": {
+                          "backgroundColor": "transparent",
+                          "color": "#ffffff",
+                          "border": "2px solid rgba(255,255,255,0.7)",
+                          "padding": "11px 28px",
+                          "borderRadius": "2px",
+                          "fontWeight": "600",
+                          "margin": "28px 0 0"
+                        },
+                        "settings": { "actionType": "link", "link": "#", "alignment": "left" }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_card_body_2",
+                    "style": { "backgroundColor": "#7aafc8", "color": "#ffffff", "padding": "36px 32px 48px" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_card_2_heading",
+                        "type": "heading",
+                        "content": "Upcoming Projects",
+                        "style": { "fontSize": "32px", "fontWeight": "800", "margin": "0 0 16px", "color": "#ffffff" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_card_2_text",
+                        "type": "text",
+                        "content": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Autem dolore, alias, numquam enim ab voluptate id quam harum ducimus.",
+                        "style": { "fontSize": "15px", "lineHeight": "1.65", "color": "#ffffff", "opacity": "0.9" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_card_2_btn",
+                        "type": "button",
+                        "content": "Learn More",
+                        "style": {
+                          "backgroundColor": "transparent",
+                          "color": "#ffffff",
+                          "border": "2px solid rgba(255,255,255,0.7)",
+                          "padding": "11px 28px",
+                          "borderRadius": "2px",
+                          "fontWeight": "600",
+                          "margin": "28px 0 0"
+                        },
+                        "settings": { "actionType": "link", "link": "#", "alignment": "left" }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_card_body_3",
+                    "style": { "backgroundColor": "#e84c1e", "color": "#ffffff", "padding": "36px 32px 48px" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_card_3_heading",
+                        "type": "heading",
+                        "content": "How You Can Help",
+                        "style": { "fontSize": "32px", "fontWeight": "800", "margin": "0 0 16px", "color": "#ffffff" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_card_3_text",
+                        "type": "text",
+                        "content": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Autem dolore, alias, numquam enim ab voluptate id quam harum ducimus.",
+                        "style": { "fontSize": "15px", "lineHeight": "1.65", "color": "#ffffff", "opacity": "0.9" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_card_3_btn",
+                        "type": "button",
+                        "content": "Learn More",
+                        "style": {
+                          "backgroundColor": "transparent",
+                          "color": "#ffffff",
+                          "border": "2px solid rgba(255,255,255,0.7)",
+                          "padding": "11px 28px",
+                          "borderRadius": "2px",
+                          "fontWeight": "600",
+                          "margin": "28px 0 0"
+                        },
+                        "settings": { "actionType": "link", "link": "#", "alignment": "left" }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_events",
+            "style": { "padding": "80px 48px", "backgroundColor": "#ffffff" },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_events_title",
+                "style": { "gap": "12px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_events_title",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_events_title",
+                        "type": "heading",
+                        "content": "UPCOMING EVENTS<span style=\"color:#e84c1e;\">.</span>",
+                        "style": {
+                          "fontSize": "44px",
+                          "fontWeight": "900",
+                          "textTransform": "uppercase",
+                          "letterSpacing": "1px",
+                          "margin": "0 0 28px"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row_events_cards",
+                "style": { "gap": "24px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_event_1",
+                    "style": { "backgroundColor": "#e84c1e", "color": "#ffffff" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_event_img_1",
+                        "type": "image",
+                        "content": "",
+                        "style": { "width": "100%", "height": "340px" },
+                        "settings": {
+                          "src": "https://images.unsplash.com/photo-1597138804456-e7dca7f59d54?w=700&q=80",
+                          "alt": "Formal Gala Dinner",
+                          "alignment": "center"
+                        }
+                      },
+                      {
+                        "id": "el_event_meta_1",
+                        "type": "text",
+                        "content": "Tue, Mar 27 | San Francisco",
+                        "style": { "fontSize": "13px", "fontWeight": "500", "opacity": "0.85", "padding": "20px 24px 0" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_event_title_1",
+                        "type": "heading",
+                        "content": "Last Chance Formal Gala Dinner",
+                        "style": {
+                          "fontSize": "30px",
+                          "fontWeight": "800",
+                          "lineHeight": "1.1",
+                          "padding": "6px 24px 28px",
+                          "color": "#ffffff"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_event_2",
+                    "style": { "backgroundColor": "#e84c1e", "color": "#ffffff" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_event_img_2",
+                        "type": "image",
+                        "content": "",
+                        "style": { "width": "100%", "height": "340px" },
+                        "settings": {
+                          "src": "https://images.unsplash.com/photo-1504701954957-2010ec3bcec1?w=700&q=80",
+                          "alt": "Climate Change Conference",
+                          "alignment": "center"
+                        }
+                      },
+                      {
+                        "id": "el_event_meta_2",
+                        "type": "text",
+                        "content": "Tue, Mar 27 | San Francisco",
+                        "style": { "fontSize": "13px", "fontWeight": "500", "opacity": "0.85", "padding": "20px 24px 0" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_event_title_2",
+                        "type": "heading",
+                        "content": "Climate Change Conference",
+                        "style": {
+                          "fontSize": "30px",
+                          "fontWeight": "800",
+                          "lineHeight": "1.1",
+                          "padding": "6px 24px 28px",
+                          "color": "#ffffff"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_newsletter",
+            "style": { "padding": "72px 48px", "backgroundColor": "#f0a023" },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_newsletter",
+                "style": { "gap": "16px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_newsletter",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_newsletter_heading",
+                        "type": "heading",
+                        "content": "JOIN THE MOVEMENT!",
+                        "style": {
+                          "fontSize": "54px",
+                          "fontWeight": "900",
+                          "textTransform": "uppercase",
+                          "letterSpacing": "1px",
+                          "color": "#ffffff",
+                          "margin": "0 0 8px"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_newsletter_text",
+                        "type": "text",
+                        "content": "Get the Latest News &amp; Updates",
+                        "style": { "fontSize": "17px", "fontWeight": "700", "color": "#ffffff", "margin": "0 0 32px" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_newsletter_form",
+                        "type": "form",
+                        "content": "",
+                        "style": { "width": "100%", "maxWidth": "640px", "margin": "0 auto" },
+                        "settings": {
+                          "alignment": "center",
+                          "width": "640px",
+                          "buttonAlign": "center",
+                          "buttonBold": true,
+                          "labelColor": "#ffffff",
+                          "placeholderColor": "#9aa3af",
+                          "buttonBgColor": "transparent",
+                          "buttonTextColor": "#ffffff",
+                          "fields": [
+                            { "type": "email", "label": "Email", "placeholder": "Email", "required": true }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_footer",
+            "style": { "padding": "64px 48px 40px", "backgroundColor": "#ffffff", "borderTop": "3px solid #f0a023" },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_footer",
+                "style": { "gap": "48px", "alignItems": "flex-start" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_footer_contact",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_footer_contact_heading",
+                        "type": "heading",
+                        "content": "Contact Us",
+                        "style": { "fontSize": "22px", "fontWeight": "700", "margin": "0 0 24px" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_contact_form",
+                        "type": "form",
+                        "content": "",
+                        "style": { "width": "100%", "maxWidth": "420px" },
+                        "settings": {
+                          "alignment": "left",
+                          "width": "100%",
+                          "buttonAlign": "left",
+                          "buttonBold": true,
+                          "labelColor": "#222222",
+                          "placeholderColor": "#999999",
+                          "buttonBgColor": "transparent",
+                          "buttonTextColor": "#222222",
+                          "fields": [
+                            { "type": "text", "label": "First name", "placeholder": "First name", "required": false },
+                            { "type": "email", "label": "Email", "placeholder": "Email", "required": false },
+                            { "type": "phone_number", "label": "Phone", "placeholder": "Phone number", "required": false }
+                          ]
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_footer_address",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_footer_address_heading",
+                        "type": "heading",
+                        "content": "Address",
+                        "style": { "fontSize": "17px", "fontWeight": "700", "margin": "0 0 16px" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_address_text",
+                        "type": "text",
+                        "content": "500 Terry Francine St.<br>San Francisco, CA 941",
+                        "style": { "fontSize": "14px", "lineHeight": "1.7", "color": "#555555" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_address_link",
+                        "type": "text",
+                        "content": "<a href=\"#\" style=\"color:#555;text-decoration:none;\">Privacy Policy</a>",
+                        "style": { "fontSize": "14px", "margin": "18px 0 0" },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_footer_phone",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_footer_phone_heading",
+                        "type": "heading",
+                        "content": "Phone",
+                        "style": { "fontSize": "17px", "fontWeight": "700", "margin": "0 0 16px" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_phone_text",
+                        "type": "text",
+                        "content": "+123 456 789",
+                        "style": { "fontSize": "14px", "lineHeight": "1.7", "color": "#555555" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_phone_link",
+                        "type": "text",
+                        "content": "<a href=\"#\" style=\"color:#555;text-decoration:none;\">Terms and Condition</a>",
+                        "style": { "fontSize": "14px", "margin": "18px 0 0" },
+                        "settings": {}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_footer_email",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_footer_email_heading",
+                        "type": "heading",
+                        "content": "Email",
+                        "style": { "fontSize": "17px", "fontWeight": "700", "margin": "0 0 16px" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_email_text",
+                        "type": "text",
+                        "content": "info@example.com",
+                        "style": { "fontSize": "14px", "lineHeight": "1.7", "color": "#555555" },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_footer_email_link",
+                        "type": "text",
+                        "content": "<a href=\"#\" style=\"color:#555;text-decoration:none;\">Refund Policy</a>",
+                        "style": { "fontSize": "14px", "margin": "18px 0 0" },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row_footer_bottom",
+                "style": { "gap": "12px", "margin": "40px 0 0" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_footer_bottom",
+                    "style": { "textAlign": "right" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_footer_bottom",
+                        "type": "text",
+                        "content": "Built with <a href=\"#\" style=\"color:#e84c1e;text-decoration:none;\">systeme.io</a>",
+                        "style": { "fontSize": "12px", "color": "#aaaaaa" },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "sections": [],
+        "__editor": { "canvasBg": "#ffffff" }
+      }
+    }
+  ]
+}

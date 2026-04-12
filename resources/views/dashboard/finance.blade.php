@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Finance Dashboard')
 
@@ -39,19 +39,19 @@
     <div class="kpi-cards">
         <div class="card">
             <h3>Paid Total</h3>
-            <p>â‚±{{ number_format((float) ($statusAmounts['paid'] ?? 0), 2) }}</p>
+            <p>{{ number_format((float) ($statusAmounts['paid'] ?? 0), 2) }}</p>
         </div>
         <div class="card">
             <h3>Pending Total</h3>
-            <p>â‚±{{ number_format((float) ($statusAmounts['pending'] ?? 0), 2) }}</p>
+            <p>{{ number_format((float) ($statusAmounts['pending'] ?? 0), 2) }}</p>
         </div>
         <div class="card">
             <h3>Failed Total</h3>
-            <p>â‚±{{ number_format((float) ($statusAmounts['failed'] ?? 0), 2) }}</p>
+            <p>{{ number_format((float) ($statusAmounts['failed'] ?? 0), 2) }}</p>
         </div>
         <div class="card">
             <h3>Outstanding Invoices</h3>
-            <p>{{ $outstandingCount }} ({{ 'â‚±' . number_format($outstandingAmount, 2) }})</p>
+            <p>{{ $outstandingCount }} ({{ '' . number_format($outstandingAmount, 2) }})</p>
         </div>
     </div>
 
@@ -93,7 +93,7 @@
                     <tr>
                         <td>{{ $invoice->payment_date->format('Y-m-d') }}</td>
                         <td>{{ $invoice->lead->name ?? 'N/A' }}</td>
-                        <td>â‚±{{ number_format((float) $invoice->amount, 2) }}</td>
+                        <td>{{ number_format((float) $invoice->amount, 2) }}</td>
                     </tr>
                 @empty
                     <tr>

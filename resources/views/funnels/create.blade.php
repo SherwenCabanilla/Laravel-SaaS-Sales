@@ -29,9 +29,47 @@
                 @enderror
             </div>
 
+            @php
+                $selectedTemplateId = (int) old('template_id', 0);
+            @endphp
+            <div style="margin-bottom: 16px;">
+                <label style="display:block; margin-bottom:8px; font-weight:700;">Starter Template</label>
+                <div style="display:grid; gap:8px;">
+                    <label style="display:flex; gap:8px; align-items:flex-start; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:8px; background:#fff;">
+                        <input type="radio" name="template_id" value="" {{ $selectedTemplateId === 0 ? 'checked' : '' }}>
+                        <span style="display:grid; gap:2px;">
+                            <strong style="font-size:13px;">Use Built-in Starter Flow</strong>
+                            <span style="font-size:12px; color:#64748b;">Choose purpose below and start from your default step sequence.</span>
+                        </span>
+                    </label>
+                    @forelse(($publishedTemplates ?? []) as $template)
+                        <label style="display:flex; gap:8px; align-items:flex-start; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:8px; background:#fff;">
+                            <input type="radio" name="template_id" value="{{ $template->id }}" {{ $selectedTemplateId === (int) $template->id ? 'checked' : '' }}>
+                            <span style="display:grid; gap:2px;">
+                                <strong style="font-size:13px;">{{ $template->name }}</strong>
+                                <span style="font-size:12px; color:#64748b;">{{ $template->description ?: 'Published shared template.' }}</span>
+                                <span style="font-size:11px; color:#8b5cf6;">
+                                    {{ $template->templateTypeLabel() }} | {{ $template->steps->count() }} Steps
+                                </span>
+                            </span>
+                        </label>
+                    @empty
+                        <div style="font-size:12px; color:#64748b; border:1px dashed #d6cce4; border-radius:8px; padding:10px;">
+                            No published shared templates yet. Create and publish one in Super Admin -> Funnel Templates.
+                        </div>
+                    @endforelse
+                </div>
+                <div style="margin-top:6px; color:#64748b; font-size:12px;">
+                    If you pick a template, this funnel is cloned from that template and you can edit it in your workspace builder.
+                </div>
+                @error('template_id')
+                    <span style="color:red; font-size:12px;">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div style="margin-bottom: 16px;">
                 <label for="purpose" style="display:block; margin-bottom:8px; font-weight:700;">Funnel Purpose</label>
-                <select id="purpose" name="purpose" required
+                <select id="purpose" name="purpose" {{ $selectedTemplateId === 0 ? 'required' : '' }}
                     style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
                     <option value="" disabled {{ old('purpose') ? '' : 'selected' }}>Select funnel purpose</option>
                     @foreach(($purposeOptions ?? []) as $value => $label)
@@ -60,7 +98,7 @@
                 Starter flow by purpose:
                 <br><strong>Service / Lead</strong>: Landing -> Opt-in -> Sales -> Checkout -> Thank You
                 <br><strong>Physical Product</strong>: Sales -> Checkout -> Thank You
-                <br><br>Shared templates are available only inside the builder templates panel.
+                <br><br>Template mode clones the selected published template and keeps full step layout/content.
             </div>
 
             <div style="display:flex; gap:10px; margin-top:18px;">
@@ -69,4 +107,24 @@
             </div>
         </form>
     </div>
+    <script>
+        (function () {
+            var purpose = document.getElementById('purpose');
+            if (!purpose) return;
+            var radios = Array.from(document.querySelectorAll('input[name="template_id"]'));
+            var sync = function () {
+                var selected = radios.find(function (node) { return node.checked; });
+                var hasTemplate = !!selected && String(selected.value || '').trim() !== '';
+                if (hasTemplate) {
+                    purpose.removeAttribute('required');
+                } else {
+                    purpose.setAttribute('required', 'required');
+                }
+            };
+            radios.forEach(function (node) {
+                node.addEventListener('change', sync);
+            });
+            sync();
+        })();
+    </script>
 @endsection

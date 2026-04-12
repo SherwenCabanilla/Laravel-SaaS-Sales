@@ -9,6 +9,7 @@ use App\Models\FunnelTemplateStep;
 use App\Models\FunnelTemplateStepRevision;
 use App\Services\FunnelTemplateService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
@@ -57,6 +58,41 @@ class AdminFunnelTemplateController extends Controller
         return view('admin.funnel-templates.import', [
             'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
         ]);
+    }
+
+    public function importFromFile(Request $request, FunnelTemplateService $templateService)
+    {
+        $path = base_path('animals-template.json');
+        if (!is_file($path)) {
+            return redirect()->route('admin.funnel-templates.index')
+                ->with('error', 'Local template file not found: animals-template.json');
+        }
+
+        $raw = file_get_contents($path);
+        if ($raw === false) {
+            return redirect()->route('admin.funnel-templates.index')
+                ->with('error', 'Unable to read local template file.');
+        }
+
+        try {
+            $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return redirect()->route('admin.funnel-templates.index')
+                ->with('error', 'Local template JSON is invalid.');
+        }
+
+        try {
+            $template = $templateService->importTemplateFromJson($decoded, auth()->user(), [
+                'template_type' => FunnelTemplate::TEMPLATE_TYPE_SERVICE,
+                'publish' => true,
+            ]);
+        } catch (\Throwable $e) {
+            return redirect()->route('admin.funnel-templates.index')
+                ->with('error', 'Template import failed from local file.');
+        }
+
+        return redirect()->route('admin.funnel-templates.edit', $template)
+            ->with('success', 'Template imported from local file.');
     }
 
     public function store(Request $request, FunnelTemplateService $templateService)
@@ -131,6 +167,7 @@ class AdminFunnelTemplateController extends Controller
             'stepTemplates' => FunnelStep::TEMPLATES,
             'defaultStepId' => $defaultStep?->id,
             'builderMode' => 'template',
+            'builderSingleScrollMode' => $this->singleScrollModeEnabledForTemplate(auth()->user(), $funnelTemplate),
             'builderUpdateUrl' => route('admin.funnel-templates.update', $funnelTemplate),
             'builderPublishUrl' => route('admin.funnel-templates.publish', $funnelTemplate),
             'builderUnpublishUrl' => route('admin.funnel-templates.unpublish', $funnelTemplate),
@@ -152,6 +189,11 @@ class AdminFunnelTemplateController extends Controller
             'builderTagValue' => '',
             'builderSharedTemplates' => $this->builderSharedTemplatesPayload(),
         ]);
+    }
+
+    private function singleScrollModeEnabledForTemplate($user, FunnelTemplate $template): bool
+    {
+        return true;
     }
 
     private function builderSharedTemplatesPayload(): array
@@ -454,7 +496,7 @@ class AdminFunnelTemplateController extends Controller
             $this->rememberStepRevision($step, $this->normalizeRevisionLayout($step->layout_json), $this->normalizeRevisionBackground($step->background_color));
         }
 
-        $layout = $rawLayout;
+        $layout = $this->enforceBuilderStructureRules($rawLayout);
         $this->mergeElementSizeFromRaw($layout, $rawLayout);
 
         $step->update([
@@ -1158,6 +1200,131 @@ class AdminFunnelTemplateController extends Controller
             })
             ->values()
             ->all();
+    }
+
+    private function enforceBuilderStructureRules(array $layout): array
+    {
+        $root = is_array($layout['root'] ?? null) ? $layout['root'] : [];
+        $editor = is_array($layout['__editor'] ?? null) ? $layout['__editor'] : null;
+        $resultRoot = [];
+        $pendingElements = [];
+        $firstSectionIndex = null;
+
+        $collectElementsFromColumn = function (array $column): array {
+            return collect($column['elements'] ?? [])
+                ->filter(fn ($element) => is_array($element))
+                ->values()
+                ->all();
+        };
+
+        $collectElementsFromRow = function (array $row) use ($collectElementsFromColumn): array {
+            $elements = [];
+            foreach ((array) ($row['columns'] ?? []) as $column) {
+                if (! is_array($column)) {
+                    continue;
+                }
+                $elements = array_merge($elements, $collectElementsFromColumn($column));
+            }
+            return $elements;
+        };
+
+        foreach ($root as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $kind = strtolower((string) ($item['kind'] ?? 'section'));
+            if ($kind === 'section') {
+                $elements = collect($item['elements'] ?? [])
+                    ->filter(fn ($element) => is_array($element))
+                    ->values()
+                    ->all();
+                foreach ((array) ($item['rows'] ?? []) as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $elements = array_merge($elements, $collectElementsFromRow($row));
+                }
+
+                $normalizedSection = [
+                    'kind' => 'section',
+                    'id' => $item['id'] ?? ('sec_' . Str::lower(Str::random(10))),
+                    'style' => is_array($item['style'] ?? null) ? $item['style'] : [],
+                    'settings' => is_array($item['settings'] ?? null) ? $item['settings'] : [],
+                    'elements' => $elements,
+                    'rows' => [],
+                ];
+                if ($firstSectionIndex === null) {
+                    $firstSectionIndex = count($resultRoot);
+                }
+                $resultRoot[] = $normalizedSection;
+                continue;
+            }
+
+            if ($kind === 'row') {
+                $pendingElements = array_merge($pendingElements, $collectElementsFromRow($item));
+                continue;
+            }
+
+            if ($kind === 'column' || $kind === 'col') {
+                $pendingElements = array_merge($pendingElements, $collectElementsFromColumn($item));
+                continue;
+            }
+
+            $elementType = strtolower((string) ($item['type'] ?? ''));
+            if ($elementType === 'menu') {
+                $resultRoot[] = array_merge(['kind' => 'el'], $item);
+                continue;
+            }
+
+            $pendingElements[] = array_merge(['kind' => 'el'], $item);
+        }
+
+        if (! empty($pendingElements)) {
+            if ($firstSectionIndex === null) {
+                $section = [
+                    'kind' => 'section',
+                    'id' => 'sec_' . Str::lower(Str::random(10)),
+                    'style' => ['padding' => '20px', 'backgroundColor' => '#ffffff', 'minHeight' => '30vh'],
+                    'settings' => ['contentWidth' => 'full'],
+                    'elements' => [],
+                    'rows' => [],
+                ];
+                $resultRoot[] = $section;
+                $firstSectionIndex = count($resultRoot) - 1;
+            }
+            $existing = is_array($resultRoot[$firstSectionIndex]['elements'] ?? null) ? $resultRoot[$firstSectionIndex]['elements'] : [];
+            $resultRoot[$firstSectionIndex]['elements'] = array_values(array_merge($existing, $pendingElements));
+        }
+
+        $sections = collect($resultRoot)
+            ->filter(fn ($item) => is_array($item) && strtolower((string) ($item['kind'] ?? '')) === 'section')
+            ->map(function (array $item) {
+                unset($item['kind']);
+                $item['rows'] = [];
+                return $item;
+            })
+            ->values()
+            ->all();
+
+        $out = [
+            'root' => array_values($resultRoot),
+            'sections' => $sections,
+        ];
+
+        if ($editor !== null) {
+            $out['__editor'] = $editor;
+        }
+
+        $out['__editor'] = is_array($out['__editor'] ?? null) ? $out['__editor'] : [];
+        if (! isset($out['__editor']['canvasWidth'])) {
+            $out['__editor']['canvasWidth'] = 1366;
+        }
+        if (! isset($out['__editor']['canvasContentWidth'])) {
+            $out['__editor']['canvasContentWidth'] = 1366;
+        }
+
+        return $out;
     }
 
     private function normalizeTagsString(?string $raw): array

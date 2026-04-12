@@ -101,15 +101,15 @@
         </div>
         <div class="card">
             <h3>Funnel Paid Revenue</h3>
-            <p>â‚±{{ number_format($revenueTotal, 2) }}</p>
+            <p>{{ number_format($revenueTotal, 2) }}</p>
         </div>
         <div class="card">
             <h3>Service Sales</h3>
-            <p>â‚±{{ number_format($servicePaidRevenue, 2) }}</p>
+            <p>{{ number_format($servicePaidRevenue, 2) }}</p>
         </div>
         <div class="card">
             <h3>Physical Product Sales</h3>
-            <p>â‚±{{ number_format($physicalPaidRevenue, 2) }}</p>
+            <p>{{ number_format($physicalPaidRevenue, 2) }}</p>
         </div>
         <div class="card">
             <h3>Total Users</h3>

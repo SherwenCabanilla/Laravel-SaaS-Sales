@@ -223,6 +223,7 @@
                                         <li><span>Max Users</span><strong>{{ $formatLimit($plan['max_users'] ?? null) }}</strong></li>
                                         <li><span>Max Leads</span><strong>{{ $formatLimit($plan['max_leads'] ?? null) }}</strong></li>
                                         <li><span>Max Funnels</span><strong>{{ $formatLimit($plan['max_funnels'] ?? null) }}</strong></li>
+                                        <li><span>Max Templates</span><strong>{{ $formatLimit($plan['max_templates'] ?? null) }}</strong></li>
                                         <li><span>Max Workflows</span><strong>{{ $formatLimit($plan['max_workflows'] ?? null) }}</strong></li>
                                         <li><span>Max Monthly Messages</span><strong>{{ $formatLimit($plan['max_monthly_messages'] ?? null) }}</strong></li>
                                     </ul>

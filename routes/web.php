@@ -92,6 +92,7 @@ Route::middleware(['auth', 'tenant.subscription', 'role:super-admin'])->group(fu
     Route::get('/admin/funnel-templates', [AdminFunnelTemplateController::class, 'index'])->name('admin.funnel-templates.index');
     Route::get('/admin/funnel-templates/create', [AdminFunnelTemplateController::class, 'create'])->name('admin.funnel-templates.create');
     Route::get('/admin/funnel-templates/import', [AdminFunnelTemplateController::class, 'import'])->name('admin.funnel-templates.import');
+    Route::post('/admin/funnel-templates/import-file', [AdminFunnelTemplateController::class, 'importFromFile'])->name('admin.funnel-templates.import-file');
     Route::post('/admin/funnel-templates', [AdminFunnelTemplateController::class, 'store'])->name('admin.funnel-templates.store');
     Route::post('/admin/funnel-templates/import', [AdminFunnelTemplateController::class, 'importStore'])->name('admin.funnel-templates.import.store');
     Route::get('/admin/funnel-templates/{funnel_template}/edit', [AdminFunnelTemplateController::class, 'edit'])->name('admin.funnel-templates.edit');
@@ -161,10 +162,11 @@ Route::middleware(['auth', 'tenant.subscription', 'role:sales-agent,marketing-ma
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
     });
 
-    Route::middleware(['role:account-owner,marketing-manager'])->group(function () {
+    Route::middleware(['role:account-owner,marketing-manager,sales-agent,finance'])->group(function () {
         Route::get('/funnels', [FunnelController::class, 'index'])->name('funnels.index');
         Route::get('/funnels/create', [FunnelController::class, 'create'])->name('funnels.create');
         Route::get('/funnels/shared-templates', [FunnelController::class, 'sharedTemplates'])->name('funnels.shared-templates');
+        Route::put('/funnels/shared-templates/{funnel_template}', [FunnelController::class, 'updateSharedTemplate'])->name('funnels.shared-templates.update');
         Route::post('/funnels', [FunnelController::class, 'store'])->name('funnels.store');
         Route::get('/funnels/{funnel}/edit', [FunnelController::class, 'edit'])->name('funnels.edit');
         Route::get('/funnels/{funnel}/preview/{step?}', [FunnelController::class, 'preview'])->name('funnels.preview');

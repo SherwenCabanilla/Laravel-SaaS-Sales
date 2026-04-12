@@ -1,0 +1,534 @@
+{
+  "name": "Women PWR Single Screen Funnel",
+  "slug": "women-pwr-single-screen-funnel",
+  "description": "Single-scroll editable template converted from women-pwr-template.html for builder use.",
+  "template_type": "service",
+  "template_tags": [
+    "Women Empowerment",
+    "single-scroll",
+    "__single_scroll"
+  ],
+  "steps": [
+    {
+      "title": "Women PWR Page",
+      "slug": "women-pwr",
+      "type": "landing",
+      "content": "Single-screen page",
+      "cta_label": "Support Now",
+      "layout_json": {
+        "root": [
+          {
+            "kind": "section",
+            "id": "sec-nav",
+            "style": {
+              "backgroundColor": "#1a1a1a",
+              "padding": "16px 24px"
+            },
+            "rows": [
+              {
+                "id": "row-nav",
+                "columns": [
+                  {
+                    "id": "col-nav-left",
+                    "elements": [
+                      {
+                        "id": "el-logo",
+                        "type": "icon",
+                        "content": "",
+                        "settings": {
+                          "icon": "fas fa-seedling"
+                        },
+                        "style": {
+                          "color": "#ffffff",
+                          "fontSize": "28px"
+                        }
+                      },
+                      {
+                        "id": "el-brand",
+                        "type": "heading",
+                        "content": "Women PWR",
+                        "settings": {},
+                        "style": {
+                          "color": "#ffffff",
+                          "fontSize": "30px",
+                          "fontWeight": "800"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col-nav-right",
+                    "elements": [
+                      {
+                        "id": "el-nav-menu",
+                        "type": "menu",
+                        "content": "",
+                        "settings": {
+                          "items": [
+                            {"label": "About", "link": "#"},
+                            {"label": "Support Us", "link": "#"},
+                            {"label": "News", "link": "#"},
+                            {"label": "Events", "link": "#"},
+                            {"label": "Contact", "link": "#"}
+                          ]
+                        },
+                        "style": {
+                          "color": "#cbd5e1"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec-hero",
+            "style": {
+              "backgroundImage": "url(https://images.unsplash.com/photo-1531983412531-1f49a365ffed?w=1600&q=80)",
+              "backgroundSize": "cover",
+              "backgroundPosition": "center",
+              "padding": "120px 24px",
+              "textAlign": "center"
+            },
+            "rows": [
+              {
+                "id": "row-hero",
+                "columns": [
+                  {
+                    "id": "col-hero",
+                    "elements": [
+                      {
+                        "id": "el-hero-heading",
+                        "type": "heading",
+                        "content": "Empowering Women & Girls Worldwide",
+                        "settings": {},
+                        "style": {
+                          "color": "#ffffff",
+                          "fontSize": "58px",
+                          "fontWeight": "800"
+                        }
+                      },
+                      {
+                        "id": "el-hero-text",
+                        "type": "text",
+                        "content": "Build this entire advocacy page as one long, high-converting screen in the funnel builder.",
+                        "settings": {},
+                        "style": {
+                          "color": "#e2e8f0",
+                          "fontSize": "18px",
+                          "maxWidth": "760px",
+                          "margin": "14px auto 24px"
+                        }
+                      },
+                      {
+                        "id": "el-hero-btn",
+                        "type": "button",
+                        "content": "DONATE",
+                        "settings": {
+                          "actionType": "link",
+                          "link": "#"
+                        },
+                        "style": {
+                          "backgroundColor": "#c9386a",
+                          "color": "#ffffff",
+                          "padding": "14px 26px",
+                          "borderRadius": "4px"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec-news",
+            "style": {
+              "padding": "64px 24px",
+              "backgroundColor": "#ffffff"
+            },
+            "rows": [
+              {
+                "id": "row-news-title",
+                "columns": [
+                  {
+                    "id": "col-news-title",
+                    "elements": [
+                      {
+                        "id": "el-news-title",
+                        "type": "heading",
+                        "content": "Latest News",
+                        "settings": {},
+                        "style": {
+                          "textAlign": "center",
+                          "fontSize": "44px",
+                          "fontWeight": "800"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row-news-media",
+                "columns": [
+                  {
+                    "id": "col-news-img",
+                    "elements": [
+                      {
+                        "id": "el-news-image",
+                        "type": "image",
+                        "content": "",
+                        "settings": {
+                          "src": "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1000&q=80",
+                          "alt": "Community event"
+                        },
+                        "style": {
+                          "width": "100%",
+                          "height": "280px",
+                          "borderRadius": "6px"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col-news-video",
+                    "elements": [
+                      {
+                        "id": "el-news-video",
+                        "type": "video",
+                        "content": "",
+                        "settings": {
+                          "videoUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                          "controls": true
+                        },
+                        "style": {
+                          "width": "100%",
+                          "height": "280px",
+                          "borderRadius": "6px"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row-carousel",
+                "columns": [
+                  {
+                    "id": "col-carousel",
+                    "elements": [
+                      {
+                        "id": "el-carousel",
+                        "type": "carousel",
+                        "content": "",
+                        "settings": {
+                          "slides": [
+                            {
+                              "id": "slide-1",
+                              "elements": [
+                                {
+                                  "id": "slide-1-heading",
+                                  "type": "heading",
+                                  "content": "Female Robotics Team Wins Major Award",
+                                  "settings": {},
+                                  "style": {"fontSize": "24px"}
+                                }
+                              ]
+                            },
+                            {
+                              "id": "slide-2",
+                              "elements": [
+                                {
+                                  "id": "slide-2-heading",
+                                  "type": "heading",
+                                  "content": "Women Overtake Men in College Degrees",
+                                  "settings": {},
+                                  "style": {"fontSize": "24px"}
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        "style": {
+                          "margin": "20px 0 0"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec-proof",
+            "style": {
+              "backgroundColor": "#2d46b9",
+              "padding": "56px 24px"
+            },
+            "rows": [
+              {
+                "id": "row-proof",
+                "columns": [
+                  {
+                    "id": "col-proof",
+                    "elements": [
+                      {
+                        "id": "el-testimonial",
+                        "type": "testimonial",
+                        "content": "",
+                        "settings": {
+                          "quote": "I am no bird, and no net ensnares me, I am a free human being with an independent will.",
+                          "name": "Charlotte Bronte",
+                          "role": "Jane Eyre"
+                        },
+                        "style": {
+                          "color": "#ffffff",
+                          "textAlign": "center"
+                        }
+                      },
+                      {
+                        "id": "el-countdown",
+                        "type": "countdown",
+                        "content": "",
+                        "settings": {
+                          "label": "Campaign closes in",
+                          "endDate": "2030-01-01T00:00",
+                          "expiredMessage": "Campaign closed"
+                        },
+                        "style": {
+                          "margin": "24px auto 0",
+                          "maxWidth": "640px"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec-offers",
+            "style": {
+              "padding": "64px 24px",
+              "backgroundColor": "#ffffff"
+            },
+            "rows": [
+              {
+                "id": "row-offers-title",
+                "columns": [
+                  {
+                    "id": "col-offers-title",
+                    "elements": [
+                      {
+                        "id": "el-offers-title",
+                        "type": "heading",
+                        "content": "Support Options",
+                        "settings": {},
+                        "style": {"textAlign": "center", "fontSize": "40px"}
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row-offers",
+                "columns": [
+                  {
+                    "id": "col-pricing",
+                    "elements": [
+                      {
+                        "id": "el-pricing",
+                        "type": "pricing",
+                        "content": "",
+                        "settings": {
+                          "plan": "Impact Sponsor",
+                          "price": "PHP 2,500",
+                          "regularPrice": "PHP 3,500",
+                          "period": "one-time",
+                          "subtitle": "Scholarship and program funding",
+                          "features": [
+                            "Learning kits",
+                            "Leadership sessions",
+                            "Community mentoring"
+                          ],
+                          "ctaLabel": "Support Now",
+                          "ctaActionType": "link",
+                          "ctaLink": "#"
+                        },
+                        "style": {"maxWidth": "520px", "margin": "0 auto"}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col-product",
+                    "elements": [
+                      {
+                        "id": "el-product",
+                        "type": "product_offer",
+                        "content": "",
+                        "settings": {
+                          "plan": "Advocacy Shirt Bundle",
+                          "price": "PHP 1,499",
+                          "regularPrice": "PHP 1,999",
+                          "subtitle": "Wear and share the movement",
+                          "features": ["Premium cotton", "Awareness insert", "Nationwide shipping"],
+                          "ctaLabel": "Order Bundle",
+                          "ctaActionType": "link",
+                          "ctaLink": "#"
+                        },
+                        "style": {"maxWidth": "520px", "margin": "0 auto"}
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row-checkout-widgets",
+                "columns": [
+                  {
+                    "id": "col-checkout-summary",
+                    "elements": [
+                      {
+                        "id": "el-checkout-summary",
+                        "type": "checkout_summary",
+                        "content": "",
+                        "settings": {
+                          "plan": "Impact Sponsor",
+                          "price": "PHP 2,500",
+                          "period": "one-time",
+                          "ctaLabel": "Pay Now"
+                        },
+                        "style": {"margin": "20px 0 0"}
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col-physical-summary",
+                    "elements": [
+                      {
+                        "id": "el-physical-summary",
+                        "type": "physical_checkout_summary",
+                        "content": "",
+                        "settings": {
+                          "plan": "Advocacy Shirt Bundle",
+                          "price": "PHP 1,499",
+                          "ctaLabel": "Place Order"
+                        },
+                        "style": {"margin": "20px 0 0"}
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row-shipping",
+                "columns": [
+                  {
+                    "id": "col-shipping",
+                    "elements": [
+                      {
+                        "id": "el-shipping",
+                        "type": "shipping_details",
+                        "content": "",
+                        "settings": {
+                          "title": "Delivery Information",
+                          "subtitle": "Fill out complete shipping details"
+                        },
+                        "style": {"margin": "20px 0 0"}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec-community",
+            "style": {
+              "padding": "64px 24px",
+              "backgroundColor": "#f8fafc"
+            },
+            "rows": [
+              {
+                "id": "row-community-title",
+                "columns": [
+                  {
+                    "id": "col-community-title",
+                    "elements": [
+                      {
+                        "id": "el-community-title",
+                        "type": "heading",
+                        "content": "Join Us",
+                        "settings": {},
+                        "style": {"fontSize": "42px", "textAlign": "center"}
+                      },
+                      {
+                        "id": "el-community-form",
+                        "type": "form",
+                        "content": "Register Now",
+                        "settings": {
+                          "fields": [
+                            {"type": "text", "label": "Full Name", "required": true},
+                            {"type": "email", "label": "Email", "required": true},
+                            {"type": "phone_number", "label": "Phone", "required": false}
+                          ],
+                          "buttonLabel": "Register Now"
+                        },
+                        "style": {"maxWidth": "620px", "margin": "18px auto 0"}
+                      },
+                      {
+                        "id": "el-spacer",
+                        "type": "spacer",
+                        "content": "",
+                        "settings": {},
+                        "style": {"height": "24px"}
+                      },
+                      {
+                        "id": "el-faq",
+                        "type": "faq",
+                        "content": "",
+                        "settings": {
+                          "items": [
+                            {"q": "How can I donate?", "a": "Choose any support option above."},
+                            {"q": "Can I volunteer?", "a": "Yes, submit the form and we will contact you."}
+                          ]
+                        },
+                        "style": {"maxWidth": "760px", "margin": "0 auto"}
+                      },
+                      {
+                        "id": "el-review-form",
+                        "type": "review_form",
+                        "content": "",
+                        "settings": {
+                          "title": "Share your support story"
+                        },
+                        "style": {"maxWidth": "760px", "margin": "20px auto 0"}
+                      },
+                      {
+                        "id": "el-reviews",
+                        "type": "reviews",
+                        "content": "",
+                        "settings": {
+                          "title": "Community Voices"
+                        },
+                        "style": {"maxWidth": "760px", "margin": "20px auto 0"}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "sections": []
+      }
+    }
+  ]
+}

@@ -20,6 +20,7 @@ class Plan extends Model
         'max_users',
         'max_leads',
         'max_funnels',
+        'max_templates',
         'max_workflows',
         'max_monthly_messages',
         'automation_enabled',

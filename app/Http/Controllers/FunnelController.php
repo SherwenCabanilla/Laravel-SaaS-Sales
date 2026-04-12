@@ -9,6 +9,7 @@ use App\Models\Lead;
 use App\Models\FunnelStep;
 use App\Models\FunnelStepRevision;
 use App\Models\FunnelTemplate;
+use App\Services\FunnelTemplateService;
 use App\Services\FunnelTrackingService;
 use App\Support\TenantPlanEnforcer;
 use Illuminate\Http\Request;
@@ -81,18 +82,27 @@ class FunnelController extends Controller
         $purposeOptions = collect(Funnel::PURPOSES)
             ->only(self::CREATE_PURPOSE_KEYS)
             ->all();
+        $publishedTemplates = $this->publishedTemplatesQueryForUser(auth()->user())
+            ->with(['steps' => fn ($query) => $query->where('is_active', true)->orderBy('position')])
+            ->get();
 
         return view('funnels.create', [
             'purposeOptions' => $purposeOptions,
+            'publishedTemplates' => $publishedTemplates,
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, FunnelTemplateService $templateService)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'purpose' => ['required', Rule::in(self::CREATE_PURPOSE_KEYS)],
+            'template_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('funnel_templates', 'id')->where(fn ($query) => $query->where('status', 'published')),
+            ],
+            'purpose' => ['nullable', Rule::in(self::CREATE_PURPOSE_KEYS), 'required_without:template_id'],
             'default_tags' => 'nullable|string|max:500',
         ]);
 
@@ -101,33 +111,66 @@ class FunnelController extends Controller
         try {
             app(TenantPlanEnforcer::class)->ensureCanCreateFunnel($user->tenant);
 
-            $funnel = Funnel::create([
-                'tenant_id' => $user->tenant_id,
-                'created_by' => $user->id,
-                'name' => $validated['name'],
-                'slug' => $this->generateUniqueFunnelSlug($validated['name'], $user->tenant_id),
-                'description' => $validated['description'] ?? null,
-                'purpose' => $validated['purpose'],
-                'default_tags' => $this->normalizeTagsString($validated['default_tags'] ?? null),
-                'status' => 'draft',
-            ]);
-
-            $starterSteps = $this->starterStepsForPurpose($validated['purpose']);
-
-            foreach ($starterSteps as $index => $step) {
-                $createdStep = FunnelStep::create([
-                    'funnel_id' => $funnel->id,
-                    'title' => $step['title'],
-                    'slug' => $step['slug'],
-                    'type' => $step['type'],
-                    'content' => $step['content'],
-                    'step_tags' => [],
-                    'cta_label' => $step['cta_label'] ?? null,
-                    'price' => $step['price'] ?? null,
-                    'position' => $index + 1,
-                    'is_active' => true,
+            $templateId = (int) ($validated['template_id'] ?? 0);
+            if ($templateId > 0) {
+                $template = $this->findAccessiblePublishedTemplateForUser($user, $templateId);
+                if (! $template) {
+                    abort(403, 'Selected template is not available for your current subscription plan.');
+                }
+                $funnel = $templateService->createFunnelFromTemplate($template, $user, [
+                    'name' => $validated['name'],
+                    'description' => $validated['description'] ?? null,
+                    'purpose' => $validated['purpose'] ?? $template->template_type,
                 ]);
-                $this->ensureStepHasInitialRevision($createdStep);
+            } else {
+                $funnel = Funnel::create([
+                    'tenant_id' => $user->tenant_id,
+                    'created_by' => $user->id,
+                    'name' => $validated['name'],
+                    'slug' => $this->generateUniqueFunnelSlug($validated['name'], $user->tenant_id),
+                    'description' => $validated['description'] ?? null,
+                    'purpose' => $validated['purpose'],
+                    'default_tags' => $this->normalizeTagsString($validated['default_tags'] ?? null),
+                    'status' => 'draft',
+                ]);
+
+                $starterSteps = $this->starterStepsForPurpose($validated['purpose']);
+
+                foreach ($starterSteps as $index => $step) {
+                    $createdStep = FunnelStep::create([
+                        'funnel_id' => $funnel->id,
+                        'title' => $step['title'],
+                        'slug' => $step['slug'],
+                        'type' => $step['type'],
+                        'content' => $step['content'],
+                        'step_tags' => [],
+                        'cta_label' => $step['cta_label'] ?? null,
+                        'price' => $step['price'] ?? null,
+                        'position' => $index + 1,
+                        'is_active' => true,
+                    ]);
+                    $this->ensureStepHasInitialRevision($createdStep);
+                }
+            }
+
+            if (array_key_exists('default_tags', $validated)) {
+                $nextTags = $this->normalizeTagsString($validated['default_tags'] ?? null);
+                if ($templateId > 0) {
+                    $existingTags = collect($funnel->default_tags ?? [])
+                        ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+                        ->filter()
+                        ->values();
+                    if ($existingTags->contains('__single_scroll') && ! in_array('__single_scroll', $nextTags, true)) {
+                        $nextTags[] = '__single_scroll';
+                    }
+                }
+
+                $funnel->update(['default_tags' => $nextTags]);
+            }
+
+            $funnel->load('steps.revisions');
+            foreach ($funnel->steps as $step) {
+                $this->ensureStepHasInitialRevision($step);
             }
 
             return redirect()->route('funnels.edit', $funnel)->with('success', 'Added Successfully');
@@ -191,24 +234,61 @@ class FunnelController extends Controller
             'defaultStepId' => $defaultStep?->id,
             'builderSharedTemplates' => $this->builderSharedTemplatesPayload(),
             'builderSharedTemplatesUrl' => route('funnels.shared-templates'),
+            'builderSingleScrollMode' => $this->singleScrollModeEnabledForFunnel(auth()->user(), $funnel),
         ]);
     }
 
     public function sharedTemplates()
     {
         return response()->json([
-            'templates' => $this->builderSharedTemplatesPayload(),
+            'templates' => $this->builderSharedTemplatesPayload(auth()->user()),
         ]);
     }
 
-    private function builderSharedTemplatesPayload(): array
+    public function updateSharedTemplate(Request $request, FunnelTemplate $funnelTemplate)
     {
-        return FunnelTemplate::query()
-            ->where('status', 'published')
-            ->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED)
+        $user = auth()->user();
+        if (! $this->canEditSharedTemplates($user)) {
+            abort(403, 'You are not allowed to edit built-in template cards.');
+        }
+
+        $accessible = $this->findAccessiblePublishedTemplateForUser($user, (int) $funnelTemplate->id);
+        if (! $accessible) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string', 'max:2000'],
+            'status' => ['required', Rule::in(array_keys(FunnelTemplate::STATUSES))],
+            'template_tags' => ['nullable', 'array'],
+            'template_tags.*' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $funnelTemplate->update([
+            'name' => trim((string) $validated['name']) !== '' ? trim((string) $validated['name']) : $funnelTemplate->name,
+            'description' => $validated['description'] ?? null,
+            'status' => $validated['status'],
+            'template_tags' => collect($validated['template_tags'] ?? [])
+                ->map(fn ($tag) => trim((string) $tag))
+                ->filter()
+                ->unique()
+                ->take(6)
+                ->values()
+                ->all(),
+        ]);
+
+        return response()->json([
+            'message' => 'Template card updated successfully.',
+        ]);
+    }
+
+    private function builderSharedTemplatesPayload($user = null): array
+    {
+        $resolvedUser = $user ?: auth()->user();
+
+        return $this->publishedTemplatesQueryForUser($resolvedUser)
             ->with(['steps' => fn ($query) => $query->orderBy('position')])
-            ->latest('published_at')
-            ->latest('id')
             ->get()
             ->map(function (FunnelTemplate $template) {
                 $steps = $template->steps
@@ -257,7 +337,9 @@ class FunnelController extends Controller
                     'description' => $template->description ?: 'Saved super-admin funnel template.',
                     'template_type' => (string) $template->template_type,
                     'status' => (string) $template->status,
-                    'update_url' => null,
+                    'update_url' => $this->canEditSharedTemplates(auth()->user())
+                        ? route('funnels.shared-templates.update', $template)
+                        : null,
                     'preview' => $preview,
                     'preview_image' => $template->preview_image,
                     'tags' => $this->templateCardTags($template, count($steps), $stepTypeTags),
@@ -265,6 +347,62 @@ class FunnelController extends Controller
                 ];
             })
             ->all();
+    }
+
+    private function publishedTemplatesQueryForUser($user)
+    {
+        $query = FunnelTemplate::query()
+            ->where('status', 'published')
+            ->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED)
+            ->latest('published_at')
+            ->latest('id');
+
+        $limit = $this->templateLibraryLimitForUser($user);
+        if ($limit !== null) {
+            $query->limit($limit);
+        }
+
+        return $query;
+    }
+
+    private function templateLibraryLimitForUser($user): ?int
+    {
+        if (! $user || ! $user->tenant) {
+            return null;
+        }
+
+        $plan = app(TenantPlanEnforcer::class)->resolvePlan($user->tenant);
+        if (! $plan) {
+            return null;
+        }
+
+        $limit = $plan->max_templates;
+        if ($limit === null) {
+            $limit = $plan->max_funnels;
+        }
+
+        return $limit === null ? null : max(0, (int) $limit);
+    }
+
+    private function findAccessiblePublishedTemplateForUser($user, int $templateId): ?FunnelTemplate
+    {
+        if ($templateId <= 0) {
+            return null;
+        }
+
+        return $this->publishedTemplatesQueryForUser($user)
+            ->where('id', $templateId)
+            ->first();
+    }
+
+    private function singleScrollModeEnabledForFunnel($user, Funnel $funnel): bool
+    {
+        return true;
+    }
+
+    private function canEditSharedTemplates($user): bool
+    {
+        return (bool) ($user && $user->hasAnyRole(['super-admin', 'account-owner', 'marketing-manager']));
     }
 
     private function templateCardTags(FunnelTemplate $template, int $stepCount, array $fallbackStepTypeTags): array
@@ -826,6 +964,7 @@ class FunnelController extends Controller
     public function publish(Funnel $funnel)
     {
         $this->ensureTenantFunnelAccess($funnel);
+        $this->ensureTenantCanPublishFunnel($funnel);
 
         $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
         if ($steps->isEmpty()) {
@@ -1124,6 +1263,35 @@ class FunnelController extends Controller
     {
         if ((int) $funnel->tenant_id !== (int) auth()->user()->tenant_id) {
             abort(403, 'Unauthorized action.');
+        }
+    }
+
+    private function ensureTenantCanPublishFunnel(Funnel $funnel): void
+    {
+        $tenant = auth()->user()->tenant;
+        if (! $tenant) {
+            return;
+        }
+
+        $plan = app(TenantPlanEnforcer::class)->resolvePlan($tenant);
+        if (! $plan || $plan->max_funnels === null) {
+            return;
+        }
+
+        if ((string) $funnel->status === 'published') {
+            return;
+        }
+
+        $publishedCount = Funnel::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('status', 'published')
+            ->count();
+
+        if ($publishedCount >= (int) $plan->max_funnels) {
+            abort(422, sprintf(
+                'You have reached your published funnels limit for the %s plan. Upgrade your subscription to publish another funnel.',
+                $plan->name
+            ));
         }
     }
 
@@ -1557,7 +1725,133 @@ class FunnelController extends Controller
             }
         }
 
+        $result = $this->enforceBuilderStructureRules($result);
+        $result['__editor'] = is_array($result['__editor'] ?? null) ? $result['__editor'] : [];
+        if (! isset($result['__editor']['canvasWidth'])) {
+            $result['__editor']['canvasWidth'] = 1366;
+        }
+        if (! isset($result['__editor']['canvasContentWidth'])) {
+            $result['__editor']['canvasContentWidth'] = 1366;
+        }
+
         return $result;
+    }
+
+    private function enforceBuilderStructureRules(array $layout): array
+    {
+        $root = is_array($layout['root'] ?? null) ? $layout['root'] : [];
+        $editor = is_array($layout['__editor'] ?? null) ? $layout['__editor'] : null;
+        $resultRoot = [];
+        $pendingElements = [];
+        $firstSectionIndex = null;
+
+        $collectElementsFromColumn = function (array $column): array {
+            return collect($column['elements'] ?? [])
+                ->filter(fn ($element) => is_array($element))
+                ->values()
+                ->all();
+        };
+
+        $collectElementsFromRow = function (array $row) use ($collectElementsFromColumn): array {
+            $elements = [];
+            foreach ((array) ($row['columns'] ?? []) as $column) {
+                if (! is_array($column)) {
+                    continue;
+                }
+                $elements = array_merge($elements, $collectElementsFromColumn($column));
+            }
+            return $elements;
+        };
+
+        foreach ($root as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $kind = strtolower((string) ($item['kind'] ?? 'section'));
+            if ($kind === 'section') {
+                $elements = collect($item['elements'] ?? [])
+                    ->filter(fn ($element) => is_array($element))
+                    ->values()
+                    ->all();
+                foreach ((array) ($item['rows'] ?? []) as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $elements = array_merge($elements, $collectElementsFromRow($row));
+                }
+
+                $normalizedSection = [
+                    'kind' => 'section',
+                    'id' => $item['id'] ?? ('sec_' . Str::lower(Str::random(10))),
+                    'style' => is_array($item['style'] ?? null) ? $item['style'] : [],
+                    'settings' => is_array($item['settings'] ?? null) ? $item['settings'] : [],
+                    'elements' => $elements,
+                    'rows' => [],
+                ];
+                if ($firstSectionIndex === null) {
+                    $firstSectionIndex = count($resultRoot);
+                }
+                $resultRoot[] = $normalizedSection;
+                continue;
+            }
+
+            if ($kind === 'row') {
+                $pendingElements = array_merge($pendingElements, $collectElementsFromRow($item));
+                continue;
+            }
+
+            if ($kind === 'column' || $kind === 'col') {
+                $pendingElements = array_merge($pendingElements, $collectElementsFromColumn($item));
+                continue;
+            }
+
+            $elementType = strtolower((string) ($item['type'] ?? ''));
+            if ($elementType === 'menu') {
+                $resultRoot[] = array_merge(['kind' => 'el'], $item);
+                continue;
+            }
+
+            $pendingElements[] = array_merge(['kind' => 'el'], $item);
+        }
+
+        if (! empty($pendingElements)) {
+            if ($firstSectionIndex === null) {
+                $section = [
+                    'kind' => 'section',
+                    'id' => 'sec_' . Str::lower(Str::random(10)),
+                    'style' => ['padding' => '20px', 'backgroundColor' => '#ffffff', 'minHeight' => '30vh'],
+                    'settings' => ['contentWidth' => 'full'],
+                    'elements' => [],
+                    'rows' => [],
+                ];
+                $resultRoot[] = $section;
+                $firstSectionIndex = count($resultRoot) - 1;
+            }
+            $existing = is_array($resultRoot[$firstSectionIndex]['elements'] ?? null) ? $resultRoot[$firstSectionIndex]['elements'] : [];
+            $resultRoot[$firstSectionIndex]['elements'] = array_values(array_merge($existing, $pendingElements));
+        }
+
+        $sections = collect($resultRoot)
+            ->filter(fn ($item) => is_array($item) && strtolower((string) ($item['kind'] ?? '')) === 'section')
+            ->map(function (array $item) {
+                unset($item['kind']);
+                $item['rows'] = [];
+                return $item;
+            })
+            ->values()
+            ->all();
+
+        $out = [
+            'root' => array_values($resultRoot),
+            'sections' => $sections,
+        ];
+
+        if ($editor !== null) {
+            $out['__editor'] = $editor;
+        }
+
+        return $out;
     }
 
     private function sanitizeId(mixed $value, string $prefix): string
@@ -1795,6 +2089,10 @@ class FunnelController extends Controller
             'linkedPricingId' => 120,
             'expandLabel' => 120,
             'collapseLabel' => 120,
+            'leftButtonLabel' => 120,
+            'leftButtonUrl' => 2048,
+            'rightLogoUrl' => 2048,
+            'rightLogoAlt' => 300,
         ] as $k => $maxLen) {
             $v = $readStringAllowEmpty($k, $maxLen);
             if ($v !== null) {
@@ -1868,7 +2166,7 @@ class FunnelController extends Controller
             $safe['contentScale'] = $scale;
         }
 
-        foreach (['textColor', 'controlsColor', 'arrowColor', 'bodyBgColor', 'containerBgColor', 'labelColor', 'placeholderColor', 'buttonBgColor', 'buttonTextColor', 'questionColor', 'answerColor', 'numberColor', 'ctaBgColor', 'ctaTextColor'] as $k) {
+        foreach (['textColor', 'controlsColor', 'arrowColor', 'bodyBgColor', 'containerBgColor', 'labelColor', 'placeholderColor', 'buttonBgColor', 'buttonTextColor', 'questionColor', 'answerColor', 'numberColor', 'ctaBgColor', 'ctaTextColor', 'leftButtonBgColor', 'leftButtonTextColor'] as $k) {
             $v = $readColor($k);
             if ($v !== null) {
                 $safe[$k] = $v;

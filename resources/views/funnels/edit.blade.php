@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 @section('title', 'Funnel Builder')
 @section('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -708,7 +708,6 @@
                 <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Layout & Structure</div>
                     <button draggable="true" data-c="section" data-purpose="all"><i class="fas fa-square"></i>Section</button>
-                    <button draggable="true" data-c="row" data-purpose="all"><i class="fas fa-grip-lines"></i>Row</button>
                     <button draggable="true" data-c="column" data-purpose="all"><i class="fas fa-columns"></i>Column</button>
                     <button draggable="true" data-c="spacer" data-purpose="all"><i class="fas fa-arrows-up-down"></i>Spacer</button>
                 </div>
@@ -776,9 +775,13 @@
     <div class="fb-canvas-col">
     <div class="fb-card">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
-            <label for="stepSel" style="font-weight:800;">Step</label>
-            <select id="stepSel"></select>
-            <button id="stepAddBtn" type="button" class="fb-btn" style="padding:6px 10px;min-height:32px;">+ Add Page</button>
+            @if(!($builderSingleScrollMode ?? false))
+                <label for="stepSel" style="font-weight:800;">Step</label>
+                <select id="stepSel"></select>
+                <button id="stepAddBtn" type="button" class="fb-btn" style="padding:6px 10px;min-height:32px;">+ Add Page</button>
+            @else
+                <span style="font-weight:800;color:#1f2937;">Single Screen Mode</span>
+            @endif
             <label for="canvasBgColor" style="font-weight:800;">Canvas BG</label>
             <input id="canvasBgColor" type="color" value="#F3EEF7" title="Canvas background color">
             <button id="canvasBgReset" type="button" class="fb-btn" style="padding:6px 10px;min-height:32px;">Reset BG</button>
@@ -961,6 +964,7 @@ const builderPurposeRaw=@json(($funnel->purpose ?? $funnel->template_type ?? 'se
 let builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
 const funnelStepUrlTpl=@json($builderPublicStepUrlTemplate ?? route('funnels.portal.step',['funnelSlug'=>$funnel->slug,'stepSlug'=>'__STEP__']));
 const steps=@json($builderSteps);
+const builderSingleScrollMode=@json((bool) ($builderSingleScrollMode ?? false));
 const sharedTemplatesUrl=@json($builderSharedTemplatesUrl ?? null);
 let sharedFunnelTemplates=@json($builderSharedTemplates ?? []);
 const state={sid:{{ (int)($defaultStepId??0) }}||((steps[0]&&steps[0].id)||null),layout:null,sel:null,carouselSel:null,clipboard:null,pasteAnchor:null,editingEl:null,mediaLoading:new Set()};
@@ -1278,7 +1282,7 @@ function makePhysicalCheckoutSummaryEl(opts,style){
     },style||{}),{
         heading:opts.heading||"Cart Summary",
         plan:opts.plan||"3 items",
-        price:opts.price||"â‚±4,000",
+        price:opts.price||"4,000",
         period:opts.period||"",
         subtitle:opts.subtitle||"Review the products in your cart before paying.",
         badge:opts.badge||"Cart",
@@ -1340,7 +1344,7 @@ function templatePricingFaqLayout(){
             makeEl("text","Start today and upgrade anytime.",{fontSize:"16px",color:"#64748b",lineHeight:"1.6",textAlign:"center"},{})
         ],{textAlign:"center"})],{gap:"10px"})]
     });
-    var pricing=makePricingCardEl({plan:"Pro",price:"â‚±49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],badge:"Popular"},makeBareCardStyle());
+    var pricing=makePricingCardEl({plan:"Pro",price:"49",period:"/month",subtitle:"Best for growing teams",features:["Unlimited pages","Custom domains","Priority support"],badge:"Popular"},makeBareCardStyle());
     var faq=makeFaqCardEl([{q:"Can I cancel anytime?",a:"Yes, cancel anytime from your account settings."},{q:"Do you offer a free trial?",a:"Yes, you get a 14-day free trial."}],makeBareCardStyle());
     var gridSection=makeSection({
         style:{padding:"28px 24px 64px",backgroundColor:"#ffffff"},
@@ -1541,7 +1545,7 @@ function makePricingCardEl(opts,style){
         boxShadow:"0 12px 24px rgba(36,14,53,.08)"
     },style||{}),{
         plan:opts.plan||"Growth",
-        price:opts.price||"â‚±49",
+        price:opts.price||"49",
         period:opts.period||"/month",
         subtitle:opts.subtitle||"Best for growing teams",
         features:Array.isArray(opts.features)&&opts.features.length?opts.features:["Unlimited funnels","Priority support","Conversion analytics"],
@@ -1923,7 +1927,7 @@ function templateSalesOfferStackLayout(){
         makePanelColumn([
             makePricingCardEl({
                 plan:"Signature Offer",
-                price:"â‚±1,500",
+                price:"1,500",
                 period:"",
                 subtitle:"Ideal for clients who want faster implementation",
                 features:["Strategy kickoff","Custom build","Launch support"],
@@ -1983,7 +1987,7 @@ function templateVideoSalesLetterLayout(){
         columns:[
             makePanelColumn([makePricingCardEl({
                 plan:"Launch Intensive",
-                price:"â‚±497",
+                price:"497",
                 period:"",
                 subtitle:"Fast-start program with templates and support",
                 features:["Video training","Templates","Q and A session"],
@@ -2009,9 +2013,9 @@ function templateComparisonSalesLayout(){
         padding:"0 24px 32px",
         backgroundColor:"#ffffff",
         columns:[
-            makePanelColumn([makePricingCardEl({plan:"Starter",price:"â‚±49",period:"/month",subtitle:"For getting started",features:["Core pages","Email capture","Basic support"]},makeBareCardStyle())]),
-            makePanelColumn([makePricingCardEl({plan:"Growth",price:"â‚±99",period:"/month",subtitle:"For serious launches",features:["Unlimited funnels","Priority support","Analytics"],badge:"Best Value"},makeBareCardStyle())]),
-            makePanelColumn([makePricingCardEl({plan:"Scale",price:"â‚±199",period:"/month",subtitle:"For advanced teams",features:["Advanced insights","Team access","Hands-on onboarding"]},makeBareCardStyle())])
+            makePanelColumn([makePricingCardEl({plan:"Starter",price:"49",period:"/month",subtitle:"For getting started",features:["Core pages","Email capture","Basic support"]},makeBareCardStyle())]),
+            makePanelColumn([makePricingCardEl({plan:"Growth",price:"99",period:"/month",subtitle:"For serious launches",features:["Unlimited funnels","Priority support","Analytics"],badge:"Best Value"},makeBareCardStyle())]),
+            makePanelColumn([makePricingCardEl({plan:"Scale",price:"199",period:"/month",subtitle:"For advanced teams",features:["Advanced insights","Team access","Hands-on onboarding"]},makeBareCardStyle())])
         ]
     });
     var faq=makeCardGridSection({
@@ -2034,7 +2038,7 @@ function templatePremiumCheckoutLayout(){
     var summary=makeSplitInfoSection(
         makePanelColumn([makePricingCardEl({
             plan:"Premium Access",
-            price:"â‚±299",
+            price:"299",
             period:"",
             subtitle:"Everything needed to launch with confidence",
             features:["Templates included","Priority email support","Bonus training vault"],
@@ -2075,7 +2079,7 @@ function templateWorkshopTicketCheckoutLayout(){
         ]),
         makePanelColumn([makePricingCardEl({
             plan:"Workshop Ticket",
-            price:"â‚±97",
+            price:"97",
             period:"",
             subtitle:"Live training plus replay and workbook",
             features:["90-minute workshop","Replay access","Action workbook"],
@@ -2113,8 +2117,8 @@ function templateWorkshopTicketCheckoutDiscountLayout(){
         ]),
         makePanelColumn([makePricingCardEl({
             plan:"Workshop Ticket",
-            price:"â‚±97",
-            regularPrice:"â‚±117",
+            price:"97",
+            regularPrice:"117",
             period:"",
             subtitle:"Live training plus replay and workbook",
             features:["90-minute workshop","Replay access","Action workbook"],
@@ -2142,7 +2146,7 @@ function templateBundleCheckoutLayout(){
         )),
         makePanelColumn([makePricingCardEl({
             plan:"Launch Bundle",
-            price:"â‚±149",
+            price:"149",
             period:"",
             subtitle:"Core offer plus valuable bonuses",
             features:["Main product","Bonus template pack","Private Q and A","Quick-start checklist"],
@@ -2175,7 +2179,7 @@ function templateMembershipCheckoutLayout(){
     var section=makeSplitInfoSection(
         makePanelColumn([makePricingCardEl({
             plan:"Membership Access",
-            price:"â‚±39",
+            price:"39",
             period:"/month",
             subtitle:"Ongoing training, resources, and support",
             features:["New sessions monthly","Resource vault","Member-only updates"],
@@ -2220,7 +2224,7 @@ function templateUpsellVipUpgradeLayout(){
         makePanelColumn([
             makePricingCardEl({
                 plan:"VIP Upgrade",
-                price:"â‚±19",
+                price:"19",
                 period:"",
                 subtitle:"Extra support, premium resources, and a faster path to results",
                 features:["Priority Q and A","Bonus implementation guide","VIP-only template pack"],
@@ -2257,7 +2261,7 @@ function templateDownsellLiteLayout(){
         makePanelColumn([
             makePricingCardEl({
                 plan:"Lite Bonus Pack",
-                price:"â‚±9",
+                price:"9",
                 period:"",
                 subtitle:"A smaller add-on for buyers who want one practical extra",
                 features:["Quick-start checklist","Bonus worksheet","Mini resource pack"],
@@ -3913,9 +3917,9 @@ const componentTemplates=[
             style:{padding:"56px 24px",backgroundColor:"#ffffff"},
             settings:{contentWidth:"wide"},
             rows:[makeRow([
-                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Starter",price:"â‚±19",period:"/month",subtitle:"For new teams",features:["1 funnel","Basic support","Email capture"],ctaLabel:"Choose Starter",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"}),
-                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Growth",price:"â‚±49",period:"/month",subtitle:"For growing teams",features:["Unlimited funnels","Custom domains","Priority support"],ctaLabel:"Choose Growth",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"})],{flex:"1"}),
-                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Scale",price:"â‚±99",period:"/month",subtitle:"For scale-ups",features:["Advanced analytics","SLA support","Custom onboarding"],ctaLabel:"Choose Scale",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"})
+                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Starter",price:"19",period:"/month",subtitle:"For new teams",features:["1 funnel","Basic support","Email capture"],ctaLabel:"Choose Starter",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"}),
+                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Growth",price:"49",period:"/month",subtitle:"For growing teams",features:["Unlimited funnels","Custom domains","Priority support"],ctaLabel:"Choose Growth",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:"Popular"})],{flex:"1"}),
+                makeColumn([makeEl("pricing","",{width:"100%"},{plan:"Scale",price:"99",period:"/month",subtitle:"For scale-ups",features:["Advanced analytics","SLA support","Custom onboarding"],ctaLabel:"Choose Scale",ctaLink:"#",ctaBgColor:"#240E35",ctaTextColor:"#ffffff",badge:""})],{flex:"1"})
             ],{gap:"18px",alignItems:"stretch"})]
         });
     }},
@@ -4728,7 +4732,13 @@ function wireStepManagement(){
         stepSel.onchange=function(){loadStep(stepSel.value);};
     }
     if(stepAddBtn){
-        stepAddBtn.onclick=function(){openPageManagerModal();};
+        stepAddBtn.onclick=function(){
+            if(builderSingleScrollMode){
+                showBuilderToast("Single screen mode keeps this funnel as one scrollable page.","error");
+                return;
+            }
+            openPageManagerModal();
+        };
     }
     if(pageMgrModal){
         pageMgrModal.addEventListener("click",function(e){
@@ -7317,6 +7327,27 @@ function findLooseRootSection(){
     })||null;
 }
 
+function hasLooseRootSection(){
+    ensureRootModel();
+    return !!findLooseRootSection();
+}
+
+function canAddComponentNow(type){
+    var t=String(type||"").toLowerCase();
+    if(t==="row"){
+        showBuilderToast("Row component is removed. Use Section as the main container.","error");
+        return false;
+    }
+    if(t==="section"||t==="menu"||t==="column"){
+        return true;
+    }
+    if(!hasLooseRootSection()){
+        showBuilderToast("Add a Section first before placing this component.","error");
+        return false;
+    }
+    return true;
+}
+
 function ensureLooseRootSection(createFresh,insertIndex){
     ensureRootModel();
     var existing=createFresh?null:findLooseRootSection();
@@ -7340,6 +7371,7 @@ function addComponent(type){
     const p=state.sel||{};
     ensureRootModel();
     const rs=rootItems();
+    if(!canAddComponentNow(type))return;
     function convertToFlowElement(node){
         if(!node)return node;
         node.style=node.style||{};
@@ -7351,6 +7383,23 @@ function addComponent(type){
             if(Object.prototype.hasOwnProperty.call(node.settings,key))delete node.settings[key];
         });
         return node;
+    }
+    if(!isStructureComponent(type)&&!isStandaloneRootComponent(type)){
+        var targetSection=(p&&p.s)?sec(p.s):null;
+        if(!targetSection||targetSection.__rootWrap||targetSection.__freeformCanvas){
+            targetSection=findLooseRootSection();
+        }
+        if(!targetSection){
+            showBuilderToast("Add a Section first before placing this component.","error");
+            return;
+        }
+        targetSection.elements=Array.isArray(targetSection.elements)?targetSection.elements:[];
+        const freeEl=convertToFlowElement(createDefaultElement(type));
+        if(!freeEl)return;
+        autoPlaceElement(freeEl,{elements:targetSection.elements});
+        targetSection.elements.push(freeEl);
+        state.sel={k:"el",scope:"section",s:targetSection.id,e:freeEl.id};
+        return;
     }
     if(!p||!p.k){
         if(isStandaloneRootComponent(type)){
@@ -8328,6 +8377,7 @@ function addComponentAt(type,target,place){
     ensureRootModel();
     const rs=rootItems();
     state.layout.sections=Array.isArray(state.layout.sections)?state.layout.sections:[];
+    if(!canAddComponentNow(type))return false;
     function convertToFlowElement(node){
         if(!node)return node;
         node.style=node.style||{};
@@ -8339,6 +8389,24 @@ function addComponentAt(type,target,place){
             if(Object.prototype.hasOwnProperty.call(node.settings,key))delete node.settings[key];
         });
         return node;
+    }
+    if(!isStructureComponent(type)&&!isStandaloneRootComponent(type)){
+        var targetSection=(t&&t.s)?sec(t.s):null;
+        if(!targetSection||targetSection.__rootWrap||targetSection.__freeformCanvas){
+            targetSection=findLooseRootSection();
+        }
+        if(!targetSection){
+            showBuilderToast("Add a Section first before placing this component.","error");
+            return false;
+        }
+        targetSection.elements=Array.isArray(targetSection.elements)?targetSection.elements:[];
+        var freeEl=convertToFlowElement(createDefaultElement(type));
+        if(!freeEl)return false;
+        if(freePlacement)applyFreePlacementToElement(freeEl,freePlacement);
+        else autoPlaceElement(freeEl,{elements:targetSection.elements});
+        targetSection.elements.push(freeEl);
+        state.sel={k:"el",scope:"section",s:targetSection.id,e:freeEl.id};
+        return true;
     }
     if(!t||!t.k){
         if(isStandaloneRootComponent(type)){
@@ -9198,7 +9266,7 @@ function renderElement(item,ctx){
         var plan=String(item.settings.plan||"Plan");
         var salePrice=normalizeTemplateCurrencyValue(item.settings.price||"");
         var regularPrice=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
-        var price=(salePrice!==""?salePrice:(regularPrice!==""?regularPrice:"â‚±0"));
+        var price=(salePrice!==""?salePrice:(regularPrice!==""?regularPrice:"0"));
         var period=String(item.settings.period||"");
         var subtitle=String(item.settings.subtitle||"");
         var badge=String(item.settings.badge||"");
@@ -9278,7 +9346,7 @@ function renderElement(item,ctx){
         var productName=String(item.settings.plan||"Product");
         var productSale=normalizeTemplateCurrencyValue(item.settings.price||"");
         var productRegular=normalizeTemplateCurrencyValue(item.settings.regularPrice||"");
-        var productPrice=(productSale!==""?productSale:(productRegular!==""?productRegular:"â‚±0"));
+        var productPrice=(productSale!==""?productSale:(productRegular!==""?productRegular:"0"));
         var productPeriod=String(item.settings.period||"");
         var productSubtitle=String(item.settings.subtitle||"");
         var productBadge=String(item.settings.badge||"");
@@ -9479,7 +9547,7 @@ function renderElement(item,ctx){
         var summaryBg=String(item.settings.ctaBgColor||"#240E35");
         var summaryText=String(item.settings.ctaTextColor||"#ffffff");
         var customSummaryColor=(item.style&&item.style.color)?String(item.style.color):"";
-        var priceText=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"â‚±0");
+        var priceText=summaryPrice!==""?summaryPrice:(summaryRegular!==""?summaryRegular:"0");
         var card=document.createElement("div");
         card.className=isPhysicalCheckoutSummary?"fb-pricing fb-physical-checkout":"fb-pricing";
         if(summaryBadge){
@@ -9520,7 +9588,7 @@ function renderElement(item,ctx){
             priceWrap.className="fb-physical-checkout-price";
             var sPrice=document.createElement("span");
             sPrice.className="fb-pricing-price";
-            sPrice.textContent="â‚±4,000";
+            sPrice.textContent="4,000";
             if(customSummaryColor)sPrice.style.color=customSummaryColor;
             priceWrap.appendChild(sPrice);
             if(summaryPeriod){
@@ -9538,13 +9606,13 @@ function renderElement(item,ctx){
             rows.className="fb-physical-checkout-rows";
             var row1=document.createElement("div");
             row1.className="fb-physical-checkout-row";
-            row1.innerHTML='<span>Items subtotal</span><strong>â‚±4,000</strong>';
+            row1.innerHTML='<span>Items subtotal</span><strong>4,000</strong>';
             var row2=document.createElement("div");
             row2.className="fb-physical-checkout-row";
             row2.innerHTML='<span>Shipping</span><strong>Calculated at checkout</strong>';
             var row3=document.createElement("div");
             row3.className="fb-physical-checkout-row fb-physical-checkout-row--total";
-            row3.innerHTML='<strong>Order total</strong><strong>â‚±4,000</strong>';
+            row3.innerHTML='<strong>Order total</strong><strong>4,000</strong>';
             rows.appendChild(row1);
             rows.appendChild(row2);
             rows.appendChild(row3);
@@ -9553,8 +9621,8 @@ function renderElement(item,ctx){
             var placeholderLines=document.createElement("div");
             placeholderLines.className="fb-physical-checkout-lines";
             [
-                {name:"Product one",sub:"Qty: 1 â€¢ Best Seller",total:"â‚±500"},
-                {name:"Product two",sub:"Qty: 1 â€¢ Featured",total:"â‚±1,500"}
+                {name:"Product one",sub:"Qty: 1 â€¢ Best Seller",total:"500"},
+                {name:"Product two",sub:"Qty: 1 â€¢ Featured",total:"1,500"}
             ].forEach(function(line){
                 var row=document.createElement("div");
                 row.className="fb-physical-checkout-line";
@@ -9689,11 +9757,50 @@ function renderElement(item,ctx){
         var gap=Number(ms.itemGap);if(isNaN(gap))gap=13;
         var activeIdx=Number(ms.activeIndex);if(isNaN(activeIdx))activeIdx=0;
         var align=(ms.menuAlign||"left");
+        var rightButtonLabel=String(ms.leftButtonLabel||"Get Started");
+        var rightButtonUrl=String(ms.leftButtonUrl||"#");
+        var rightButtonBg=String(ms.leftButtonBgColor||"#240E35");
+        var rightButtonText=String(ms.leftButtonTextColor||"#ffffff");
+        var leftLogoUrl=String(ms.rightLogoUrl||"");
+        var leftLogoAlt=String(ms.rightLogoAlt||"Logo");
         var st=item.style||{};
+        const shell=document.createElement("div");
+        shell.style.display="flex";
+        shell.style.alignItems="center";
+        shell.style.gap="12px";
+        shell.style.width="100%";
+        const leftWrap=document.createElement("div");
+        leftWrap.style.flex="0 0 auto";
+        if(leftLogoUrl){
+            const logo=document.createElement("img");
+            logo.src=leftLogoUrl;
+            logo.alt=leftLogoAlt||"Logo";
+            logo.style.display="block";
+            logo.style.maxHeight="42px";
+            logo.style.width="auto";
+            logo.style.maxWidth="180px";
+            logo.style.objectFit="contain";
+            leftWrap.appendChild(logo);
+        }else{
+            const ph=document.createElement("div");
+            ph.textContent="Logo";
+            ph.style.padding="8px 12px";
+            ph.style.border="1px dashed #cbd5e1";
+            ph.style.borderRadius="10px";
+            ph.style.fontSize="12px";
+            ph.style.color="#64748b";
+            leftWrap.appendChild(ph);
+        }
+        shell.appendChild(leftWrap);
+        const centerWrap=document.createElement("div");
+        centerWrap.style.flex="1 1 auto";
+        centerWrap.style.minWidth="0";
         const ul=document.createElement("ul");
         ul.style.listStyle="none";ul.style.margin="0";ul.style.padding="0";
         ul.style.display="flex";ul.style.flexWrap="nowrap";ul.style.whiteSpace="nowrap";ul.style.gap=gap+"px";
         ul.style.justifyContent=align==="right"?"flex-end":align==="center"?"center":"flex-start";
+        ul.style.alignItems="center";
+        ul.style.overflowX="auto";
         if(st.fontFamily)ul.style.fontFamily=st.fontFamily;
         if(st.fontSize)ul.style.fontSize=st.fontSize;
         if(st.lineHeight)ul.style.lineHeight=st.lineHeight;
@@ -9717,7 +9824,24 @@ function renderElement(item,ctx){
             a.addEventListener("click",e=>e.preventDefault());
             li.appendChild(a);ul.appendChild(li);
         });
-        w.innerHTML="";w.appendChild(ul);
+        centerWrap.appendChild(ul);
+        shell.appendChild(centerWrap);
+        const rightWrap=document.createElement("div");
+        rightWrap.style.flex="0 0 auto";
+        const rightBtn=document.createElement("a");
+        rightBtn.href=rightButtonUrl||"#";
+        rightBtn.textContent=rightButtonLabel||"Get Started";
+        rightBtn.style.display="inline-block";
+        rightBtn.style.padding="8px 14px";
+        rightBtn.style.borderRadius="999px";
+        rightBtn.style.textDecoration="none";
+        rightBtn.style.fontWeight="600";
+        rightBtn.style.backgroundColor=rightButtonBg;
+        rightBtn.style.color=rightButtonText;
+        rightBtn.addEventListener("click",e=>e.preventDefault());
+        rightWrap.appendChild(rightBtn);
+        shell.appendChild(rightWrap);
+        w.innerHTML="";w.appendChild(shell);
     }
     else if(item.type==="carousel"){
         var cs=item.settings||{};
@@ -12547,6 +12671,7 @@ function renderSettings(){
                 return '<div class="menu-item-card"><div class="menu-item-head"><strong>Menu item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button><button type="button" class="menu-toggle" data-idx="'+idx+'" title="Toggle"><i class="fas '+(collapsed?'fa-chevron-down':'fa-chevron-up')+'"></i></button></div></div>'+body+'</div>';
             }).join("");
             settings.innerHTML='<div class="menu-panel-title">Menu</div><div class="menu-section-title">Content</div>'+cards+'<button type="button" id="addMenuItem" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add menu item</button><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Font family</label><select id="mFont"><option value="">Same font as the page</option>'+fonts.map(f=>'<option value="'+f.value.replace(/"/g,'&quot;')+'">'+f.label+'</option>').join('')+'</select><div class="menu-typo-grid"><div class="px-wrap"><input id="mFs" type="number" step="1"><span class="px-unit">px</span></div><div class="px-wrap"><input id="mLh" type="number" step="0.1"><span class="px-unit">lh</span></div></div><label>Text style</label><div class="menu-style-row"><button type="button" id="mBold" class="menu-align-btn" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button><button type="button" id="mItalic" class="menu-align-btn" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button></div><div class="menu-split"></div><div class="menu-section-title">Layout</div><div class="menu-align-row"><button type="button" class="menu-align-btn" data-align="left"><i class="fas fa-align-left"></i></button><button type="button" class="menu-align-btn" data-align="center"><i class="fas fa-align-center"></i></button><button type="button" class="menu-align-btn" data-align="right"><i class="fas fa-align-right"></i></button></div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Letter spacing</label><div class="menu-slider-row"><input id="mLsRange" type="range" min="0" max="20" step="0.1"><input id="mLsNum" type="number" min="0" max="20" step="0.1"></div><label>Text color</label><input id="mTextColor" type="color"><label>Menu items underline color</label><input id="mUnderlineColor" type="color"><label>Background color</label><input id="mBgColor" type="color"><label>Background image URL</label><input id="mBgImg" placeholder="https://..."><label>Upload background image</label><input id="mBgUp" type="file" accept="image/*"><div class="menu-split"></div><div class="menu-section-title">Spacing</div><label>Spacing between menu items</label><div class="menu-slider-row"><input id="mGapRange" type="range" min="0" max="64" step="1"><input id="mGapNum" type="number" min="0" max="64" step="1"></div><label>Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>&harr;</span></button><span>Link</span></div></div><label>Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>&harr;</span></button><span>Link</span></div></div>'+posControls+moveControls+remove;
+            settings.insertAdjacentHTML("beforeend",'<div class="menu-split"></div><div class="menu-section-title">Menu Extras</div><label>Right button label</label><input id="mLeftBtnLabel" placeholder="Get Started"><label>Right button URL</label><input id="mLeftBtnUrl" placeholder="#"><label>Right button background color</label><input id="mLeftBtnBg" type="color"><label>Right button text color</label><input id="mLeftBtnText" type="color"><div class="menu-split"></div><label>Left logo image URL</label><input id="mRightLogoUrl" placeholder="https://..."><label>Left logo alt text</label><input id="mRightLogoAlt" placeholder="Logo"><label>Upload left logo image</label><input id="mRightLogoUp" type="file" accept="image/*">');
 
             items.forEach((it,idx)=>{
                 var lab=document.getElementById("miLabel_"+idx),url=document.getElementById("miUrl_"+idx),mode=document.getElementById("miMode_"+idx),anchor=document.getElementById("miAnchor_"+idx),sectionWrap=document.getElementById("miSectionWrap_"+idx),customWrap=document.getElementById("miCustomWrap_"+idx),nw=document.getElementById("miNew_"+idx),sm=document.getElementById("miSub_"+idx);
@@ -12607,6 +12732,22 @@ function renderSettings(){
             var mBgUp=document.getElementById("mBgUp");
             if(mBgUp)mBgUp.onchange=()=>{if(mBgUp.files&&mBgUp.files[0]){saveToHistory();var mBgImg=document.getElementById("mBgImg");uploadImage(mBgUp.files[0],url=>{var s=sty();s.backgroundImage='url('+url+')';if(mBgImg)mBgImg.value=url;renderCanvas();},"Menu background image upload");}};
             mountBackgroundAssetLibrary("mBgUp","mBgAssetLibraryBtn","mBgImg","Menu Background Asset Library");
+            bind("mLeftBtnLabel",(t.settings&&t.settings.leftButtonLabel)||"Get Started",v=>{t.settings=t.settings||{};t.settings.leftButtonLabel=v;renderCanvas();},{undo:true});
+            bind("mLeftBtnUrl",(t.settings&&t.settings.leftButtonUrl)||"#",v=>{t.settings=t.settings||{};t.settings.leftButtonUrl=v;renderCanvas();},{undo:true});
+            bind("mLeftBtnBg",(t.settings&&t.settings.leftButtonBgColor)||"#240E35",v=>{t.settings=t.settings||{};t.settings.leftButtonBgColor=v;renderCanvas();},{undo:true});
+            bind("mLeftBtnText",(t.settings&&t.settings.leftButtonTextColor)||"#ffffff",v=>{t.settings=t.settings||{};t.settings.leftButtonTextColor=v;renderCanvas();},{undo:true});
+            bind("mRightLogoUrl",(t.settings&&t.settings.rightLogoUrl)||"",v=>{t.settings=t.settings||{};t.settings.rightLogoUrl=v;renderCanvas();},{undo:true});
+            bind("mRightLogoAlt",(t.settings&&t.settings.rightLogoAlt)||"Logo",v=>{t.settings=t.settings||{};t.settings.rightLogoAlt=v;renderCanvas();},{undo:true});
+            var mRightLogoUp=document.getElementById("mRightLogoUp");
+            if(mRightLogoUp)mRightLogoUp.onchange=()=>{if(mRightLogoUp.files&&mRightLogoUp.files[0]){saveToHistory();var mRightLogoUrl=document.getElementById("mRightLogoUrl");uploadImage(mRightLogoUp.files[0],url=>{t.settings=t.settings||{};t.settings.rightLogoUrl=url;if(mRightLogoUrl)mRightLogoUrl.value=url;renderCanvas();},"Menu left logo upload");}};
+            mountMediaAssetLibrary("mRightLogoUp","mRightLogoAssetLibraryBtn","image","Menu Left Logo Asset Library",function(url){
+                saveToHistory();
+                t.settings=t.settings||{};
+                t.settings.rightLogoUrl=url;
+                var mRightLogoUrl=document.getElementById("mRightLogoUrl");
+                if(mRightLogoUrl)mRightLogoUrl.value=url;
+                renderCanvas();
+            });
 
             var gapVal=Number((t.settings&&t.settings.itemGap)||13);if(isNaN(gapVal))gapVal=13;
             var gRange=document.getElementById("mGapRange"),gNum=document.getElementById("mGapNum");
@@ -13020,7 +13161,7 @@ function renderSettings(){
             var productActionSection=isCheckoutProductEditor
                 ? '<div class="menu-split"></div><div class="menu-section-title">Payment Action</div><div class="meta" style="margin:0 0 10px;">Checkout-step product buttons automatically submit payment.</div><label>Payment button label</label><input id="poCtaLabel"><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">'
                 : '<div class="menu-split"></div><div class="menu-section-title">Call to Actions</div><label>Button label</label><input id="poCtaLabel"><label>Button link</label><input id="poCtaLink" placeholder="https://..."><label>Button color</label><input id="poCtaBg" type="color"><label>Button text color</label><input id="poCtaText" type="color">';
-            settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="â‚±299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="â‚±499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
+            settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
             var poDescriptionField=document.getElementById("poDescription");
             if(poDescriptionField){
                 poDescriptionField.insertAdjacentHTML("afterend",'<div class="menu-split"></div><div class="menu-section-title">Inventory</div><label>Available stock</label><input id="poStock" type="number" min="0" step="1" placeholder="Leave blank for unlimited"><div class="meta" style="margin:6px 0 0;">Set a stock count to cap cart quantity and stop checkout once paid orders consume the remaining inventory.</div>');
@@ -13147,7 +13288,7 @@ function renderSettings(){
             var pricingActionSection=isCheckoutPricingEditor
                 ? '<div class="menu-split"></div><div class="menu-section-title">Payment Action</div><div class="meta" style="margin:0 0 10px;">This checkout pricing card is automatically the Pay Now button. Buyers do not need any extra action setup here.</div><label>Payment button label</label><input id="priceCtaLabel"><label>Button color</label><input id="priceCtaBg" type="color"><label>Button text color</label><input id="priceCtaText" type="color">'
                 : '<div class="menu-split"></div><div class="menu-section-title">Call to Actions</div><label>Button label</label><input id="priceCtaLabel"><label>Button link</label><input id="priceCtaLink" placeholder="https://..."><label>Button color</label><input id="priceCtaBg" type="color"><label>Button text color</label><input id="priceCtaText" type="color">';
-            settings.innerHTML='<div class="menu-section-title">Content</div>'+pricingContentMeta+'<label>Plan name</label><input id="pricePlan"><label>'+(isCheckoutPricingEditor?'Fallback sale price':'Sale price')+'</label><input id="priceValue" placeholder="â‚±49"><label>'+(isCheckoutPricingEditor?'Fallback regular price (after countdown)':'Regular price (after countdown)')+'</label><input id="priceRegular" placeholder="â‚±79"><label>Period</label><input id="pricePeriod" placeholder="/month"><label>Subtitle</label><input id="priceSubtitle"><label>Badge</label><input id="priceBadge" placeholder="Popular"><label>Promo key (legacy)</label><input id="pricePromo" placeholder="spring-sale"><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featCards+'<button type="button" id="addPriceFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+pricingActionSection+'<div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="priceTextColor" type="color"><label>Background color</label><input id="priceBg" type="color"><label>Border</label><input id="priceBorder">'+radiusHelpLabelHtml("priceRadiusHelp","Border radius")+'<div class="px-wrap"><input id="priceRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="priceShadow">'+posControls+moveControls+remove;
+            settings.innerHTML='<div class="menu-section-title">Content</div>'+pricingContentMeta+'<label>Plan name</label><input id="pricePlan"><label>'+(isCheckoutPricingEditor?'Fallback sale price':'Sale price')+'</label><input id="priceValue" placeholder="49"><label>'+(isCheckoutPricingEditor?'Fallback regular price (after countdown)':'Regular price (after countdown)')+'</label><input id="priceRegular" placeholder="79"><label>Period</label><input id="pricePeriod" placeholder="/month"><label>Subtitle</label><input id="priceSubtitle"><label>Badge</label><input id="priceBadge" placeholder="Popular"><label>Promo key (legacy)</label><input id="pricePromo" placeholder="spring-sale"><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featCards+'<button type="button" id="addPriceFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+pricingActionSection+'<div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="priceTextColor" type="color"><label>Background color</label><input id="priceBg" type="color"><label>Border</label><input id="priceBorder">'+radiusHelpLabelHtml("priceRadiusHelp","Border radius")+'<div class="px-wrap"><input id="priceRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="priceShadow">'+posControls+moveControls+remove;
             var priceCtaLabelField=document.getElementById("priceCtaLabel");
             var priceCtaLinkField=document.getElementById("priceCtaLink");
             if(priceCtaLabelField&&priceCtaLinkField){
@@ -13347,7 +13488,7 @@ function renderSettings(){
                 var val=String(f||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
                 return '<div class="menu-item-card" data-idx="'+idx+'"><div class="menu-item-head"><strong>Summary item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="csMoveUp" data-idx="'+idx+'" title="Move up"><i class="fas fa-arrow-up"></i></button><button type="button" class="csMoveDown" data-idx="'+idx+'" title="Move down"><i class="fas fa-arrow-down"></i></button><button type="button" class="csDelete menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button></div></div><label>Text</label><input class="csFeature" data-idx="'+idx+'" value="'+val+'"></div>';
             }).join("");
-            settings.innerHTML='<div class="menu-section-title">'+(isPhysicalSummary?'Physical Checkout Summary':'Checkout Summary')+'</div><div class="meta" style="margin:0 0 10px;">'+(isPhysicalSummary?'Best used on physical-product checkout pages. Selected product images, cart items, and totals will replace these fallback values on the live page.':'Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.')+'</div><label>Eyebrow</label><input id="csHeading"><label>'+(isPhysicalSummary?'Fallback product name':'Fallback plan name')+'</label><input id="csPlan"><label>'+(isPhysicalSummary?'Fallback total':'Fallback price')+'</label><input id="csPrice" placeholder="â‚±29"><label>Fallback regular price</label><input id="csRegular" placeholder="â‚±49"><label>Period</label><input id="csPeriod" placeholder="'+(isPhysicalSummary?'':'/month')+'"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="'+(isPhysicalSummary?'Order Summary':'Selected Plan')+'"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
+            settings.innerHTML='<div class="menu-section-title">'+(isPhysicalSummary?'Physical Checkout Summary':'Checkout Summary')+'</div><div class="meta" style="margin:0 0 10px;">'+(isPhysicalSummary?'Best used on physical-product checkout pages. Selected product images, cart items, and totals will replace these fallback values on the live page.':'Best used on checkout pages. The selected plan from the sales page will automatically replace these fallback values on the live page.')+'</div><label>Eyebrow</label><input id="csHeading"><label>'+(isPhysicalSummary?'Fallback product name':'Fallback plan name')+'</label><input id="csPlan"><label>'+(isPhysicalSummary?'Fallback total':'Fallback price')+'</label><input id="csPrice" placeholder="29"><label>Fallback regular price</label><input id="csRegular" placeholder="49"><label>Period</label><input id="csPeriod" placeholder="'+(isPhysicalSummary?'':'/month')+'"><label>Subtitle</label><input id="csSubtitle"><label>Badge</label><input id="csBadge" placeholder="'+(isPhysicalSummary?'Order Summary':'Selected Plan')+'"><div class="menu-split"></div><div class="menu-section-title">Summary Items</div>'+feats+'<button type="button" id="addCsFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add item</button>'+spacingControlsHtml(pad,mar)+'<div class="menu-split"></div><div class="menu-section-title">Payment Button</div><label>Button label</label><input id="csCtaLabel"><label>Button color</label><input id="csCtaBg" type="color"><label>Button text color</label><input id="csCtaText" type="color"><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="csTextColor" type="color"><label>Background color</label><input id="csBg" type="color"><label>Border</label><input id="csBorder">'+radiusHelpLabelHtml("csRadiusHelp","Border radius")+'<div class="px-wrap"><input id="csRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="csShadow">'+posControls+moveControls+remove;
             bind("csHeading",(t.settings&&t.settings.heading)||(isPhysicalSummary?"Review Your Order":"Order Summary"),v=>{t.settings=t.settings||{};t.settings.heading=v;renderCanvas();},{undo:true});
             bind("csPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings=t.settings||{};t.settings.plan=v;renderCanvas();},{undo:true});
             bindCurrency("csPrice",(t.settings&&t.settings.price)||"",v=>{t.settings=t.settings||{};t.settings.price=v;renderCanvas();},{undo:true});
@@ -13875,11 +14016,11 @@ function sidebarPreviewMarkup(type){
         case "faq":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card'><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line md'></span></span><span class='fb-comp-preview-faq-item'><span class='fb-comp-preview-faq-badge'>?</span><span class='fb-comp-preview-line lg'></span></span></span></span>";
         case "pricing":
-            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Popular</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±49</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Popular</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>49</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
         case "product_offer":
-            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-media'></span><span class='fb-comp-preview-pill'>Best Seller</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>â‚±299</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-media'></span><span class='fb-comp-preview-pill'>Best Seller</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>299</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-btn'>Buy Now</span></span></span>";
         case "checkout_summary":
-            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Selected</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>Ã¢â€šÂ±29</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Pay Now</span></span></span>";
+            return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-card fb-comp-preview-card--pricing'><span class='fb-comp-preview-pill'>Selected</span><span class='fb-comp-preview-line sm is-dark'></span><span class='fb-comp-preview-price-row'><span class='fb-comp-preview-price'>29</span><span class='fb-comp-preview-period'>/mo</span></span><span class='fb-comp-preview-line md'></span><span class='fb-comp-preview-line sm'></span><span class='fb-comp-preview-btn'>Pay Now</span></span></span>";
         case "countdown":
             return "<span class='fb-comp-drag-ghost__preview' aria-hidden='true'><span class='fb-comp-preview-timer'><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>12</span><br><span class='fb-comp-preview-timer-unit'>Hr</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>08</span><br><span class='fb-comp-preview-timer-unit'>Min</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>43</span><br><span class='fb-comp-preview-timer-unit'>Sec</span></span></span><span class='fb-comp-preview-timer-box'><span><span class='fb-comp-preview-timer-num'>05</span><br><span class='fb-comp-preview-timer-unit'>Day</span></span></span></span></span>";
         default:

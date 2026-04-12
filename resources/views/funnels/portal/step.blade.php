@@ -205,8 +205,15 @@
         .builder-image-placeholder__plus { width: 58px; height: 58px; border-radius: 999px; background: #d9d9d9; color: #5f6368; display: flex; align-items: center; justify-content: center; font-size: 40px; font-weight: 300; line-height: 1; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.16); }
         .builder-image-placeholder__label { font-size: 14px; font-weight: 600; color: #5f6368; letter-spacing: 0.01em; }
         .builder-menu { width: 100%; }
+        .builder-menu-shell { width: 100%; display: flex; align-items: center; gap: 12px; }
+        .builder-menu-left,
+        .builder-menu-right { flex: 0 0 auto; }
+        .builder-menu-center { flex: 1 1 auto; min-width: 0; }
         .builder-menu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
         .builder-menu-link { text-decoration: none; text-underline-offset: 3px; font: inherit; }
+        .builder-menu-edit-btn { display: inline-block; padding: 8px 14px; border-radius: 999px; text-decoration: none; font-weight: 600; }
+        .builder-menu-logo { display: block; max-height: 42px; width: auto; max-width: 180px; object-fit: contain; }
+        .builder-menu-logo-placeholder { padding: 8px 12px; border: 1px dashed #cbd5e1; border-radius: 10px; font-size: 12px; color: #64748b; }
         .builder-testimonial { display: grid; gap: 10px; }
         .builder-testimonial-quote { font-style: italic; line-height: 1.5; color: #334155; }
         .builder-testimonial-author { display: flex; align-items: center; gap: 10px; }
@@ -487,9 +494,17 @@
         .preview-device-switcher{
             display:flex;
             align-items:center;
-            gap:8px;
-            flex-wrap:wrap;
+            gap:6px;
             justify-content:flex-end;
+            position:fixed;
+            right:16px;
+            bottom:16px;
+            z-index:35;
+            padding:6px;
+            border-radius:999px;
+            background:rgba(255,255,255,0.96);
+            border:1px solid #e2e8f0;
+            box-shadow:0 12px 26px rgba(15,23,42,0.16);
         }
         .preview-device-btn{
             appearance:none;
@@ -497,8 +512,13 @@
             background:#ffffff;
             color:#0f172a;
             border-radius:999px;
-            padding:6px 10px;
-            font-size:12px;
+            width:36px;
+            height:36px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            padding:0;
+            font-size:13px;
             font-weight:800;
             cursor:pointer;
             box-shadow:none;
@@ -526,51 +546,26 @@
             border-radius:12px;
             background:#ffffff;
         }
-        /* Device-aware layout overrides for Preview Mode.
-           We key off `body[data-preview-device="..."]` so it works regardless of the
-           actual browser viewport width (like Google Sites device preview). */
-        body[data-preview-device="tablet"] .builder-row-inner{
-            flex-direction: column !important;
-        }
-        body[data-preview-device="tablet"] .builder-col{
-            flex: 0 0 100% !important;
-            width: 100% !important;
-        }
-        body[data-preview-device="tablet"] .builder-carousel-content-row{
-            flex-direction: column !important;
-        }
-        body[data-preview-device="tablet"] .builder-carousel-content-col{
-            min-width: 0 !important;
-            width: 100% !important;
-        }
-
-        body[data-preview-device="mobile"] .builder-row-inner{
-            flex-direction: column !important;
-        }
-        body[data-preview-device="mobile"] .builder-col{
-            flex: 0 0 100% !important;
-            width: 100% !important;
-        }
-        body[data-preview-device="mobile"] .builder-carousel-content-row{
-            flex-direction: column !important;
-        }
-        body[data-preview-device="mobile"] .builder-carousel-content-col{
-            min-width: 0 !important;
-            width: 100% !important;
-        }
+        /* Preview device buttons should emulate viewport width only.
+           Structural layout must stay on the same render path as publish mode. */
         .preview-toolbar {
-            position: relative;
+            position: fixed;
             display: flex;
             justify-content: space-between;
             align-items: center;
             gap: 12px;
-            z-index: 10;
-            margin: 12px;
-            padding: 10px 12px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            z-index: 30;
+            left: 12px;
+            right: 12px;
+            top: 12px;
+            margin: 0;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            pointer-events: none;
         }
+        .preview-toolbar-left{ pointer-events:auto; }
+        .preview-device-switcher{ pointer-events:auto; }
     </style>
 </head>
 <body class="{{ ($isPreview ?? false) ? 'is-preview' : 'is-published' }}{{ ($portalHasFreeformCanvas ?? false) ? ' portal-has-freeform-canvas' : '' }}">
@@ -1126,9 +1121,9 @@
                 <span class="preview-badge"><i class="fas fa-eye"></i> Preview Mode</span>
             </div>
             <div class="preview-device-switcher" role="group" aria-label="Preview device">
-                <button type="button" class="preview-device-btn is-active" data-preview-device="desktop">Desktop</button>
-                <button type="button" class="preview-device-btn" data-preview-device="tablet">Tablet</button>
-                <button type="button" class="preview-device-btn" data-preview-device="mobile">Mobile</button>
+                <button type="button" class="preview-device-btn is-active" data-preview-device="desktop" title="Desktop"><i class="fas fa-desktop" aria-hidden="true"></i><span style="position:absolute;left:-9999px;">Desktop</span></button>
+                <button type="button" class="preview-device-btn" data-preview-device="tablet" title="Tablet"><i class="fas fa-tablet-alt" aria-hidden="true"></i><span style="position:absolute;left:-9999px;">Tablet</span></button>
+                <button type="button" class="preview-device-btn" data-preview-device="mobile" title="Mobile"><i class="fas fa-mobile-alt" aria-hidden="true"></i><span style="position:absolute;left:-9999px;">Mobile</span></button>
             </div>
         </div>
         @endif
@@ -1508,22 +1503,47 @@
                                                         $itemGap = max(0, min(300, (int) ($settings['itemGap'] ?? 13)));
                                                         $menuText = trim((string) ($settings['textColor'] ?? '#374151'));
                                                         $menuUnderline = trim((string) ($settings['underlineColor'] ?? ''));
+                                                        $leftButtonLabel = trim((string) ($settings['leftButtonLabel'] ?? 'Edit'));
+                                                        if ($leftButtonLabel === '') $leftButtonLabel = 'Edit';
+                                                        $leftButtonUrl = trim((string) ($settings['leftButtonUrl'] ?? '#'));
+                                                        if ($leftButtonUrl === '') $leftButtonUrl = '#';
+                                                        $leftButtonBg = trim((string) ($settings['leftButtonBgColor'] ?? '#240E35'));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $leftButtonBg)) $leftButtonBg = '#240E35';
+                                                        $leftButtonText = trim((string) ($settings['leftButtonTextColor'] ?? '#ffffff'));
+                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $leftButtonText)) $leftButtonText = '#ffffff';
+                                                        $rightLogoUrl = trim((string) ($settings['rightLogoUrl'] ?? ''));
+                                                        $rightLogoAlt = trim((string) ($settings['rightLogoAlt'] ?? 'Logo'));
+                                                        if ($rightLogoAlt === '') $rightLogoAlt = 'Logo';
                                                     @endphp
                                                     <nav class="builder-menu" style="{{ $menuAlignStyle }}{{ $style !== '' ? $style : '' }}">
-                                                        <ul class="builder-menu-list" style="gap: {{ $itemGap }}px;">
-                                                            @foreach($menuItems as $i => $menuItem)
-                                                                @php
-                                                                    $menuLabel = trim((string) ($menuItem['label'] ?? 'Menu item ' . ($i + 1)));
-                                                                    $menuHref = trim((string) ($menuItem['url'] ?? '#'));
-                                                                    $menuNew = (bool) ($menuItem['newWindow'] ?? false);
-                                                                    $linkColor = $menuText;
-                                                                    $decoStyle = $menuUnderline !== '' ? 'text-decoration:underline;text-decoration-color:' . $menuUnderline . ';' : 'text-decoration:none;';
-                                                                @endphp
-                                                                <li>
-                                                                    <a class="builder-menu-link" href="{{ $menuHref !== '' ? $menuHref : '#' }}" @if($menuNew) target="_blank" rel="noopener" @endif style="color: {{ $linkColor }}; {{ $decoStyle }} font-family:inherit; font-size:inherit; line-height:inherit; letter-spacing:inherit; font-weight:inherit; font-style:inherit;">{{ $menuLabel !== '' ? $menuLabel : ('Menu item ' . ($i + 1)) }}</a>
-                                                                </li>
-                                                            @endforeach
-                                                        </ul>
+                                                        <div class="builder-menu-shell">
+                                                            <div class="builder-menu-left">
+                                                                <a class="builder-menu-edit-btn" href="{{ $leftButtonUrl }}" style="background-color: {{ $leftButtonBg }}; color: {{ $leftButtonText }};">{{ $leftButtonLabel }}</a>
+                                                            </div>
+                                                            <div class="builder-menu-center">
+                                                                <ul class="builder-menu-list" style="gap: {{ $itemGap }}px;">
+                                                                    @foreach($menuItems as $i => $menuItem)
+                                                                        @php
+                                                                            $menuLabel = trim((string) ($menuItem['label'] ?? 'Menu item ' . ($i + 1)));
+                                                                            $menuHref = trim((string) ($menuItem['url'] ?? '#'));
+                                                                            $menuNew = (bool) ($menuItem['newWindow'] ?? false);
+                                                                            $linkColor = $menuText;
+                                                                            $decoStyle = $menuUnderline !== '' ? 'text-decoration:underline;text-decoration-color:' . $menuUnderline . ';' : 'text-decoration:none;';
+                                                                        @endphp
+                                                                        <li>
+                                                                            <a class="builder-menu-link" href="{{ $menuHref !== '' ? $menuHref : '#' }}" @if($menuNew) target="_blank" rel="noopener" @endif style="color: {{ $linkColor }}; {{ $decoStyle }} font-family:inherit; font-size:inherit; line-height:inherit; letter-spacing:inherit; font-weight:inherit; font-style:inherit;">{{ $menuLabel !== '' ? $menuLabel : ('Menu item ' . ($i + 1)) }}</a>
+                                                                        </li>
+                                                                    @endforeach
+                                                                </ul>
+                                                            </div>
+                                                            <div class="builder-menu-right">
+                                                                @if($rightLogoUrl !== '')
+                                                                    <img class="builder-menu-logo" src="{{ $rightLogoUrl }}" alt="{{ $rightLogoAlt }}">
+                                                                @else
+                                                                    <div class="builder-menu-logo-placeholder">Logo</div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
                                                     </nav>
                                                 @elseif($type === 'carousel')
                                                     @php
@@ -1750,22 +1770,47 @@
                                                                                                         $menuAlignStyle = 'display:flex;justify-content:' . ($menuAlign === 'right' ? 'flex-end' : ($menuAlign === 'center' ? 'center' : 'flex-start')) . ';';
                                                                                                         $menuText = trim((string) ($ssc['textColor'] ?? '#374151'));
                                                                                                         $menuUnderline = trim((string) ($ssc['underlineColor'] ?? ''));
+                                                                                                        $leftButtonLabel = trim((string) ($ssc['leftButtonLabel'] ?? 'Edit'));
+                                                                                                        if ($leftButtonLabel === '') $leftButtonLabel = 'Edit';
+                                                                                                        $leftButtonUrl = trim((string) ($ssc['leftButtonUrl'] ?? '#'));
+                                                                                                        if ($leftButtonUrl === '') $leftButtonUrl = '#';
+                                                                                                        $leftButtonBg = trim((string) ($ssc['leftButtonBgColor'] ?? '#240E35'));
+                                                                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $leftButtonBg)) $leftButtonBg = '#240E35';
+                                                                                                        $leftButtonText = trim((string) ($ssc['leftButtonTextColor'] ?? '#ffffff'));
+                                                                                                        if (!preg_match('/^#[0-9A-Fa-f]{6}$/', $leftButtonText)) $leftButtonText = '#ffffff';
+                                                                                                        $rightLogoUrl = trim((string) ($ssc['rightLogoUrl'] ?? ''));
+                                                                                                        $rightLogoAlt = trim((string) ($ssc['rightLogoAlt'] ?? 'Logo'));
+                                                                                                        if ($rightLogoAlt === '') $rightLogoAlt = 'Logo';
                                                                                                     @endphp
                                                                                                     <nav class="builder-menu" style="{{ $menuAlignStyle }}{{ $ss !== '' ? $ss : '' }}">
-                                                                                                        <ul class="builder-menu-list" style="gap: {{ $itemGap }}px;">
-                                                                                                            @foreach($menuItems as $i => $menuItem)
-                                                                                                                @php
-                                                                                                                    $menuLabel = trim((string) ($menuItem['label'] ?? 'Menu item ' . ($i + 1)));
-                                                                                                                    $menuHref = trim((string) ($menuItem['url'] ?? '#'));
-                                                                                                                    $menuNew = (bool) ($menuItem['newWindow'] ?? false);
-                                                                                                                    $linkColor = $menuText;
-                                                                                                                    $decoStyle = $menuUnderline !== '' ? 'text-decoration:underline;text-decoration-color:' . $menuUnderline . ';' : 'text-decoration:none;';
-                                                                                                                @endphp
-                                                                                                                <li>
-                                                                                                                    <a class="builder-menu-link" href="{{ $menuHref !== '' ? $menuHref : '#' }}" @if($menuNew) target="_blank" rel="noopener" @endif style="color: {{ $linkColor }}; {{ $decoStyle }} font-family:inherit; font-size:inherit; line-height:inherit; letter-spacing:inherit; font-weight:inherit; font-style:inherit;">{{ $menuLabel !== '' ? $menuLabel : ('Menu item ' . ($i + 1)) }}</a>
-                                                                                                                </li>
-                                                                                                            @endforeach
-                                                                                                        </ul>
+                                                                                                        <div class="builder-menu-shell">
+                                                                                                            <div class="builder-menu-left">
+                                                                                                                <a class="builder-menu-edit-btn" href="{{ $leftButtonUrl }}" style="background-color: {{ $leftButtonBg }}; color: {{ $leftButtonText }};">{{ $leftButtonLabel }}</a>
+                                                                                                            </div>
+                                                                                                            <div class="builder-menu-center">
+                                                                                                                <ul class="builder-menu-list" style="gap: {{ $itemGap }}px;">
+                                                                                                                    @foreach($menuItems as $i => $menuItem)
+                                                                                                                        @php
+                                                                                                                            $menuLabel = trim((string) ($menuItem['label'] ?? 'Menu item ' . ($i + 1)));
+                                                                                                                            $menuHref = trim((string) ($menuItem['url'] ?? '#'));
+                                                                                                                            $menuNew = (bool) ($menuItem['newWindow'] ?? false);
+                                                                                                                            $linkColor = $menuText;
+                                                                                                                            $decoStyle = $menuUnderline !== '' ? 'text-decoration:underline;text-decoration-color:' . $menuUnderline . ';' : 'text-decoration:none;';
+                                                                                                                        @endphp
+                                                                                                                        <li>
+                                                                                                                            <a class="builder-menu-link" href="{{ $menuHref !== '' ? $menuHref : '#' }}" @if($menuNew) target="_blank" rel="noopener" @endif style="color: {{ $linkColor }}; {{ $decoStyle }} font-family:inherit; font-size:inherit; line-height:inherit; letter-spacing:inherit; font-weight:inherit; font-style:inherit;">{{ $menuLabel !== '' ? $menuLabel : ('Menu item ' . ($i + 1)) }}</a>
+                                                                                                                        </li>
+                                                                                                                    @endforeach
+                                                                                                                </ul>
+                                                                                                            </div>
+                                                                                                            <div class="builder-menu-right">
+                                                                                                                @if($rightLogoUrl !== '')
+                                                                                                                    <img class="builder-menu-logo" src="{{ $rightLogoUrl }}" alt="{{ $rightLogoAlt }}">
+                                                                                                                @else
+                                                                                                                    <div class="builder-menu-logo-placeholder">Logo</div>
+                                                                                                                @endif
+                                                                                                            </div>
+                                                                                                        </div>
                                                                                                     </nav>
                                                                                                 @elseif($st === 'form')
                                                                                                     <form onsubmit="return false;" style="{{ $ss }}">
@@ -4890,8 +4935,8 @@
                 content.style.height="auto";
                 content.style.width=editorCanvasWidth+"px";
                 content.style.maxWidth="none";
-                content.style.marginLeft="auto";
-                content.style.marginRight="auto";
+                content.style.marginLeft="0";
+                content.style.marginRight="0";
                 content.style.display="block";
                 content.style.position="relative";
                 content.style.left="0";

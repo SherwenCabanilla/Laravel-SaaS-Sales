@@ -34,6 +34,7 @@ class SignupOnboardingService
      *   max_users: int|null,
      *   max_leads: int|null,
      *   max_funnels: int|null,
+     *   max_templates: int|null,
      *   max_workflows: int|null,
      *   max_monthly_messages: int|null
      * }>
@@ -76,6 +77,7 @@ class SignupOnboardingService
      *   max_users: int|null,
      *   max_leads: int|null,
      *   max_funnels: int|null,
+     *   max_templates: int|null,
      *   max_workflows: int|null,
      *   max_monthly_messages: int|null
      * }
@@ -103,6 +105,7 @@ class SignupOnboardingService
      *   max_users: int|null,
      *   max_leads: int|null,
      *   max_funnels: int|null,
+     *   max_templates: int|null,
      *   max_workflows: int|null,
      *   max_monthly_messages: int|null
      * }
@@ -120,6 +123,7 @@ class SignupOnboardingService
             'max_users' => $plan->max_users,
             'max_leads' => $plan->max_leads,
             'max_funnels' => $plan->max_funnels,
+            'max_templates' => $plan->max_templates,
             'max_workflows' => $plan->max_workflows,
             'max_monthly_messages' => $plan->max_monthly_messages,
         ];
@@ -137,6 +141,7 @@ class SignupOnboardingService
      *   max_users: int|null,
      *   max_leads: int|null,
      *   max_funnels: int|null,
+     *   max_templates: int|null,
      *   max_workflows: int|null,
      *   max_monthly_messages: int|null
      * }>
@@ -160,6 +165,7 @@ class SignupOnboardingService
                 'max_users' => 5,
                 'max_leads' => 1000,
                 'max_funnels' => 3,
+                'max_templates' => 3,
                 'max_workflows' => 1,
                 'max_monthly_messages' => 2000,
             ],
@@ -179,6 +185,7 @@ class SignupOnboardingService
                 'max_users' => 20,
                 'max_leads' => 10000,
                 'max_funnels' => null,
+                'max_templates' => null,
                 'max_workflows' => 10,
                 'max_monthly_messages' => 30000,
             ],
@@ -198,6 +205,7 @@ class SignupOnboardingService
                 'max_users' => null,
                 'max_leads' => null,
                 'max_funnels' => null,
+                'max_templates' => null,
                 'max_workflows' => null,
                 'max_monthly_messages' => null,
             ],
@@ -220,6 +228,7 @@ class SignupOnboardingService
                 'max_users' => 3,
                 'max_leads' => 300,
                 'max_funnels' => 1,
+                'max_templates' => 1,
                 'max_workflows' => 1,
                 'max_monthly_messages' => 500,
             ]);

@@ -93,7 +93,7 @@ class FunnelTemplateService
                 'slug' => $this->generateUniqueFunnelSlug($name !== '' ? $name : $template->name, (int) $user->tenant_id),
                 'description' => $description,
                 'purpose' => $overrides['purpose'] ?? $template->template_type,
-                'default_tags' => [],
+                'default_tags' => $this->templateDefaultTags($template),
                 'status' => 'draft',
             ]);
 
@@ -121,6 +121,20 @@ class FunnelTemplateService
 
             return $funnel->fresh('steps');
         });
+    }
+
+    private function templateDefaultTags(FunnelTemplate $template): array
+    {
+        $tags = collect($template->template_tags ?? [])
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter()
+            ->values();
+
+        if ($tags->contains('single-scroll') || $tags->contains('__single_scroll')) {
+            return ['__single_scroll'];
+        }
+
+        return [];
     }
 
     public function importTemplateFromJson(array $payload, User $user, array $overrides = []): FunnelTemplate
