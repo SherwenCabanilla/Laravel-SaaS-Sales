@@ -45,10 +45,26 @@
                 @enderror
             </div>
 
+            <div style="margin-bottom: 16px;">
+                <label for="funnel_purpose" style="display:block; margin-bottom:8px; font-weight:700;">Funnel Purpose</label>
+                <select id="funnel_purpose" name="funnel_purpose" required
+                    style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
+                    @foreach(($templateFunnelPurposeOptions ?? []) as $value => $label)
+                        <option value="{{ $value }}" {{ old('funnel_purpose', 'service') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+                <div style="margin-top:6px; color:#64748b; font-size:12px;">
+                    Choose whether this template is for Services or Physical Product funnels.
+                </div>
+                @error('funnel_purpose')
+                    <span style="color:red; font-size:12px;">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div style="margin:18px 0; padding:14px 16px; border-radius:12px; background:#fbf9fd; border:1px solid #ece2f5; color:#475569; font-size:13px; line-height:1.55;">
-                Active build type:
-                <br><strong>Single Page Funnel</strong>: Single page canvas with sections for full journey content.
-                <br><strong>Step-by-Step templates</strong>: visible as placeholders only (no real content for now).
+                Build setup:
+                <br><strong>Template Purpose</strong>: Single Page or Step-by-Step layout mode.
+                <br><strong>Funnel Purpose</strong>: Services or Physical Product component focus.
             </div>
 
             <div style="display:flex; gap:10px;">

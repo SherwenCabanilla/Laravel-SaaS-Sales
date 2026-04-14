@@ -50,6 +50,7 @@ class AdminFunnelTemplateController extends Controller
     {
         return view('admin.funnel-templates.create', [
             'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
+            'templateFunnelPurposeOptions' => FunnelTemplate::FUNNEL_PURPOSE_OPTIONS,
         ]);
     }
 
@@ -57,6 +58,7 @@ class AdminFunnelTemplateController extends Controller
     {
         return view('admin.funnel-templates.import', [
             'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
+            'templateFunnelPurposeOptions' => FunnelTemplate::FUNNEL_PURPOSE_OPTIONS,
         ]);
     }
 
@@ -101,11 +103,15 @@ class AdminFunnelTemplateController extends Controller
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
             'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
             'template_tags' => 'nullable|string|max:500',
         ]);
 
         try {
-            $validated['template_tags'] = $this->normalizeTemplateTags($validated['template_tags'] ?? '');
+            $validated['template_tags'] = $this->attachFunnelPurposeTag(
+                $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
+                (string) ($validated['funnel_purpose'] ?? 'service')
+            );
             $template = $templateService->createStarterTemplate($validated, auth()->user());
             return redirect()->route('admin.funnel-templates.edit', $template)->with('success', 'Template created successfully.');
         } catch (\Throwable $e) {
@@ -119,6 +125,7 @@ class AdminFunnelTemplateController extends Controller
             'name' => 'nullable|string|max:120',
             'description' => 'nullable|string|max:2000',
             'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
             'template_tags' => 'nullable|string|max:500',
             'import_json' => 'required|string',
             'publish_now' => 'nullable|boolean',
@@ -135,7 +142,10 @@ class AdminFunnelTemplateController extends Controller
                 'name' => trim((string) ($validated['name'] ?? '')) !== '' ? $validated['name'] : null,
                 'description' => array_key_exists('description', $validated) ? $validated['description'] : null,
                 'template_type' => $validated['template_type'],
-                'template_tags' => $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
+                'template_tags' => $this->attachFunnelPurposeTag(
+                    $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
+                    (string) ($validated['funnel_purpose'] ?? 'service')
+                ),
                 'publish' => (bool) $request->boolean('publish_now'),
             ]);
 
@@ -193,7 +203,23 @@ class AdminFunnelTemplateController extends Controller
 
     private function singleScrollModeEnabledForTemplate($user, FunnelTemplate $template): bool
     {
-        return true;
+        $activeStepCount = $template->relationLoaded('steps')
+            ? $template->steps->where('is_active', true)->count()
+            : $template->steps()->where('is_active', true)->count();
+
+        if ($activeStepCount > 1) {
+            return false;
+        }
+
+        $templateTags = collect($template->template_tags ?? [])
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter();
+
+        if ($templateTags->contains('__single_scroll') || $templateTags->contains('single-scroll')) {
+            return true;
+        }
+
+        return FunnelTemplate::normalizeTemplateType($template->template_type) === 'single_page';
     }
 
     private function builderSharedTemplatesPayload(): array
@@ -250,6 +276,7 @@ class AdminFunnelTemplateController extends Controller
                     'template_id' => $template->id,
                     'name' => $template->name,
                     'description' => $template->description ?: 'Saved super-admin funnel template.',
+                    'funnel_purpose' => $template->resolvedFunnelPurpose(),
                     'status' => (string) $template->status,
                     'update_url' => route('admin.funnel-templates.update', $template),
                     'preview' => $preview,
@@ -268,6 +295,28 @@ class AdminFunnelTemplateController extends Controller
         return collect($values)
             ->map(fn ($value) => trim((string) $value))
             ->filter()
+            ->unique()
+            ->take(6)
+            ->values()
+            ->all();
+    }
+
+    private function attachFunnelPurposeTag(array $tags, string $funnelPurpose): array
+    {
+        $normalizedPurpose = FunnelTemplate::normalizeFunnelPurpose($funnelPurpose);
+        $purposeTag = FunnelTemplate::PURPOSE_TAG_PREFIX . $normalizedPurpose;
+
+        $cleaned = collect($tags)
+            ->map(fn ($tag) => trim((string) $tag))
+            ->filter()
+            ->reject(function (string $tag) {
+                return str_starts_with(mb_strtolower($tag), FunnelTemplate::PURPOSE_TAG_PREFIX);
+            })
+            ->values();
+
+        $cleaned->push($purposeTag);
+
+        return $cleaned
             ->unique()
             ->take(6)
             ->values()
@@ -321,6 +370,30 @@ class AdminFunnelTemplateController extends Controller
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'Template update failed.');
         }
+    }
+
+    public function destroy(FunnelTemplate $funnelTemplate)
+    {
+        $assets = $funnelTemplate->assets()->get();
+        foreach ($assets as $asset) {
+            try {
+                Storage::disk((string) ($asset->disk ?: 'public'))->delete($asset->path);
+            } catch (\Throwable $e) {
+                // Ignore storage errors so DB cleanup still happens.
+            }
+            $asset->delete();
+        }
+
+        $funnelTemplate->steps()->with('revisions')->get()->each(function (FunnelTemplateStep $step) {
+            $step->revisions()->delete();
+            $step->delete();
+        });
+
+        $funnelTemplate->delete();
+
+        return redirect()
+            ->route('admin.funnel-templates.index')
+            ->with('success', 'Template deleted successfully.');
     }
 
     public function publish(FunnelTemplate $funnelTemplate)

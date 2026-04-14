@@ -5,10 +5,17 @@
         <td>{{ ucfirst($template->status) }}</td>
         <td>{{ $template->steps_count }}</td>
         <td>{{ $template->slug }}</td>
-        <td>
-            <a href="{{ route('admin.funnel-templates.edit', $template) }}" class="action-link edit">
+        <td style="display: flex; gap: 12px; align-items: center;">
+            <a href="{{ route('admin.funnel-templates.edit', $template) }}" style="color: var(--theme-primary, #240E35); text-decoration: none; font-weight: 600;">
                 <i class="fas fa-pen"></i> Edit
             </a>
+            <form method="POST" action="{{ route('admin.funnel-templates.destroy', $template) }}" style="display:inline;" data-delete-template-form data-template-name="{{ $template->name }}">
+                @csrf
+                @method('DELETE')
+                <button type="submit" style="background: none; border: none; color: #DC2626; cursor: pointer; padding: 0; font-weight: 600;">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </form>
         </td>
     </tr>
 @empty

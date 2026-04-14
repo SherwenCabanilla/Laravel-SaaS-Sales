@@ -95,7 +95,7 @@ class FunnelTemplateService
                 'name' => $name !== '' ? $name : $template->name,
                 'slug' => $this->generateUniqueFunnelSlug($name !== '' ? $name : $template->name, (int) $user->tenant_id),
                 'description' => $description,
-                'purpose' => $overrides['purpose'] ?? $template->template_type,
+                'purpose' => $overrides['purpose'] ?? $template->resolvedFunnelPurpose(),
                 'default_tags' => $this->templateDefaultTags($template),
                 'status' => 'draft',
             ]);

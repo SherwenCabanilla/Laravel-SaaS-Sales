@@ -43,6 +43,18 @@
                         <span style="color:red; font-size:12px;">{{ $message }}</span>
                     @enderror
                 </div>
+                <div>
+                    <label for="funnel_purpose" style="display:block; margin-bottom:8px; font-weight:700;">Funnel Purpose</label>
+                    <select id="funnel_purpose" name="funnel_purpose" required
+                        style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
+                        @foreach(($templateFunnelPurposeOptions ?? []) as $value => $label)
+                            <option value="{{ $value }}" {{ old('funnel_purpose', 'service') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @error('funnel_purpose')
+                        <span style="color:red; font-size:12px;">{{ $message }}</span>
+                    @enderror
+                </div>
             </div>
 
             <div style="margin-bottom: 16px;">
@@ -98,7 +110,7 @@
                 <br>1. Full template JSON with <code>steps</code>
                 <br>2. Full template JSON with <code>pages</code>
                 <br>3. Single-page JSON with one <code>layout_json</code> object
-                <br><br>Use <code>Single Page Funnel</code> for active templates. Step-by-step templates are placeholders only.
+                <br><br>Template Purpose controls layout mode. Funnel Purpose controls Services vs Physical Product usage.
                 <br><br>Each step can include fields like <code>title</code>, <code>slug</code>, <code>type</code>, <code>description</code>, <code>template</code>, <code>step_tags</code>, and <code>layout_json</code>.
             </div>
 

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class FunnelTemplate extends Model
 {
     public const TEMPLATE_TYPE_UNCATEGORIZED = 'uncategorized';
+    public const PURPOSE_TAG_PREFIX = '__funnel_purpose:';
 
     public const STATUSES = [
         'draft' => 'Draft',
@@ -25,12 +26,47 @@ class FunnelTemplate extends Model
         'hybrid' => 'Hybrid Funnel',
     ];
 
+    public const FUNNEL_PURPOSE_OPTIONS = [
+        'service' => 'Services',
+        'physical_product' => 'Physical Product',
+    ];
+
     public static function selectableTemplateTypes(): array
     {
         return [
             'single_page' => self::TEMPLATE_TYPES['single_page'],
             'step_by_step' => self::TEMPLATE_TYPES['step_by_step'],
         ];
+    }
+
+    public static function normalizeFunnelPurpose(mixed $value): string
+    {
+        $normalized = mb_strtolower(trim((string) $value));
+
+        return array_key_exists($normalized, self::FUNNEL_PURPOSE_OPTIONS) ? $normalized : 'service';
+    }
+
+    public function resolvedFunnelPurpose(): string
+    {
+        $tags = collect($this->template_tags ?? [])
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter();
+
+        $prefix = self::PURPOSE_TAG_PREFIX;
+        $tagPurpose = $tags
+            ->first(function (string $tag) use ($prefix) {
+                return str_starts_with($tag, $prefix);
+            });
+
+        if (is_string($tagPurpose) && $tagPurpose !== '') {
+            return self::normalizeFunnelPurpose(mb_substr($tagPurpose, mb_strlen($prefix)));
+        }
+
+        if (self::normalizeTemplateType($this->template_type) === 'physical_product') {
+            return 'physical_product';
+        }
+
+        return 'service';
     }
 
     protected $fillable = [

@@ -652,12 +652,10 @@
                     style="min-width:190px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;background:#fff;"
                     title="Template Purpose"
                 >
-                    @foreach(\App\Models\FunnelTemplate::TEMPLATE_TYPES as $value => $label)
-                        @if(in_array($value, ['single_page'], true))
-                            <option value="{{ $value }}" {{ old('template_type', $funnel->template_type) === $value ? 'selected' : '' }}>
-                                {{ $label }}
-                            </option>
-                        @endif
+                    @foreach(\App\Models\FunnelTemplate::selectableTemplateTypes() as $value => $label)
+                        <option value="{{ $value }}" {{ old('template_type', $funnel->template_type) === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
                     @endforeach
                 </select>
             @else
@@ -1143,7 +1141,7 @@ function setBuilderPurpose(nextPurpose){
     applyPurposeComponentVisibility();
 }
 function syncBuilderPurposeFromTemplate(template){
-    var nextPurpose=normalizeBuilderPurpose(template&&template.template_type||"service");
+    var nextPurpose=normalizeBuilderPurpose((template&&template.funnel_purpose)||(template&&template.template_type)||"service");
     if(!funnelUpdateUrl){
         setBuilderPurpose(nextPurpose);
         return Promise.resolve(nextPurpose);
@@ -3785,7 +3783,7 @@ function renderTemplateLibrary(){
     var mode="shared";
     var allFunnelTemplates=(sharedFunnelTemplates||[]);
     var matchingFunnelTemplates=allFunnelTemplates.filter(function(template){
-        return normalizeBuilderPurpose(template&&template.template_type||"service")===builderPurpose;
+        return normalizeBuilderPurpose((template&&template.funnel_purpose)||(template&&template.template_type)||"service")===builderPurpose;
     });
     var purposeLabels={
         service:"Service Funnel",

@@ -339,6 +339,7 @@ class FunnelController extends Controller
                     'name' => $template->name,
                     'description' => $template->description ?: 'Saved super-admin funnel template.',
                     'template_type' => (string) $template->template_type,
+                    'funnel_purpose' => $template->resolvedFunnelPurpose(),
                     'status' => (string) $template->status,
                     'update_url' => $this->canEditSharedTemplates(auth()->user())
                         ? route('funnels.shared-templates.update', $template)
@@ -413,7 +414,23 @@ class FunnelController extends Controller
 
     private function singleScrollModeEnabledForFunnel($user, Funnel $funnel): bool
     {
-        return true;
+        $activeStepCount = $funnel->relationLoaded('steps')
+            ? $funnel->steps->where('is_active', true)->count()
+            : $funnel->steps()->where('is_active', true)->count();
+
+        if ($activeStepCount > 1) {
+            return false;
+        }
+
+        $defaultTags = collect($funnel->default_tags ?? [])
+            ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+            ->filter();
+
+        if ($defaultTags->contains('__single_scroll') || $defaultTags->contains('single-scroll')) {
+            return true;
+        }
+
+        return Funnel::normalizePurpose($funnel->purpose ?? $funnel->template_type) === 'single_page';
     }
 
     private function canEditSharedTemplates($user): bool
