@@ -9,7 +9,6 @@ use App\Models\Lead;
 use App\Models\FunnelStep;
 use App\Models\FunnelStepRevision;
 use App\Models\FunnelTemplate;
-use App\Services\FunnelTemplateService;
 use App\Services\FunnelTrackingService;
 use App\Support\TenantPlanEnforcer;
 use Illuminate\Http\Request;
@@ -22,7 +21,7 @@ class FunnelController extends Controller
 {
     private const MAX_STEP_REVISIONS = 40;
     private const MAX_MANUAL_VERSIONS = 25;
-    private const CREATE_PURPOSE_KEYS = ['single_page'];
+    private const CREATE_PURPOSE_KEYS = ['service', 'single_page', 'digital_product', 'physical_product', 'hybrid'];
 
     public function index(Request $request)
     {
@@ -79,93 +78,56 @@ class FunnelController extends Controller
             return redirect()->route('funnels.index')->with('error', $e->getMessage());
         }
 
-        $purposeOptions = collect(Funnel::PURPOSES)
-            ->only(self::CREATE_PURPOSE_KEYS)
-            ->all();
-        $publishedTemplates = $this->publishedTemplatesQueryForUser(auth()->user())
-            ->with(['steps' => fn ($query) => $query->where('is_active', true)->orderBy('position')])
-            ->get();
-
         return view('funnels.create', [
-            'purposeOptions' => $purposeOptions,
-            'publishedTemplates' => $publishedTemplates,
+            'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
+            'funnelPurposeOptions' => FunnelTemplate::FUNNEL_PURPOSE_OPTIONS,
         ]);
     }
 
-    public function store(Request $request, FunnelTemplateService $templateService)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'template_id' => [
-                'nullable',
-                'integer',
-                Rule::exists('funnel_templates', 'id')->where(fn ($query) => $query->where('status', 'published')),
-            ],
-            'purpose' => ['nullable', Rule::in(self::CREATE_PURPOSE_KEYS), 'required_without:template_id'],
-            'default_tags' => 'nullable|string|max:500',
+            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
         ]);
+
+        $purpose = $validated['template_type'] === 'single_page'
+            ? 'single_page'
+            : FunnelTemplate::normalizeFunnelPurpose($validated['funnel_purpose']);
 
         $user = auth()->user();
 
         try {
             app(TenantPlanEnforcer::class)->ensureCanCreateFunnel($user->tenant);
 
-            $templateId = (int) ($validated['template_id'] ?? 0);
-            if ($templateId > 0) {
-                $template = $this->findAccessiblePublishedTemplateForUser($user, $templateId);
-                if (! $template) {
-                    abort(403, 'Selected template is not available for your current subscription plan.');
-                }
-                $funnel = $templateService->createFunnelFromTemplate($template, $user, [
-                    'name' => $validated['name'],
-                    'description' => $validated['description'] ?? null,
-                    'purpose' => $validated['purpose'] ?? $template->template_type,
+            $funnel = Funnel::create([
+                'tenant_id' => $user->tenant_id,
+                'created_by' => $user->id,
+                'name' => $validated['name'],
+                'slug' => $this->generateUniqueFunnelSlug($validated['name'], $user->tenant_id),
+                'description' => $validated['description'] ?? null,
+                'purpose' => $purpose,
+                'status' => 'draft',
+            ]);
+
+            $starterSteps = $this->starterStepsForPurpose($purpose);
+
+            foreach ($starterSteps as $index => $step) {
+                $createdStep = FunnelStep::create([
+                    'funnel_id' => $funnel->id,
+                    'title' => $step['title'],
+                    'slug' => $step['slug'],
+                    'type' => $step['type'],
+                    'content' => $step['content'],
+                    'step_tags' => [],
+                    'cta_label' => $step['cta_label'] ?? null,
+                    'price' => $step['price'] ?? null,
+                    'position' => $index + 1,
+                    'is_active' => true,
                 ]);
-            } else {
-                $funnel = Funnel::create([
-                    'tenant_id' => $user->tenant_id,
-                    'created_by' => $user->id,
-                    'name' => $validated['name'],
-                    'slug' => $this->generateUniqueFunnelSlug($validated['name'], $user->tenant_id),
-                    'description' => $validated['description'] ?? null,
-                    'purpose' => $validated['purpose'],
-                    'default_tags' => $this->normalizeTagsString($validated['default_tags'] ?? null),
-                    'status' => 'draft',
-                ]);
-
-                $starterSteps = $this->starterStepsForPurpose($validated['purpose']);
-
-                foreach ($starterSteps as $index => $step) {
-                    $createdStep = FunnelStep::create([
-                        'funnel_id' => $funnel->id,
-                        'title' => $step['title'],
-                        'slug' => $step['slug'],
-                        'type' => $step['type'],
-                        'content' => $step['content'],
-                        'step_tags' => [],
-                        'cta_label' => $step['cta_label'] ?? null,
-                        'price' => $step['price'] ?? null,
-                        'position' => $index + 1,
-                        'is_active' => true,
-                    ]);
-                    $this->ensureStepHasInitialRevision($createdStep);
-                }
-            }
-
-            if (array_key_exists('default_tags', $validated)) {
-                $nextTags = $this->normalizeTagsString($validated['default_tags'] ?? null);
-                if ($templateId > 0) {
-                    $existingTags = collect($funnel->default_tags ?? [])
-                        ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
-                        ->filter()
-                        ->values();
-                    if ($existingTags->contains('__single_scroll') && ! in_array('__single_scroll', $nextTags, true)) {
-                        $nextTags[] = '__single_scroll';
-                    }
-                }
-
-                $funnel->update(['default_tags' => $nextTags]);
+                $this->ensureStepHasInitialRevision($createdStep);
             }
 
             $funnel->load('steps.revisions');
@@ -188,11 +150,13 @@ class FunnelController extends Controller
                 ['title' => 'Single Page Funnel', 'slug' => 'single-page', 'type' => 'landing', 'content' => 'Build the full one-page journey here: hero, offer, proof, and checkout sections.', 'cta_label' => 'Get Started'],
             ],
             'digital_product' => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the digital product and build interest before the sales page.', 'cta_label' => 'Learn More'],
                 ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present your digital product offer here.', 'cta_label' => 'Go to Checkout'],
                 ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Complete your digital order.', 'cta_label' => 'Pay Now', 'price' => 1000],
                 ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank you for your purchase. Deliver access details here.', 'cta_label' => null],
             ],
             'physical_product' => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the product and capture interest before the full sales page.', 'cta_label' => 'Shop Now'],
                 ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Show the product, price, benefits, and buying reason here.', 'cta_label' => 'Buy Now'],
                 ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect customer, shipping, and payment details here.', 'cta_label' => 'Place Order', 'price' => 1000],
                 ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Confirm the order and tell the buyer what happens next.', 'cta_label' => null],
@@ -238,6 +202,7 @@ class FunnelController extends Controller
             'builderSharedTemplates' => $this->builderSharedTemplatesPayload(),
             'builderSharedTemplatesUrl' => route('funnels.shared-templates'),
             'builderSingleScrollMode' => $this->singleScrollModeEnabledForFunnel(auth()->user(), $funnel),
+            'builderPurpose' => $funnel->purpose ?? 'service',
         ]);
     }
 

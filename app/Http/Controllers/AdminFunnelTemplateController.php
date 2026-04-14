@@ -198,6 +198,7 @@ class AdminFunnelTemplateController extends Controller
             'builderTagInputDisabled' => true,
             'builderTagValue' => '',
             'builderSharedTemplates' => $this->builderSharedTemplatesPayload(),
+            'builderPurpose' => $funnelTemplate->resolvedFunnelPurpose(),
         ]);
     }
 
@@ -345,6 +346,16 @@ class AdminFunnelTemplateController extends Controller
 
     public function update(Request $request, FunnelTemplate $funnelTemplate, FunnelTemplateService $templateService)
     {
+        if ($request->wantsJson() && $request->has('purpose') && ! $request->has('name')) {
+            $purpose = FunnelTemplate::normalizeFunnelPurpose($request->input('purpose', 'service'));
+            $tags = $this->attachFunnelPurposeTag($funnelTemplate->template_tags ?? [], $purpose);
+            $funnelTemplate->update(['template_tags' => $tags]);
+            return response()->json([
+                'message' => 'Purpose updated.',
+                'funnel' => ['purpose' => $purpose],
+            ]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',

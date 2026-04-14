@@ -639,6 +639,15 @@
             @csrf
             @method('PUT')
             <input type="hidden" name="name" value="{{ $funnel->name }}">
+            <select
+                id="fbPurposeTopBar"
+                style="min-width:190px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;background:#fff;font-weight:700;"
+                title="Funnel Purpose"
+            >
+                @php $resolvedPurpose = $builderPurpose ?? $funnel->purpose ?? 'service'; @endphp
+                <option value="service" {{ $resolvedPurpose === 'service' ? 'selected' : '' }}>Service</option>
+                <option value="physical_product" {{ $resolvedPurpose === 'physical_product' ? 'selected' : '' }}>Physical Product</option>
+            </select>
             @if(($builderMode ?? 'funnel') === 'template')
                 <input
                     type="text"
@@ -647,17 +656,6 @@
                     placeholder="Template description"
                     style="min-width:320px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
                 >
-                <select
-                    name="template_type"
-                    style="min-width:190px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;background:#fff;"
-                    title="Template Purpose"
-                >
-                    @foreach(\App\Models\FunnelTemplate::selectableTemplateTypes() as $value => $label)
-                        <option value="{{ $value }}" {{ old('template_type', $funnel->template_type) === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
             @else
                 <input type="hidden" name="description" value="{{ $funnel->description }}">
             @endif
@@ -700,9 +698,7 @@
         <div class="fb-left-panel" id="fbLeftPanelComponents">
             <div class="fb-card fb-lib">
                 <h3 class="fb-h">Components</h3>
-                <p class="meta" id="fbPurposeMeta" style="margin:0 0 10px;">
-                    Component library adjusts to this funnel purpose.
-                </p>
+                <p class="meta" id="fbPurposeMeta" style="margin:0 0 10px;font-size:11px;"></p>
                 <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Layout & Structure</div>
                     <button draggable="true" data-c="section" data-purpose="all"><i class="fas fa-square"></i>Section</button>
@@ -725,19 +721,19 @@
                 <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Interaction & Navigation</div>
                     <button draggable="true" data-c="menu" data-purpose="all"><i class="fas fa-bars"></i>Menu</button>
-                    <button draggable="true" data-c="form" data-purpose="service,physical_product"><i class="fas fa-file-lines"></i>Form</button>
+                    <button draggable="true" data-c="form" data-purpose="all"><i class="fas fa-file-lines"></i>Form</button>
                 </div>
                 <div class="fb-lib-group" data-component-group>
                     <div class="fb-lib-group-title">Advanced Blocks</div>
-                    <button draggable="true" data-c="testimonial" data-purpose="service"><i class="fas fa-quote-right"></i>Testimonial</button>
-                    <button draggable="true" data-c="review_form" data-purpose="service,physical_product"><i class="fas fa-star-half-stroke"></i>Review Form</button>
-                    <button draggable="true" data-c="reviews" data-purpose="service,physical_product"><i class="fas fa-stars"></i>Reviews</button>
-                    <button draggable="true" data-c="faq" data-purpose="service"><i class="fas fa-circle-question"></i>FAQ</button>
-                    <button draggable="true" data-c="pricing" data-purpose="service"><i class="fas fa-tags"></i>Pricing</button>
-                    <button draggable="true" data-c="product_offer" data-purpose="physical_product"><i class="fas fa-box-open"></i>Product Offer</button>
-                    <button draggable="true" data-c="checkout_summary" data-purpose="service"><i class="fas fa-receipt"></i>Checkout Summary</button>
-                    <button draggable="true" data-c="physical_checkout_summary" data-purpose="physical_product"><i class="fas fa-basket-shopping"></i>Physical Checkout Summary</button>
-                    <button draggable="true" data-c="countdown" data-purpose="service"><i class="fas fa-stopwatch"></i>Countdown</button>
+                    <button draggable="true" data-c="testimonial" data-purpose="all"><i class="fas fa-quote-right"></i>Testimonial</button>
+                    <button draggable="true" data-c="review_form" data-purpose="all"><i class="fas fa-star-half-stroke"></i>Review Form</button>
+                    <button draggable="true" data-c="reviews" data-purpose="all"><i class="fas fa-stars"></i>Reviews</button>
+                    <button draggable="true" data-c="faq" data-purpose="all"><i class="fas fa-circle-question"></i>FAQ</button>
+                    <button draggable="true" data-c="pricing" data-purpose="service,digital_product,hybrid"><i class="fas fa-tags"></i>Pricing</button>
+                    <button draggable="true" data-c="product_offer" data-purpose="physical_product,hybrid"><i class="fas fa-box-open"></i>Product Offer</button>
+                    <button draggable="true" data-c="checkout_summary" data-purpose="service,digital_product,hybrid"><i class="fas fa-receipt"></i>Checkout Summary</button>
+                    <button draggable="true" data-c="physical_checkout_summary" data-purpose="physical_product,hybrid"><i class="fas fa-basket-shopping"></i>Physical Checkout Summary</button>
+                    <button draggable="true" data-c="countdown" data-purpose="all"><i class="fas fa-stopwatch"></i>Countdown</button>
                 </div>
             </div>
         </div>
@@ -958,7 +954,7 @@ const stepReorderUrl=@json($builderStepReorderUrl ?? route('funnels.steps.reorde
 const funnelUpdateUrl=@json($builderUpdateUrl ?? route('funnels.update', $funnel));
 const csrf="{{ csrf_token() }}";
 const funnelSlug=@json($funnel->slug);
-const builderPurposeRaw=@json(($funnel->purpose ?? $funnel->template_type ?? 'service'));
+const builderPurposeRaw=@json(($builderPurpose ?? $funnel->purpose ?? $funnel->template_type ?? 'service'));
 let builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
 const funnelStepUrlTpl=@json($builderPublicStepUrlTemplate ?? route('funnels.portal.step',['funnelSlug'=>$funnel->slug,'stepSlug'=>'__STEP__']));
 const steps=@json($builderSteps);
@@ -1040,6 +1036,21 @@ const iconCatalog=[
 
 const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameType=document.getElementById("pageMgrRenameType"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
 const fbPurposeMeta=document.getElementById("fbPurposeMeta");
+const fbPurposeSelect=document.getElementById("fbPurposeTopBar");
+if(fbPurposeSelect){
+    fbPurposeSelect.value=builderPurpose;
+    fbPurposeSelect.addEventListener("change",function(){
+        var next=normalizeBuilderPurpose(fbPurposeSelect.value);
+        setBuilderPurpose(next);
+        if(funnelUpdateUrl){
+            requestJson(funnelUpdateUrl,"PUT",{purpose:next}).then(function(){
+                showBuilderToast("Purpose updated to "+fbPurposeSelect.options[fbPurposeSelect.selectedIndex].text+".","success");
+            }).catch(function(){
+                showBuilderToast("Failed to save purpose.","error");
+            });
+        }
+    });
+}
 let _autoSaveTimer=null;
 let _autoSaveInFlight=false;
 let _autoSavePending=false;
@@ -1107,17 +1118,22 @@ function applyPurposeComponentVisibility(){
     var labels={
         service:"Service Funnel",
         single_page:"Single Page Funnel",
-        physical_product:"Physical Product Funnel"
+        digital_product:"Digital Product Funnel",
+        physical_product:"Physical Product Funnel",
+        hybrid:"Hybrid Funnel"
+    };
+    var descriptions={
+        service:"Service components: pricing, checkout, forms, proof, and lead capture.",
+        single_page:"Service components: pricing, checkout, forms, proof, and lead capture.",
+        digital_product:"Service components: pricing, checkout, forms, proof, and lead capture.",
+        physical_product:"Physical product components: product offers, cart, shipping, and checkout.",
+        hybrid:"Service components: pricing, checkout, forms, proof, and lead capture."
     };
     if(fbPurposeMeta){
-        var purposeLabel=labels[builderPurpose]||"Service Funnel";
-        if(builderPurpose==="physical_product"){
-            fbPurposeMeta.textContent=purposeLabel+" components are focused on product selling and checkout-related blocks.";
-        }else if(builderPurpose==="single_page"){
-            fbPurposeMeta.textContent=purposeLabel+" components are focused on one-page layouts with sections for offer and checkout.";
-        }else if(builderPurpose==="service"){
-            fbPurposeMeta.textContent=purposeLabel+" components are focused on offers, forms, proof, and service-style selling.";
-        }
+        fbPurposeMeta.textContent=descriptions[builderPurpose]||descriptions.service;
+    }
+    if(fbPurposeSelect&&fbPurposeSelect.value!==builderPurpose){
+        fbPurposeSelect.value=builderPurpose;
     }
     document.querySelectorAll("[data-c][data-purpose]").forEach(function(btn){
         var allowed=String(btn.getAttribute("data-purpose")||"all").split(",").map(function(v){return String(v||"").trim().toLowerCase();}).filter(Boolean);
@@ -1133,8 +1149,8 @@ function applyPurposeComponentVisibility(){
 }
 function normalizeBuilderPurpose(value){
     var normalized=String(value||"service").trim().toLowerCase();
-    if(normalized==="digital_product"||normalized==="hybrid")return "service";
-    return ["service","single_page","physical_product"].indexOf(normalized)>=0?normalized:"service";
+    var valid=["service","single_page","digital_product","physical_product","hybrid"];
+    return valid.indexOf(normalized)>=0?normalized:"service";
 }
 function setBuilderPurpose(nextPurpose){
     builderPurpose=normalizeBuilderPurpose(nextPurpose);
@@ -8739,10 +8755,28 @@ function renderElement(item,ctx){
                 ids.push(idStr);
                 setLinkedPricingIds(src,ids);
                 // Auto-fill pricing promo key from countdown promo key.
-                // If countdown has no promo key, generate one automatically.
+                // If countdown has no promo key, generate one automatically (do NOT overwrite manual values).
                 var srcPromo=String((src.settings&&src.settings.promoKey)||"").trim();
                 if(srcPromo===""){
-                    srcPromo="AUTO-" + Math.random().toString(36).substr(2, 8).toUpperCase();
+                    var taken=new Set();
+                    collectElementsByType("countdown").forEach(function(cd){
+                        var k=String(cd&&cd.settings&&cd.settings.promoKey||"").trim();
+                        if(k!=="")taken.add(k);
+                    });
+                    collectElementsByType("pricing").forEach(function(pr){
+                        var k=String(pr&&pr.settings&&pr.settings.promoKey||"").trim();
+                        if(k!=="")taken.add(k);
+                    });
+                    var base=("promo_"+String(src.id||"")).replace(/[^a-zA-Z0-9_-]+/g,"_").slice(0,60);
+                    if(base==="")base="promo";
+                    var candidate=base;
+                    var n=2;
+                    while(taken.has(candidate)){
+                        candidate=(base+"_"+n).slice(0,60);
+                        n++;
+                        if(n>999)break;
+                    }
+                    srcPromo=candidate;
                     src.settings=src.settings||{};
                     src.settings.promoKey=srcPromo;
                 }

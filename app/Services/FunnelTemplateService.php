@@ -25,7 +25,8 @@ class FunnelTemplateService
                 'status' => 'draft',
             ]);
 
-            $starterSteps = $this->starterTemplateStepsForType($templateType);
+            $funnelPurpose = $template->resolvedFunnelPurpose();
+            $starterSteps = $this->starterTemplateStepsForPurpose($templateType, $funnelPurpose);
 
             foreach ($starterSteps as $index => $step) {
                 $template->steps()->create([
@@ -47,21 +48,28 @@ class FunnelTemplateService
         });
     }
 
-    private function starterTemplateStepsForType(string $templateType): array
+    private function starterTemplateStepsForPurpose(string $templateType, string $funnelPurpose): array
     {
-        return match (FunnelTemplate::normalizeTemplateType($templateType)) {
-            'single_page' => [
+        $normalized = FunnelTemplate::normalizeTemplateType($templateType);
+
+        if ($normalized === 'single_page') {
+            return [
                 ['title' => 'Single Page Funnel', 'slug' => 'single-page', 'type' => 'landing', 'content' => 'Build your complete one-page experience here (hero, offer, proof, checkout, and closing sections).', 'cta_label' => 'Get Started'],
-            ],
-            'digital_product' => [
-                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present the digital product offer and why it is worth buying.', 'cta_label' => 'Go to Checkout'],
-                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect buyer info and complete payment for the digital product.', 'cta_label' => 'Pay Now', 'price' => 1000],
-                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank the buyer and explain how access or delivery works.'],
-            ],
+            ];
+        }
+
+        return match ($funnelPurpose) {
             'physical_product' => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the product and capture interest before the full sales page.', 'cta_label' => 'Shop Now'],
                 ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Show the product, its media, key benefits, pricing, and the reason to buy now.', 'cta_label' => 'Buy Now'],
                 ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect customer, shipping, and payment details for the physical product order.', 'cta_label' => 'Place Order', 'price' => 1000],
                 ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Confirm the order and tell the buyer when shipping or tracking details will be sent.'],
+            ],
+            'digital_product' => [
+                ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the digital product and build interest before the sales page.', 'cta_label' => 'Learn More'],
+                ['title' => 'Sales', 'slug' => 'sales', 'type' => 'sales', 'content' => 'Present the digital product offer and why it is worth buying.', 'cta_label' => 'Go to Checkout'],
+                ['title' => 'Checkout', 'slug' => 'checkout', 'type' => 'checkout', 'content' => 'Collect buyer info and complete payment for the digital product.', 'cta_label' => 'Pay Now', 'price' => 1000],
+                ['title' => 'Thank You', 'slug' => 'thank-you', 'type' => 'thank_you', 'content' => 'Thank the buyer and explain how access or delivery works.'],
             ],
             'hybrid' => [
                 ['title' => 'Landing', 'slug' => 'landing', 'type' => 'landing', 'content' => 'Introduce the offer and guide buyers to the main sales page.', 'cta_label' => 'Continue'],
@@ -84,7 +92,7 @@ class FunnelTemplateService
         return DB::transaction(function () use ($template, $user, $overrides) {
             $template->loadMissing('steps');
 
-            $name = trim((string) ($overrides['name'] ?? $template->name));
+            $name = trim((string) ($overrides['name'] ?? ''));
             $description = array_key_exists('description', $overrides)
                 ? $overrides['description']
                 : $template->description;

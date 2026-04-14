@@ -1,8 +1,8 @@
 {
   "name": "Last Chance Wildlife Landing",
-  "description": "Single-page wildlife advocacy landing inspired by the provided HTML/CSS.",
-  "template_type": "service",
-  "template_tags": ["Single Page", "Landing", "Wildlife", "__single_scroll"],
+  "description": "Single-page wildlife physical product landing inspired by the provided HTML/CSS.",
+  "template_type": "physical_product",
+  "template_tags": ["Single Page", "Landing", "Wildlife", "__single_scroll", "__funnel_purpose:physical_product"],
   "steps": [
     {
       "title": "Landing",
@@ -607,6 +607,176 @@
                           "color": "#ffffff"
                         },
                         "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_product_offer",
+            "style": {
+              "padding": "80px 48px",
+              "backgroundColor": "#f9f5f0"
+            },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_offer_heading",
+                "style": { "gap": "12px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_offer_heading",
+                    "style": { "textAlign": "center" },
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_offer_heading",
+                        "type": "heading",
+                        "content": "SUPPORT THE CAUSE<span style=\"color:#e84c1e;\">.</span>",
+                        "style": {
+                          "fontSize": "44px",
+                          "fontWeight": "900",
+                          "textTransform": "uppercase",
+                          "letterSpacing": "1px",
+                          "margin": "0 0 8px"
+                        },
+                        "settings": {}
+                      },
+                      {
+                        "id": "el_offer_subheading",
+                        "type": "text",
+                        "content": "Get exclusive wildlife merchandise and help fund conservation programs.",
+                        "style": {
+                          "fontSize": "17px",
+                          "color": "#555555",
+                          "maxWidth": "600px",
+                          "margin": "0 auto 36px",
+                          "lineHeight": "1.6"
+                        },
+                        "settings": {}
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "id": "row_product_offers",
+                "style": { "gap": "24px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_product_1",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_product_1",
+                        "type": "product_offer",
+                        "content": "",
+                        "settings": {
+                          "plan": "Wildlife Explorer Kit",
+                          "price": "PHP 1,299",
+                          "regularPrice": "PHP 1,799",
+                          "subtitle": "Everything you need to support wildlife conservation",
+                          "features": [
+                            "Premium wildlife t-shirt",
+                            "Conservation guidebook",
+                            "Reusable water bottle",
+                            "Nationwide shipping included"
+                          ],
+                          "ctaLabel": "Order Now",
+                          "ctaActionType": "link",
+                          "ctaLink": "#"
+                        },
+                        "style": { "maxWidth": "480px", "margin": "0 auto" }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_product_2",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_product_2",
+                        "type": "product_offer",
+                        "content": "",
+                        "settings": {
+                          "plan": "Last Chance Premium Bundle",
+                          "price": "PHP 2,499",
+                          "regularPrice": "PHP 3,299",
+                          "subtitle": "The ultimate wildlife advocate package",
+                          "features": [
+                            "Exclusive hoodie + tee combo",
+                            "Wildlife photography book",
+                            "Enamel pin collection",
+                            "Certificate of sponsorship",
+                            "Free express shipping"
+                          ],
+                          "ctaLabel": "Order Bundle",
+                          "ctaActionType": "link",
+                          "ctaLink": "#"
+                        },
+                        "style": { "maxWidth": "480px", "margin": "0 auto" }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "kind": "section",
+            "id": "sec_checkout",
+            "style": {
+              "padding": "64px 48px",
+              "backgroundColor": "#ffffff"
+            },
+            "settings": { "contentWidth": "wide" },
+            "elements": [],
+            "rows": [
+              {
+                "id": "row_checkout",
+                "style": { "gap": "24px" },
+                "settings": {},
+                "columns": [
+                  {
+                    "id": "col_physical_summary",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_physical_summary",
+                        "type": "physical_checkout_summary",
+                        "content": "",
+                        "settings": {
+                          "plan": "Wildlife Explorer Kit",
+                          "price": "PHP 1,299",
+                          "ctaLabel": "Place Order"
+                        },
+                        "style": { "maxWidth": "560px", "margin": "0 auto" }
+                      }
+                    ]
+                  },
+                  {
+                    "id": "col_shipping",
+                    "style": {},
+                    "settings": {},
+                    "elements": [
+                      {
+                        "id": "el_shipping",
+                        "type": "shipping_details",
+                        "content": "",
+                        "settings": {
+                          "title": "Shipping Information",
+                          "subtitle": "Fill out your delivery details below"
+                        },
+                        "style": { "maxWidth": "560px", "margin": "0 auto" }
                       }
                     ]
                   }
