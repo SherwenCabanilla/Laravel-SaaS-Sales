@@ -19,6 +19,7 @@ class FunnelTemplate extends Model
         self::TEMPLATE_TYPE_UNCATEGORIZED => 'Needs Purpose',
         'service' => 'Service Funnel',
         'single_page' => 'Single Page Funnel',
+        'step_by_step' => 'Step-by-Step Funnel',
         'digital_product' => 'Digital Product Funnel',
         'physical_product' => 'Physical Product Funnel',
         'hybrid' => 'Hybrid Funnel',
@@ -28,6 +29,7 @@ class FunnelTemplate extends Model
     {
         return [
             'single_page' => self::TEMPLATE_TYPES['single_page'],
+            'step_by_step' => self::TEMPLATE_TYPES['step_by_step'],
         ];
     }
 
