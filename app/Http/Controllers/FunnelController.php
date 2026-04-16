@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\FunnelOrderDeliveryUpdateMail;
 use App\Models\Funnel;
 use App\Models\FunnelBuilderAsset;
+use App\Models\FunnelEvent;
 use App\Models\Lead;
 use App\Models\FunnelStep;
 use App\Models\FunnelStepRevision;
@@ -193,6 +194,101 @@ class FunnelController extends Controller
         }
         $defaultStep = $funnel->steps->sortBy('position')->first();
 
+        // Best-effort inventory snapshot for the builder sidebar (used for restocking UX).
+        $builderProductInventory = [];
+        try {
+            $products = [];
+
+            foreach ($funnel->steps()->where('is_active', true)->get(['layout_json']) as $step) {
+                $layout = is_array($step->layout_json ?? null) ? $step->layout_json : [];
+                $roots = is_array($layout['root'] ?? null)
+                    ? $layout['root']
+                    : (is_array($layout['sections'] ?? null) ? $layout['sections'] : []);
+
+                $walk = function ($node) use (&$walk, &$products) {
+                    if (! is_array($node)) {
+                        return;
+                    }
+
+                    if (strtolower(trim((string) ($node['type'] ?? ''))) === 'product_offer') {
+                        $id = trim((string) ($node['id'] ?? ''));
+                        $settings = is_array($node['settings'] ?? null) ? $node['settings'] : [];
+                        $qtyRaw = $settings['stockQuantity'] ?? null;
+                        $qty = is_numeric($qtyRaw) ? max(0, (int) $qtyRaw) : 0;
+
+                        if ($id !== '' && $qty > 0) {
+                            $products[$id] = [
+                                'stock_quantity' => $qty,
+                                'sold_units' => (int) ($products[$id]['sold_units'] ?? 0),
+                                'sold_offset' => max(0, (int) ($settings['stockSoldOffset'] ?? 0)),
+                                'remaining_stock' => $qty,
+                                'is_out_of_stock' => false,
+                            ];
+                        }
+                    }
+
+                    foreach (['root', 'sections', 'rows', 'columns', 'elements'] as $k) {
+                        $children = $node[$k] ?? null;
+                        if (! is_array($children)) {
+                            continue;
+                        }
+                        foreach ($children as $child) {
+                            $walk($child);
+                        }
+                    }
+                };
+
+                foreach ($roots as $node) {
+                    $walk($node);
+                }
+            }
+
+            if ($products !== []) {
+                $paidEvents = FunnelEvent::query()
+                    ->where('tenant_id', $funnel->tenant_id)
+                    ->where('funnel_id', $funnel->id)
+                    ->where('event_name', FunnelTrackingService::EVENT_PAYMENT_PAID)
+                    ->get(['meta']);
+
+                foreach ($paidEvents as $event) {
+                    $items = data_get($event->meta, 'order_items');
+                    if (! is_array($items)) {
+                        continue;
+                    }
+                    foreach ($items as $item) {
+                        if (! is_array($item)) {
+                            continue;
+                        }
+                        $productId = trim((string) ($item['id'] ?? ''));
+                        if ($productId === '' || ! isset($products[$productId])) {
+                            continue;
+                        }
+                        $products[$productId]['sold_units'] += max(1, (int) ($item['quantity'] ?? 1));
+                    }
+                }
+
+                foreach ($products as $id => $product) {
+                    $stockQuantity = (int) ($product['stock_quantity'] ?? 0);
+                    $soldUnits = (int) ($product['sold_units'] ?? 0);
+                    $soldOffset = (int) ($product['sold_offset'] ?? 0);
+
+                    if ($soldOffset <= 0 && $soldUnits > $stockQuantity) {
+                        $soldOffset = $soldUnits;
+                    }
+
+                    $effectiveSold = max(0, $soldUnits - $soldOffset);
+                    $products[$id]['sold_offset'] = $soldOffset;
+                    $products[$id]['remaining_stock'] = max(0, $stockQuantity - $effectiveSold);
+                    $products[$id]['is_out_of_stock'] = $products[$id]['remaining_stock'] <= 0;
+                }
+
+                $builderProductInventory = $products;
+            }
+        } catch (\Throwable $e) {
+            report($e);
+            $builderProductInventory = [];
+        }
+
         return view('funnels.edit', [
             'funnel' => $funnel,
             'stepTypes' => FunnelStep::TYPES,
@@ -203,6 +299,7 @@ class FunnelController extends Controller
             'builderSharedTemplatesUrl' => route('funnels.shared-templates'),
             'builderSingleScrollMode' => $this->singleScrollModeEnabledForFunnel(auth()->user(), $funnel),
             'builderPurpose' => $funnel->purpose ?? 'service',
+            'builderProductInventory' => $builderProductInventory,
         ]);
     }
 
@@ -518,7 +615,9 @@ class FunnelController extends Controller
             'order_key' => 'required|string|max:191',
             'recipient_email' => 'nullable|email|max:150',
             'delivery_status' => ['required', Rule::in(['processing', 'shipped', 'out_for_delivery', 'delivered'])],
-            'tracking_url' => 'nullable|url|max:2000',
+            // Couriers like LBC often give a tracking NUMBER, not a URL.
+            // Accept either a URL or a plain tracking number/reference.
+            'tracking_number' => 'nullable|string|max:120',
             'courier_name' => 'nullable|string|max:80',
             'custom_message' => 'nullable|string|max:600',
         ]);
@@ -542,11 +641,14 @@ class FunnelController extends Controller
         }
 
         try {
+            $trackingRaw = trim((string) ($validated['tracking_number'] ?? ''));
+            // Treat full URLs as links, otherwise store as tracking number.
+            $trackingValue = $trackingRaw !== '' ? $trackingRaw : null;
             Mail::to($recipientEmail)->send(new FunnelOrderDeliveryUpdateMail(
                 (string) $funnel->name,
                 (string) ($order['customer'] ?? 'Customer'),
                 (string) $validated['delivery_status'],
-                trim((string) ($validated['tracking_url'] ?? '')) ?: null,
+                $trackingValue,
                 $courierName,
                 is_array($order['order_items'] ?? null) ? $order['order_items'] : [],
                 (int) ($order['order_quantity'] ?? 0),
@@ -556,10 +658,13 @@ class FunnelController extends Controller
             return redirect()->back()->with('error', 'Delivery update email failed to send.');
         }
 
+        $trackingRaw = trim((string) ($validated['tracking_number'] ?? ''));
+        $trackingIsUrl = $trackingRaw !== '' && preg_match('/^https?:\\/\\//i', $trackingRaw) === 1;
         $tracking->trackOrderDeliveryUpdate($funnel, $order, [
             'recipient_email' => $recipientEmail,
             'delivery_status' => (string) $validated['delivery_status'],
-            'tracking_url' => trim((string) ($validated['tracking_url'] ?? '')),
+            'tracking_url' => $trackingIsUrl ? $trackingRaw : '',
+            'tracking_number' => $trackingIsUrl ? '' : $trackingRaw,
             'courier_name' => $courierName,
             'custom_message' => trim((string) ($validated['custom_message'] ?? '')),
         ]);

@@ -958,6 +958,7 @@ const builderPurposeRaw=@json(($builderPurpose ?? $funnel->purpose ?? $funnel->t
 let builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
 const funnelStepUrlTpl=@json($builderPublicStepUrlTemplate ?? route('funnels.portal.step',['funnelSlug'=>$funnel->slug,'stepSlug'=>'__STEP__']));
 const steps=@json($builderSteps);
+const builderProductInventory=@json($builderProductInventory ?? []);
 const builderSingleScrollMode=@json((bool) ($builderSingleScrollMode ?? false));
 const sharedTemplatesUrl=@json($builderSharedTemplatesUrl ?? null);
 let sharedFunnelTemplates=@json($builderSharedTemplates ?? []);
@@ -9393,6 +9394,8 @@ function renderElement(item,ctx){
         var productDescription=String(item.settings.description||"").trim();
         var productStockRaw=String(item.settings.stockQuantity||"").trim();
         var productStockCount=productStockRaw===""?null:Math.max(0,parseInt(productStockRaw,10)||0);
+        var productInventory=(item&&item.id&&builderProductInventory&&builderProductInventory[String(item.id).trim()])?builderProductInventory[String(item.id).trim()]:null;
+        var productRemainingStock=productInventory&&productInventory.remaining_stock!=null?Math.max(0,parseInt(productInventory.remaining_stock,10)||0):null;
         var productButtonRaw=(typeof item.settings.ctaLabel==="string")?String(item.settings.ctaLabel).trim():"";
         var productQuickViewEnabled=item.settings.quickViewEnabled!==false;
         var productQuickViewLabel=String(item.settings.quickViewLabel||"Details").trim()||"Details";
@@ -9522,9 +9525,10 @@ function renderElement(item,ctx){
             productCard.appendChild(productSub);
         }
         if(productStockCount!==null){
+            var displayStockCount=productRemainingStock!==null?productRemainingStock:productStockCount;
             var productStock=document.createElement("div");
             productStock.className="fb-pricing-subtitle";
-            productStock.textContent=productStockCount===0?"Out of stock":(productStockCount+" in stock");
+            productStock.textContent=displayStockCount===0?"Out of stock":(displayStockCount+" in stock");
             if(productColor){productStock.style.color=productColor;productStock.style.opacity="0.82";}
             productCard.appendChild(productStock);
         }
@@ -13227,7 +13231,18 @@ function renderSettings(){
             settings.innerHTML='<div class="menu-section-title">Product Offer</div>'+productContentMeta+'<label>Product name</label><input id="poPlan"><label>'+(isCheckoutProductEditor?'Fallback sale price':'Sale price')+'</label><input id="poPrice" placeholder="299"><label>'+(isCheckoutProductEditor?'Fallback regular price':'Regular price')+'</label><input id="poRegular" placeholder="499"><label>Period / suffix</label><input id="poPeriod" placeholder="/bundle"><label>Subtitle</label><input id="poSubtitle"><label>Badge</label><input id="poBadge" placeholder="Best Seller"><label>Quick details description</label><textarea id="poDescription" rows="5" placeholder="Write the fuller product story, specs, sizing, inclusions, delivery notes, or care instructions."></textarea><div class="menu-split"></div><div class="menu-section-title">Media Gallery</div>'+mediaCards+'<button type="button" id="addPoMedia" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add media</button><div class="menu-split"></div><div class="menu-section-title">Features</div>'+featureCards+'<button type="button" id="addPoFeature" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add feature</button>'+spacingControlsHtml(pad,mar)+productActionSection+'<div class="menu-split"></div><div class="menu-section-title">Quick View Modal</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poQuickViewEnabled" type="checkbox" style="width:auto;margin:0;"> Enable quick details modal</label><label>Quick view button label</label><input id="poQuickViewLabel" placeholder="Details"><div class="menu-split"></div><div class="menu-section-title">Cart</div><label style="display:flex;align-items:center;gap:8px;font-weight:600;"><input id="poCartEnabled" type="checkbox" style="width:auto;margin:0;"> Show add-to-cart icon</label><div class="meta" style="margin:6px 0 0;">Buy can stay as the main action, while the cart icon lets shoppers save the item and open the cart drawer in live mode.</div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Text color</label><input id="poTextColor" type="color"><label>Background color</label><input id="poBg" type="color"><label>Border</label><input id="poBorder"><div class="px-wrap"><input id="poRadius" type="number" min="0" step="1"><span class="px-unit">px</span></div><label>Shadow</label><input id="poShadow">'+posControls+moveControls+remove;
             var poDescriptionField=document.getElementById("poDescription");
             if(poDescriptionField){
-                poDescriptionField.insertAdjacentHTML("afterend",'<div class="menu-split"></div><div class="menu-section-title">Inventory</div><label>Available stock</label><input id="poStock" type="number" min="0" step="1" placeholder="Leave blank for unlimited"><div class="meta" style="margin:6px 0 0;">Set a stock count to cap cart quantity and stop checkout once paid orders consume the remaining inventory.</div>');
+                var pid=String(t.id||"").trim();
+                var inv=pid && builderProductInventory && builderProductInventory[pid] ? builderProductInventory[pid] : null;
+                var soldUnits=inv && inv.sold_units!=null ? (parseInt(inv.sold_units,10)||0) : 0;
+                poDescriptionField.insertAdjacentHTML("afterend",
+                    '<div class="menu-split"></div>'
+                    +'<div class="menu-section-title">Inventory</div>'
+                    +'<label>Remaining stock</label>'
+                    +'<input id="poStock" type="number" min="0" step="1" placeholder="Leave blank for unlimited">'
+                    +'<div class="meta" id="poStockMeta" style="margin:6px 0 0;">'
+                    +'Sold so far: <strong>'+soldUnits+'</strong>. Tip: enter a new remaining stock (e.g. 5) to restock after selling out.'
+                    +'</div>'
+                );
             }
             bind("poPlan",(t.settings&&t.settings.plan)||"",v=>{t.settings.plan=v;renderCanvas();},{undo:true});
             bindCurrency("poPrice",(t.settings&&t.settings.price)||"",v=>{t.settings.price=v;renderCanvas();},{undo:true});
@@ -13236,7 +13251,21 @@ function renderSettings(){
             bind("poSubtitle",(t.settings&&t.settings.subtitle)||"",v=>{t.settings.subtitle=v;renderCanvas();},{undo:true});
             bind("poBadge",(t.settings&&t.settings.badge)||"",v=>{t.settings.badge=v;renderCanvas();},{undo:true});
             bind("poDescription",(t.settings&&t.settings.description)||"",v=>{t.settings.description=v;renderCanvas();},{undo:true});
-            bind("poStock",(t.settings&&t.settings.stockQuantity)!==undefined?(t.settings.stockQuantity):"",v=>{var raw=String(v||"").trim();if(raw===""){t.settings.stockQuantity="";}else{t.settings.stockQuantity=String(Math.max(0,parseInt(raw,10)||0));}renderCanvas();},{undo:true});
+            bind("poStock",(t.settings&&t.settings.stockQuantity)!==undefined?(t.settings.stockQuantity):"",v=>{
+                var raw=String(v||"").trim();
+                if(raw===""){
+                    t.settings.stockQuantity="";
+                }else{
+                    t.settings.stockQuantity=String(Math.max(0,parseInt(raw,10)||0));
+                    // When the user edits stock, treat it as "remaining stock from now on".
+                    // Offset sold units so restocking to a small number works after sell-out.
+                    var pid=String(t.id||"").trim();
+                    var inv=pid && builderProductInventory && builderProductInventory[pid] ? builderProductInventory[pid] : null;
+                    var sold=inv && inv.sold_units!=null ? (parseInt(inv.sold_units,10)||0) : 0;
+                    t.settings.stockSoldOffset=String(Math.max(0,sold));
+                }
+                renderCanvas();
+            },{undo:true});
             bind("poCtaLabel",(t.settings&&t.settings.ctaLabel)||"Buy Now",v=>{t.settings.ctaLabel=v;renderCanvas();},{undo:true});
             bind("poCtaBg",(t.settings&&t.settings.ctaBgColor)||"#240E35",v=>{t.settings.ctaBgColor=v;renderCanvas();},{undo:true});
             bind("poCtaText",(t.settings&&t.settings.ctaTextColor)||"#ffffff",v=>{t.settings.ctaTextColor=v;renderCanvas();},{undo:true});

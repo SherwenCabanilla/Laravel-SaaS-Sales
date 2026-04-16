@@ -3668,7 +3668,7 @@
                                                             @else
                                                                 <form method="POST" action="{{ $checkoutActionUrl }}" data-checkout-summary-form style="margin:0;">
                                                                     @csrf
-                                                                    <input type="hidden" name="amount" value="{{ $summaryAmount > 0 ? $summaryAmount : (float) ($step->price ?? 0) }}">
+                                                                    <input type="hidden" name="amount" value="{{ $summaryAmount > 0 ? $summaryAmount : (($resolvedCheckoutAmount ?? 0) > 0 ? $resolvedCheckoutAmount : (float) ($step->price ?? 0)) }}">
                                                                     <input type="hidden" name="website" value="">
                                                                     <input type="hidden" name="checkout_pricing_id" value="{{ $summaryPricingId }}">
                                                                     <input type="hidden" name="checkout_pricing_source_step" value="{{ $summarySourceStep }}">
@@ -3771,8 +3771,11 @@
                                                                                 </div>
                                                                                 @if(count($checkoutCouponOptions) > 0)
                                                                                 <div class="coupon-prompt-available" data-coupon-available>
-                                                                                    <div class="coupon-prompt-available-title">Available coupons</div>
-                                                                                    <div class="coupon-prompt-available-list">
+                                                                                    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                                                                                        <div class="coupon-prompt-available-title">Available coupons</div>
+                                                                                        <button type="button" class="coupon-prompt-available-btn" data-coupon-available-toggle aria-expanded="false">View</button>
+                                                                                    </div>
+                                                                                    <div class="coupon-prompt-available-list" data-coupon-available-list style="display:none;">
                                                                                         @foreach($checkoutCouponOptions as $couponOpt)
                                                                                             @php
                                                                                                 $optCode = strtoupper(trim((string) ($couponOpt['code'] ?? '')));
@@ -3817,10 +3820,11 @@
                                                                                 <div class="coupon-prompt-message" data-coupon-prompt-message></div>
                                                                                 <div class="coupon-prompt-actions">
                                                                                     <button type="button" class="coupon-prompt-skip" data-coupon-skip>Skip for now</button>
-                                                                                    <button type="button" class="builder-pricing-cta" data-coupon-apply style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};" data-coupon-options='@json($checkoutCouponOptions)'>Apply & Continue</button>
+                                                                                    <button type="button" class="builder-pricing-cta" data-coupon-apply style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};" data-coupon-options='@json($checkoutCouponOptions)'>Apply coupon & continue</button>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
+                                                                        <button type="submit" data-checkout-native-submit formnovalidate tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0;overflow:hidden;">Continue to payment</button>
                                                                     @else
                                                                         <button type="submit" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
                                                                     @endif
@@ -5373,7 +5377,42 @@
             if(!target)return null;
             var priceEl=target.querySelector("[data-pricing-price]");
             if(!priceEl)return null;
-            return parseMoneyToNumber(priceEl.textContent||"");
+            var n=parseCartMoney(priceEl.textContent||"");
+            return n>0?n:null;
+        }
+        function findCheckoutSummaryAmount(form){
+            var summary=form&&form.closest?form.closest("[data-checkout-summary]"):null;
+            if(!summary)summary=document.querySelector("[data-checkout-summary]");
+            if(!summary)return null;
+            var totalEl=summary.querySelector("[data-checkout-row-total]")||summary.querySelector("[data-checkout-price]");
+            if(!totalEl)return null;
+            var n=parseCartMoney(totalEl.textContent||"");
+            return n>0?n:null;
+        }
+        // When checkout is its own step there is often no [data-pricing-id] card — only [data-checkout-summary].
+        // Never bail out before syncing amount from hidden fields or visible totals.
+        function applyCheckoutAmountFallback(form){
+            if(!form||!form.querySelector)return;
+            var amountInput=form.querySelector('input[name="amount"]');
+            if(!amountInput)return;
+            var cur=parseFloat(String(amountInput.value||"0"));
+            if(isFinite(cur)&&cur>0)return;
+            var priceField=form.querySelector('input[name="checkout_pricing_price"]');
+            var fromPrice=priceField?parseCartMoney(priceField.value||""):0;
+            if(fromPrice>0){
+                amountInput.value=String(fromPrice);
+                return;
+            }
+            var regField=form.querySelector('input[name="checkout_pricing_regular_price"]');
+            var fromReg=regField?parseCartMoney(regField.value||""):0;
+            if(fromReg>0){
+                amountInput.value=String(fromReg);
+                return;
+            }
+            var fromSummary=findCheckoutSummaryAmount(form);
+            if(fromSummary!==null&&fromSummary>0){
+                amountInput.value=String(fromSummary);
+            }
         }
         function syncCheckoutPricingForm(form){
             if(!form||!form.querySelector)return;
@@ -5404,48 +5443,51 @@
                         if(cartAmountInput && cartSummary.total>0){
                             cartAmountInput.value=String(cartSummary.total);
                         }
+                        applyCheckoutAmountFallback(form);
                         return;
                     }
                 }
             }
             var card=findVisiblePricingCard();
-            if(!card)return;
-            var selection=extractPricingSelection(card)||{};
-            var priceEl=card.querySelector("[data-pricing-price]");
-            var titleEl=card.querySelector(".builder-pricing-title");
-            var periodEl=card.querySelector(".builder-pricing-period");
-            var subtitleEl=card.querySelector(".builder-pricing-subtitle");
-            var badgeEl=card.querySelector(".builder-pricing-badge");
-            var featureEls=Array.from(card.querySelectorAll(".builder-pricing-features li")||[]);
-            if(titleEl)selection.plan=String(titleEl.textContent||selection.plan||"").trim();
-            if(priceEl)selection.price=String(priceEl.textContent||selection.price||"").trim();
-            selection.regularPrice=String(card.getAttribute("data-pricing-regular")||selection.regularPrice||"").trim();
-            selection.period=periodEl&&String(periodEl.style.display||"").toLowerCase()!=="none"?String(periodEl.textContent||"").trim():"";
-            selection.subtitle=subtitleEl&&String(subtitleEl.style.display||"").toLowerCase()!=="none"?String(subtitleEl.textContent||"").trim():"";
-            selection.badge=badgeEl&&String(badgeEl.style.display||"").toLowerCase()!=="none"?String(badgeEl.textContent||"").trim():"";
-            selection.features=featureEls.map(function(li){return String(li.textContent||"").trim();}).filter(Boolean);
-            var amount=findVisiblePricingAmount();
-            var fieldMap={
-                checkout_pricing_id:String(selection.pricingId||"").trim(),
-                checkout_pricing_source_step:String(selection.sourceStepSlug||"").trim(),
-                checkout_pricing_plan:String(selection.plan||"").trim(),
-                checkout_pricing_price:String(selection.price||"").trim(),
-                checkout_pricing_regular_price:String(selection.regularPrice||"").trim(),
-                checkout_pricing_period:String(selection.period||"").trim(),
-                checkout_pricing_subtitle:String(selection.subtitle||"").trim(),
-                checkout_pricing_badge:String(selection.badge||"").trim(),
-                checkout_pricing_image:String(selection.image||"").trim(),
-                checkout_pricing_features:JSON.stringify(Array.isArray(selection.features)?selection.features:[]),
-                checkout_cart_items:JSON.stringify(serializeSelectionAsCheckoutItems(selection))
-            };
-            Object.keys(fieldMap).forEach(function(name){
-                var input=form.querySelector('input[name="'+name+'"]');
-                if(input)input.value=fieldMap[name];
-            });
-            var amountInput=form.querySelector('input[name="amount"]');
-            if(amountInput && typeof amount==="number" && amount>0){
-                amountInput.value=String(amount);
+            if(card){
+                var selection=extractPricingSelection(card)||{};
+                var priceEl=card.querySelector("[data-pricing-price]");
+                var titleEl=card.querySelector(".builder-pricing-title");
+                var periodEl=card.querySelector(".builder-pricing-period");
+                var subtitleEl=card.querySelector(".builder-pricing-subtitle");
+                var badgeEl=card.querySelector(".builder-pricing-badge");
+                var featureEls=Array.from(card.querySelectorAll(".builder-pricing-features li")||[]);
+                if(titleEl)selection.plan=String(titleEl.textContent||selection.plan||"").trim();
+                if(priceEl)selection.price=String(priceEl.textContent||selection.price||"").trim();
+                selection.regularPrice=String(card.getAttribute("data-pricing-regular")||selection.regularPrice||"").trim();
+                selection.period=periodEl&&String(periodEl.style.display||"").toLowerCase()!=="none"?String(periodEl.textContent||"").trim():"";
+                selection.subtitle=subtitleEl&&String(subtitleEl.style.display||"").toLowerCase()!=="none"?String(subtitleEl.textContent||"").trim():"";
+                selection.badge=badgeEl&&String(badgeEl.style.display||"").toLowerCase()!=="none"?String(badgeEl.textContent||"").trim():"";
+                selection.features=featureEls.map(function(li){return String(li.textContent||"").trim();}).filter(Boolean);
+                var amount=findVisiblePricingAmount();
+                var fieldMap={
+                    checkout_pricing_id:String(selection.pricingId||"").trim(),
+                    checkout_pricing_source_step:String(selection.sourceStepSlug||"").trim(),
+                    checkout_pricing_plan:String(selection.plan||"").trim(),
+                    checkout_pricing_price:String(selection.price||"").trim(),
+                    checkout_pricing_regular_price:String(selection.regularPrice||"").trim(),
+                    checkout_pricing_period:String(selection.period||"").trim(),
+                    checkout_pricing_subtitle:String(selection.subtitle||"").trim(),
+                    checkout_pricing_badge:String(selection.badge||"").trim(),
+                    checkout_pricing_image:String(selection.image||"").trim(),
+                    checkout_pricing_features:JSON.stringify(Array.isArray(selection.features)?selection.features:[]),
+                    checkout_cart_items:JSON.stringify(serializeSelectionAsCheckoutItems(selection))
+                };
+                Object.keys(fieldMap).forEach(function(name){
+                    var input=form.querySelector('input[name="'+name+'"]');
+                    if(input)input.value=fieldMap[name];
+                });
+                var amountInput=form.querySelector('input[name="amount"]');
+                if(amountInput && typeof amount==="number" && amount>0){
+                    amountInput.value=String(amount);
+                }
             }
+            applyCheckoutAmountFallback(form);
         }
         function collectCheckoutCustomerInputs(summaryForm){
             if(!summaryForm)return [];
@@ -5516,6 +5558,23 @@
             }
             return {ok:true};
         }
+        window.__submitCheckoutSummaryForm=function(form){
+            if(!form)return;
+            var btn=form.querySelector("[data-checkout-native-submit]");
+            if(btn&&String(btn.getAttribute("type")||"").toLowerCase()==="submit"){
+                try{
+                    btn.click();
+                    return;
+                }catch(_e){}
+            }
+            try{
+                HTMLFormElement.prototype.submit.call(form);
+            }catch(_e){
+                try{
+                    form.submit();
+                }catch(_e2){}
+            }
+        };
         document.addEventListener("submit",function(e){
             var form=e.target;
             if(!form||form.tagName!=="FORM")return;
@@ -5523,11 +5582,15 @@
             if(method!=="post")return;
             if(form.hasAttribute("data-checkout-summary-form")){
                 syncCheckoutPricingForm(form);
-                var syncedCustomer=syncCheckoutCustomerForm(form);
-                if(!syncedCustomer.ok){
-                    e.preventDefault();
-                    if(typeof portalHideLoading==="function")portalHideLoading();
-                    return;
+                // Physical checkout already synced customer fields while the shipping modal was open.
+                // Re-running validation after modals close can fail (hidden fields / browsers) and block PayMongo.
+                if(form.getAttribute("data-coupon-confirmed")!=="1"){
+                    var syncedCustomer=syncCheckoutCustomerForm(form);
+                    if(!syncedCustomer.ok){
+                        e.preventDefault();
+                        if(typeof portalHideLoading==="function")portalHideLoading();
+                        return;
+                    }
                 }
             }
             if(form.getAttribute("data-submitting")==="1"){
@@ -5593,21 +5656,13 @@
                                 if(prompt && !prompt.classList.contains("is-open") && form.getAttribute("data-coupon-prompt-open")!=="1"){
                                     form.setAttribute("data-coupon-confirmed","1");
                                     if(typeof portalShowLoading==="function")portalShowLoading();
-                                    try{
-                                        HTMLFormElement.prototype.submit.call(form);
-                                    }catch(_e){
-                                        form.submit();
-                                    }
+                                    window.__submitCheckoutSummaryForm(form);
                                 }
                             },350);
                         }else{
                             form.setAttribute("data-coupon-confirmed","1");
                             if(typeof portalShowLoading==="function")portalShowLoading();
-                            try{
-                                HTMLFormElement.prototype.submit.call(form);
-                            }catch(_e){
-                                form.submit();
-                            }
+                            window.__submitCheckoutSummaryForm(form);
                         }
                     });
                 }
@@ -5627,6 +5682,9 @@
                 });
             });
         }
+        window.syncCheckoutPricingForm=syncCheckoutPricingForm;
+        window.syncCheckoutCustomerForm=syncCheckoutCustomerForm;
+        window.setShippingModalOpen=setShippingModalOpen;
         bindShippingModals();
         document.addEventListener("click",function(e){
             var openBtn=e.target&&e.target.closest?e.target.closest("[data-open-shipping-modal]"):null;
@@ -6237,7 +6295,6 @@
             if(open){
                 var input=backdrop.querySelector("[data-coupon-prompt-input]");
                 if(input){
-                    if(sanitize(input.value)==="" && copiedCouponCode!=="")input.value=copiedCouponCode;
                     try{ input.focus(); }catch(_e){}
                 }
             }
@@ -6246,18 +6303,16 @@
             if(!form)return;
             var prompt=form.querySelector("[data-coupon-prompt]");
             if(!prompt){
-                try{
-                    HTMLFormElement.prototype.submit.call(form);
-                }catch(_e){
-                    form.submit();
-                }
+                window.__submitCheckoutSummaryForm(form);
                 return;
             }
             // Always open the modal first; never auto-submit on JS errors.
             setPromptOpen(prompt,true);
             form.setAttribute("data-coupon-prompt-open","1");
             try{
-                syncCheckoutPricingForm(form);
+                if(typeof window.syncCheckoutPricingForm==="function"){
+                    window.syncCheckoutPricingForm(form);
+                }
                 var amountInput=form.querySelector('input[name="amount"]');
                 var subtotal=parseMoney(amountInput?amountInput.value:"0");
                 prompt.setAttribute("data-coupon-subtotal-value",String(subtotal));
@@ -6265,17 +6320,9 @@
                 var hidden=form.querySelector('input[name="coupon_code"]');
                 if(input){
                     applyClaimFilter(prompt);
-                    var claimed=getClaimedCoupon();
-                    var nextValue=sanitize((hidden&&hidden.value)||claimed||copiedCouponCode||input.value);
-                    if(nextValue===""){
-                        var applyBtn0=prompt.querySelector("[data-coupon-apply]");
-                        var opts0=[];
-                        try{ opts0=JSON.parse(applyBtn0&&applyBtn0.getAttribute("data-coupon-options")||"[]"); }catch(_e){}
-                        if(Array.isArray(opts0) && opts0.length && opts0[0] && opts0[0].code){
-                            nextValue=sanitize(opts0[0].code);
-                        }
-                    }
-                    input.value=nextValue;
+                    // Professional UX: never auto-fill a coupon code (no "premade" behavior).
+                    // Keep whatever the user typed / what the form already has.
+                    input.value=sanitize((hidden&&hidden.value)||input.value);
                 }
                 var previewBtn=prompt.querySelector("[data-coupon-apply]");
                 var options=[];
@@ -6289,14 +6336,50 @@
                 if(discountNode)discountNode.textContent=moneyText(preview.discount);
                 if(totalNode)totalNode.textContent=moneyText(preview.total);
                 if(messageNode){
-                    messageNode.className="coupon-prompt-message";
-                    messageNode.textContent=preview.match ? (preview.match.title||"Coupon detected. Discount will be applied at payment.") : "No coupon applied yet. You can continue without one.";
+                    if(preview.match){
+                        messageNode.className="coupon-prompt-message is-success";
+                        messageNode.textContent="Coupon applied: "+String(preview.match.title||preview.match.code||"Discount")+".";
+                    }else if(sanitize(input?input.value:"")!==""){
+                        messageNode.className="coupon-prompt-message is-error";
+                        messageNode.textContent="Coupon code not recognized. You can edit it or continue without one.";
+                    }else{
+                        messageNode.className="coupon-prompt-message";
+                        messageNode.textContent="Enter a coupon code (optional), then continue to payment.";
+                    }
                 }
             }catch(_e){}
         };
         window.__openCouponPrompt=openCouponPrompt;
 
+        // Optional "Available coupons" disclosure
+        document.querySelectorAll("[data-coupon-available-toggle]").forEach(function(btn){
+            if(btn.getAttribute("data-bound")==="1")return;
+            btn.setAttribute("data-bound","1");
+            btn.addEventListener("click",function(){
+                var prompt=btn.closest("[data-coupon-prompt]");
+                if(!prompt)return;
+                var list=prompt.querySelector("[data-coupon-available-list]");
+                if(!list)return;
+                var isOpen=String(list.style.display||"").toLowerCase()!=="none" && list.style.display!=="";
+                isOpen=!isOpen;
+                list.style.display=isOpen?"":"none";
+                btn.textContent=isOpen?"Hide":"View";
+                btn.setAttribute("aria-expanded",isOpen?"true":"false");
+            });
+        });
+
         // Coupon quick actions inside the prompt (Copy/Use)
+        var setSelectedCouponButtonState=function(prompt,selectedCode){
+            if(!prompt)return;
+            var active=sanitize(selectedCode||"");
+            prompt.querySelectorAll("[data-coupon-use]").forEach(function(b){
+                var code=sanitize(b.getAttribute("data-coupon-use")||"");
+                var isActive=active!=="" && code===active;
+                b.textContent=isActive?"Applied":"Use";
+                b.disabled=!!isActive;
+                b.classList.toggle("is-applied",!!isActive);
+            });
+        };
         document.querySelectorAll("[data-coupon-prompt]").forEach(function(prompt){
             if(prompt.getAttribute("data-coupon-actions-bound")==="1")return;
             prompt.setAttribute("data-coupon-actions-bound","1");
@@ -6308,6 +6391,7 @@
                     if(code==="")return;
                     if(input)input.value=code;
                     copiedCouponCode=code;
+                    setSelectedCouponButtonState(prompt, code);
                     // trigger preview refresh quickly
                     try{
                         if(applyBtn){
@@ -6321,13 +6405,25 @@
                             if(discountNode)discountNode.textContent=moneyText(preview.discount);
                             if(totalNode)totalNode.textContent=moneyText(preview.total);
                             if(messageNode){
-                                messageNode.className="coupon-prompt-message"+(preview.match?" is-success":"");
-                                messageNode.textContent=preview.match ? ((preview.match.title||"Coupon applied.")+" Discount will be applied at payment.") : "Coupon selected.";
+                                if(preview.match){
+                                    messageNode.className="coupon-prompt-message is-success";
+                                    messageNode.textContent="Coupon applied: "+String(preview.match.title||preview.match.code||"Discount")+".";
+                                }else{
+                                    messageNode.className="coupon-prompt-message is-error";
+                                    messageNode.textContent="Coupon code not recognized.";
+                                }
                             }
                         }
                     }catch(_e){}
                 });
             });
+            // If user manually typed a code, keep buttons in sync.
+            if(input){
+                input.addEventListener("input",function(){
+                    setSelectedCouponButtonState(prompt, input.value);
+                });
+                setSelectedCouponButtonState(prompt, input.value);
+            }
         });
         var bindPromptPreview=function(prompt,form){
             if(!prompt||!form||prompt.getAttribute("data-coupon-prompt-bound")==="1")return;
@@ -6339,39 +6435,56 @@
             var discountNode=prompt.querySelector("[data-coupon-discount]");
             var totalNode=prompt.querySelector("[data-coupon-total]");
             var forceCheckoutSubmit=function(){
-                syncCheckoutPricingForm(form);
-                var syncedCustomer=syncCheckoutCustomerForm(form);
+                if(typeof window.syncCheckoutPricingForm==="function"){
+                    window.syncCheckoutPricingForm(form);
+                }
+                var syncedCustomer=typeof window.syncCheckoutCustomerForm==="function"
+                    ? window.syncCheckoutCustomerForm(form)
+                    : {ok:true};
                 if(!syncedCustomer.ok){
                     if(messageNode){
                         messageNode.className="coupon-prompt-message is-error";
                         messageNode.textContent="Please complete your shipping details before continuing.";
                     }
                     var shippingModal=form.querySelector("[data-shipping-modal]");
-                    if(shippingModal)setShippingModalOpen(shippingModal,true);
+                    if(shippingModal&&typeof window.setShippingModalOpen==="function"){
+                        window.setShippingModalOpen(shippingModal,true);
+                    }
                     return;
                 }
                 form.setAttribute("data-coupon-confirmed","1");
                 if(typeof portalShowLoading==="function")portalShowLoading();
-                // Submit immediately; also keep a 0ms fallback in case browser blocks sync submit.
-                try{ HTMLFormElement.prototype.submit.call(form); }catch(_e){ try{ form.submit(); }catch(_e2){} }
-                window.setTimeout(function(){
-                    if(form.getAttribute("data-submitting")==="1")return;
-                    try{ HTMLFormElement.prototype.submit.call(form); }catch(_e){ try{ form.submit(); }catch(_e2){} }
-                },0);
+                window.__submitCheckoutSummaryForm(form);
             };
             var recalc=function(){
                 var subtotal=parseMoney(prompt.getAttribute("data-coupon-subtotal-value")||"0");
                 var options=[];
                 try{ options=JSON.parse(applyBtn&&applyBtn.getAttribute("data-coupon-options")||"[]"); }catch(_e){}
                 var preview=previewCoupon(options,input?input.value:"",subtotal);
+                var enteredCode=sanitize(input?input.value:"");
                 if(subtotalNode)subtotalNode.textContent=moneyText(subtotal);
                 if(discountNode)discountNode.textContent=moneyText(preview.discount);
                 if(totalNode)totalNode.textContent=moneyText(preview.total);
+                if(applyBtn){
+                    if(enteredCode===""){
+                        applyBtn.textContent="Continue to payment";
+                    }else if(preview.match){
+                        applyBtn.textContent="Apply coupon & continue";
+                    }else{
+                        applyBtn.textContent="Continue without coupon";
+                    }
+                }
                 if(messageNode){
-                    messageNode.className="coupon-prompt-message"+(preview.match?" is-success":"");
-                    messageNode.textContent=preview.match
-                        ? "Coupon found: "+String(preview.match.title||preview.match.code||"Discount")+""
-                        : "We will still verify the code securely before payment.";
+                    if(preview.match){
+                        messageNode.className="coupon-prompt-message is-success";
+                        messageNode.textContent="Coupon applied: "+String(preview.match.title||preview.match.code||"Discount")+".";
+                    }else if(enteredCode!==""){
+                        messageNode.className="coupon-prompt-message is-error";
+                        messageNode.textContent="Coupon code not recognized.";
+                    }else{
+                        messageNode.className="coupon-prompt-message";
+                        messageNode.textContent="Enter a coupon code (optional), then continue to payment.";
+                    }
                 }
             };
             if(input){
@@ -6422,16 +6535,22 @@
                 setCouponCodeOnForm(form,input?input.value:"");
             }
             setPromptOpen(prompt,false);
-            syncCheckoutPricingForm(form);
-            var syncedCustomer=syncCheckoutCustomerForm(form);
+            if(typeof window.syncCheckoutPricingForm==="function"){
+                window.syncCheckoutPricingForm(form);
+            }
+            var syncedCustomer=typeof window.syncCheckoutCustomerForm==="function"
+                ? window.syncCheckoutCustomerForm(form)
+                : {ok:true};
             if(!syncedCustomer.ok){
                 var shippingModal=form.querySelector("[data-shipping-modal]");
-                if(shippingModal)setShippingModalOpen(shippingModal,true);
+                if(shippingModal&&typeof window.setShippingModalOpen==="function"){
+                    window.setShippingModalOpen(shippingModal,true);
+                }
                 return;
             }
             form.setAttribute("data-coupon-confirmed","1");
             if(typeof portalShowLoading==="function")portalShowLoading();
-            try{ HTMLFormElement.prototype.submit.call(form); }catch(_e){ try{ form.submit(); }catch(_e2){} }
+            window.__submitCheckoutSummaryForm(form);
         },true);
 
         document.querySelectorAll("[data-checkout-summary-form]").forEach(function(form){
@@ -6439,8 +6558,6 @@
             var prompt=form.querySelector("[data-coupon-prompt]");
             bindPromptPreview(prompt,form);
         });
-
-        bindShippingModals();
     })();
     </script>
 </body>
