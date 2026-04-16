@@ -202,6 +202,81 @@ class AdminFunnelTemplateController extends Controller
         ]);
     }
 
+    public function replaceJson(FunnelTemplate $funnelTemplate)
+    {
+        $funnelTemplate->loadMissing('steps');
+
+        $payload = [
+            'name' => $funnelTemplate->name,
+            'slug' => $funnelTemplate->slug,
+            'description' => $funnelTemplate->description,
+            'template_type' => $funnelTemplate->template_type,
+            'template_tags' => $funnelTemplate->template_tags ?? [],
+            'steps' => $funnelTemplate->steps->sortBy('position')->values()->map(function ($step) {
+                return [
+                    'title' => $step->title,
+                    'slug' => $step->slug,
+                    'type' => $step->type,
+                    'subtitle' => $step->subtitle,
+                    'content' => $step->content,
+                    'cta_label' => $step->cta_label,
+                    'price' => $step->price,
+                    'is_active' => (bool) $step->is_active,
+                    'template' => $step->template,
+                    'template_data' => $step->template_data,
+                    'step_tags' => $step->step_tags,
+                    'background_color' => $step->background_color,
+                    'button_color' => $step->button_color,
+                    'layout_style' => $step->layout_style,
+                    'layout_json' => $step->layout_json,
+                ];
+            })->all(),
+        ];
+
+        return view('admin.funnel-templates.replace-json', [
+            'template' => $funnelTemplate,
+            'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
+            'templateFunnelPurposeOptions' => FunnelTemplate::FUNNEL_PURPOSE_OPTIONS,
+            'defaultJson' => json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+        ]);
+    }
+
+    public function replaceJsonStore(Request $request, FunnelTemplate $funnelTemplate, FunnelTemplateService $templateService)
+    {
+        $validated = $request->validate([
+            'name' => 'nullable|string|max:120',
+            'description' => 'nullable|string|max:2000',
+            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
+            'template_tags' => 'nullable|string|max:500',
+            'import_json' => 'required|string',
+            'publish_now' => 'nullable|boolean',
+        ]);
+
+        try {
+            $decoded = json_decode((string) $validated['import_json'], true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return redirect()->back()->withInput()->with('error', 'Import JSON is invalid. Please paste valid JSON.');
+        }
+
+        try {
+            $templateService->replaceTemplateFromJson($funnelTemplate, $decoded, [
+                'name' => trim((string) ($validated['name'] ?? '')) !== '' ? $validated['name'] : $funnelTemplate->name,
+                'description' => array_key_exists('description', $validated) ? $validated['description'] : $funnelTemplate->description,
+                'template_type' => $validated['template_type'],
+                'template_tags' => $this->attachFunnelPurposeTag(
+                    $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
+                    (string) ($validated['funnel_purpose'] ?? 'service')
+                ),
+                'publish' => (bool) $request->boolean('publish_now'),
+            ]);
+
+            return redirect()->route('admin.funnel-templates.edit', $funnelTemplate)->with('success', 'Template JSON replaced successfully.');
+        } catch (\Throwable $e) {
+            return redirect()->back()->withInput()->with('error', 'Template replace failed. Make sure the JSON includes at least one valid step or layout.');
+        }
+    }
+
     private function singleScrollModeEnabledForTemplate($user, FunnelTemplate $template): bool
     {
         $activeStepCount = $template->relationLoaded('steps')
