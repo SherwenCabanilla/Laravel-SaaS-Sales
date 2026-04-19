@@ -223,6 +223,9 @@ body {
 .account-dropdown a,
 .account-dropdown button {
     width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     padding: 10px;
     background: none;
     border: none;
@@ -232,6 +235,13 @@ body {
     color: var(--theme-body-text, #0F172A);
     cursor: pointer;
     text-decoration: none;
+}
+
+.account-dropdown a i,
+.account-dropdown button i {
+    width: 16px;
+    text-align: center;
+    color: var(--theme-primary, #240E35);
 }
 
 .account-dropdown a:hover,
@@ -244,17 +254,17 @@ body {
 /* ============================= */
 
 .main-content {
-    flex: 0 0 auto;
-    width: calc(100vw - 250px);
-    max-width: calc(100vw - 250px);
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+    max-width: none;
     margin-left: 250px;
     padding: 20px 30px;
+    box-sizing: border-box;
     transition: margin-left 0.3s ease;
 }
 
 .sidebar.collapsed~.main-content {
-    width: calc(100vw - 70px);
-    max-width: calc(100vw - 70px);
     margin-left: 70px;
 }
 
@@ -756,15 +766,16 @@ table a:hover {
     }
 
     .main-content {
-        width: calc(100vw - var(--sidebar-mobile-collapsed));
-        max-width: calc(100vw - var(--sidebar-mobile-collapsed));
+        min-width: 0;
+        width: auto;
+        max-width: none;
         margin-left: var(--sidebar-mobile-collapsed);
         padding: 14px;
+        padding-right: 16px;
+        overflow-x: hidden;
     }
 
     .sidebar:not(.collapsed) ~ .main-content {
-        width: calc(100vw - var(--sidebar-mobile-expanded));
-        max-width: calc(100vw - var(--sidebar-mobile-expanded));
         margin-left: var(--sidebar-mobile-expanded);
     }
 

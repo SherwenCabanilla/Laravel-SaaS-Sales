@@ -297,3 +297,29 @@
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 768px) {
+    .top-header--with-tools {
+        align-items: flex-start;
+    }
+
+    .top-header--with-tools h1 {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .landing-video-trigger {
+        flex: 0 0 auto;
+        align-self: flex-start;
+    }
+
+    .kpi-cards,
+    .charts {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card,
+    .chart {
+        min-width: 0;
+    }
+}
