@@ -207,6 +207,14 @@
 .fb-template-preview .tp-img{position:absolute;right:8px;top:10px;width:40%;height:72%;border-radius:10px;background:linear-gradient(135deg,#E7D8F0,#F8F5FB);border:1px solid #E6E1EF}
 .fb-template-preview .tp-form{margin:6px 8px;border-radius:8px;background:#ffffff;border:1px solid #E6E1EF;height:48px}
 .fb-template-preview .tp-card{margin:8px;border-radius:10px;background:#ffffff;border:1px solid #E6E1EF;height:62px;box-shadow:0 6px 16px rgba(36,14,53,.08)}
+.fb-mode-badge{display:inline-flex;align-items:center;gap:6px;min-height:28px;border-radius:999px;border:1px solid #DCCEEF;background:#F8F5FB;color:#240E35;font-size:11px;font-weight:800;padding:4px 10px;letter-spacing:.01em}
+.fb-save-state{display:inline-flex;align-items:center;gap:6px;min-height:28px;border-radius:999px;border:1px solid #DCCEEF;background:#F8F5FB;color:#240E35;font-size:11px;font-weight:800;padding:4px 10px}
+.fb-save-state .dot{width:8px;height:8px;border-radius:999px;background:#94A3B8;display:inline-block}
+.fb-save-state.is-saving .dot,.fb-save-state.is-autosaving .dot{background:#0EA5E9}
+.fb-save-state.is-saved .dot{background:#16A34A}
+.fb-save-state.is-unsaved .dot{background:#F59E0B}
+.fb-save-state.is-failed .dot{background:#DC2626}
+.fb-save-time{font-size:11px;color:#64748b;font-weight:700}
 #canvas{
     width:100%;
     max-width:1400px;
@@ -245,13 +253,13 @@
 .carousel-resize-dot-bl{left:6px;bottom:6px;cursor:nesw-resize}
 .carousel-resize-dot-b{left:50%;bottom:6px;transform:translateX(-50%);cursor:ns-resize}
 .carousel-resize-dot-br{right:6px;bottom:6px;cursor:nwse-resize}
-.el{border:0 !important;border-style:none !important;border-width:0 !important;border-radius:0 !important;padding:0;background:transparent;margin-bottom:0;min-width:0;overflow-wrap:break-word;word-break:break-word;cursor:move;position:absolute;box-sizing:border-box;pointer-events:none}
+.el{border:0 !important;border-style:none !important;border-width:0 !important;border-radius:0 !important;padding:0;background:transparent;margin-bottom:0;min-width:0;overflow-wrap:break-word;word-break:break-word;cursor:move;position:relative;box-sizing:border-box;pointer-events:none}
 .el>*{pointer-events:auto}
 .el--editing [contenteditable='true']{cursor:text!important}
 .el input,.el textarea,.el select{cursor:auto}
 .el:hover:not(.sel):not(.el--dragging){outline:1px solid #E7D8F0;outline-offset:0}
 .el.sel{outline:2px solid #240E35;outline-offset:0;pointer-events:auto;background:rgba(255,255,255,0.02)}
-.el.el--abs{margin-bottom:0 !important}
+.el.el--abs{margin-bottom:0 !important;position:absolute}
 .el.el--dragging{opacity:.85;z-index:9999 !important;box-shadow:0 8px 32px rgba(37,99,235,.18);pointer-events:none}
 .el-rh{position:absolute;pointer-events:auto;z-index:100;box-sizing:border-box;display:none}
 .el.sel .el-rh{display:block}
@@ -290,10 +298,11 @@
 @keyframes el-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 .el-loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(248,250,252,0.85);z-index:10;border-radius:inherit;pointer-events:none}
 .el-loading-spinner{width:28px;height:28px;border:3px solid #E6E1EF;border-top-color:#240E35;border-radius:50%;animation:el-spin .7s linear infinite}
-#canvas .el.el--button:not(.el--abs){width:100%;box-sizing:border-box}
-#canvas .el.el--button>button{display:inline-flex;width:auto;align-items:center;justify-content:center}
+#canvas .el.el--button:not(.el--abs){width:fit-content;max-width:100%;box-sizing:border-box;min-height:0}
+#canvas .el.el--button>button{display:inline-flex;width:auto;align-items:center;justify-content:center;margin:0}
 #canvas .el.el--button-fill:not(.el--abs){display:flex;width:100%;box-sizing:border-box}
 #canvas .el.el--button-fill>button{display:flex;width:100%;align-items:center;justify-content:center;box-sizing:border-box}
+#canvas.canvas-outline-mode .el.el--button{padding:0 !important;min-height:0 !important;margin-bottom:0 !important}
 .sec.sel,.row.sel,.col.sel{outline:2px solid #240E35;outline-offset:2px}
 .settings label{font-size:12px;font-weight:800;color:#2E1244;display:block;margin:0 0 4px}
 .settings input,.settings select,.settings textarea{width:100%;padding:8px;border:1px solid #E6E1EF;border-radius:8px;margin-bottom:8px}
@@ -672,6 +681,7 @@
         </form>
         <button id="saveBtn" class="fb-btn primary" type="button"><i class="fas fa-save"></i> Save</button>
         <button id="previewBtn" class="fb-btn" type="button"><i class="fas fa-eye"></i> Preview</button>
+        <button id="publishReportBtn" class="fb-btn" type="button"><i class="fas fa-clipboard-check"></i> Validation Report</button>
         @if(($builderMode ?? 'funnel') !== 'template')
             <a href="{{ route('funnels.reviews.index', $funnel) }}" class="fb-btn"><i class="fas fa-star-half-alt"></i> Reviews</a>
         @endif
@@ -683,7 +693,7 @@
         @else
             <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">@csrf<button class="fb-btn success" type="submit" id="builderPublishBtn"><i class="fas fa-upload"></i> {{ ($builderMode ?? 'funnel') === 'template' ? 'Save as Template' : 'Publish' }}</button></form>
         @endif
-        <a href="{{ $builderExitUrl ?? route('funnels.index') }}" class="fb-btn"><i class="fas fa-door-open"></i> Exit Builder</a>
+        <a href="{{ $builderExitUrl ?? route('funnels.index') }}" class="fb-btn" id="exitBuilderBtn"><i class="fas fa-door-open"></i> Exit Builder</a>
     </div>
 </div>
 
@@ -776,9 +786,12 @@
             @else
                 <span style="font-weight:800;color:#1f2937;">Single Screen Mode</span>
             @endif
+            <span id="fbModeBadge" class="fb-mode-badge" title="Funnel page mode"></span>
             <label for="canvasBgColor" style="font-weight:800;">Canvas BG</label>
             <input id="canvasBgColor" type="color" value="#F3EEF7" title="Canvas background color">
             <button id="canvasBgReset" type="button" class="fb-btn" style="padding:6px 10px;min-height:32px;">Reset BG</button>
+            <span id="saveStateChip" class="fb-save-state is-unsaved" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="saveStateLabel">Not saved yet</span></span>
+            <span id="saveStateTime" class="fb-save-time" aria-live="polite">Last saved: --</span>
             <span id="saveMsg" style="font-size:12px;color:#475569;font-weight:700;">Not saved yet</span>
         </div>
         <div id="canvas"></div>
@@ -878,6 +891,24 @@
         </div>
     </div>
 </div>
+<div class="fb-modal" id="fbPublishReportModal" aria-hidden="true">
+    <div class="fb-modal-card" role="dialog" aria-modal="true" aria-labelledby="fbPublishReportTitle" style="width:min(820px,95vw);max-height:86vh;overflow:auto;">
+        <div class="fb-modal-title" id="fbPublishReportTitle">Pre-Publish Validation Report</div>
+        <p class="fb-modal-desc" id="fbPublishReportSummary">Checking readiness...</p>
+        <div id="fbPublishReportChecks" style="display:grid;gap:8px;margin:0 0 14px;"></div>
+        <div id="fbPublishReportIssuesWrap" style="margin:0 0 14px;">
+            <div style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#5d4476;margin-bottom:6px;">Blocking Issues</div>
+            <ul id="fbPublishReportIssues" style="margin:0;padding-left:18px;color:#334155;font-size:13px;line-height:1.5;"></ul>
+        </div>
+        <div id="fbPublishReportParityWrap" style="margin:0 0 14px;">
+            <div style="font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#5d4476;margin-bottom:6px;">Parity Checklist (WYSIWYG)</div>
+            <div id="fbPublishReportParity" style="display:grid;gap:8px;"></div>
+        </div>
+        <div class="fb-modal-actions">
+            <button type="button" class="fb-btn" id="fbPublishReportClose">Close</button>
+        </div>
+    </div>
+</div>
 <div class="fb-modal" id="fbSharedTemplateEditModal" aria-hidden="true">
     <div class="fb-modal-card" role="dialog" aria-modal="true" aria-labelledby="fbSharedTemplateEditTitle">
         <div class="fb-modal-title" id="fbSharedTemplateEditTitle">Edit saved template</div>
@@ -952,8 +983,10 @@ const stepUpdateTpl=@json($builderStepUpdateUrlTemplate ?? route('funnels.steps.
 const stepDeleteTpl=@json($builderStepDeleteUrlTemplate ?? route('funnels.steps.destroy',['funnel'=>$funnel,'step'=>'__STEP__']));
 const stepReorderUrl=@json($builderStepReorderUrl ?? route('funnels.steps.reorder',$funnel));
 const funnelUpdateUrl=@json($builderUpdateUrl ?? route('funnels.update', $funnel));
+const publishReportUrl=@json($builderPublishReportUrl ?? route((($builderMode ?? 'funnel') === 'template') ? 'admin.funnel-templates.publish.report' : 'funnels.publish.report', $funnel));
 const csrf="{{ csrf_token() }}";
 const funnelSlug=@json($funnel->slug);
+const builderCurrentStatus=@json((string) ($funnel->status ?? 'draft'));
 const builderPurposeRaw=@json(($builderPurpose ?? $funnel->purpose ?? $funnel->template_type ?? 'service'));
 let builderPurpose=String(builderPurposeRaw||"service").toLowerCase();
 const funnelStepUrlTpl=@json($builderPublicStepUrlTemplate ?? route('funnels.portal.step',['funnelSlug'=>$funnel->slug,'stepSlug'=>'__STEP__']));
@@ -1034,7 +1067,49 @@ const iconCatalog=[
     {name:"linkedin-in",label:"LinkedIn",keywords:"social",styles:["brands"]},
 ];
 
-const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameType=document.getElementById("pageMgrRenameType"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset");
+const stepSel=document.getElementById("stepSel"),stepAddBtn=document.getElementById("stepAddBtn"),pageMgrModal=document.getElementById("pageMgrModal"),pageMgrClose=document.getElementById("pageMgrClose"),pageMgrList=document.getElementById("pageMgrList"),pageMgrAddType=document.getElementById("pageMgrAddType"),pageMgrAddTitle=document.getElementById("pageMgrAddTitle"),pageMgrAddSlug=document.getElementById("pageMgrAddSlug"),pageMgrCreateBtn=document.getElementById("pageMgrCreateBtn"),pageMgrRenameTitle=document.getElementById("pageMgrRenameTitle"),pageMgrRenameType=document.getElementById("pageMgrRenameType"),pageMgrRenameSlug=document.getElementById("pageMgrRenameSlug"),pageMgrRenameTags=document.getElementById("pageMgrRenameTags"),pageMgrRenameBtn=document.getElementById("pageMgrRenameBtn"),pageMgrDeleteBtn=document.getElementById("pageMgrDeleteBtn"),pageMgrUpBtn=document.getElementById("pageMgrUpBtn"),pageMgrDownBtn=document.getElementById("pageMgrDownBtn"),versionModal=document.getElementById("versionModal"),versionModalClose=document.getElementById("versionModalClose"),versionModalCancel=document.getElementById("versionModalCancel"),versionModalSave=document.getElementById("versionModalSave"),versionModalLabel=document.getElementById("versionModalLabel"),versionModalPageName=document.getElementById("versionModalPageName"),canvas=document.getElementById("canvas"),settings=document.getElementById("settings"),saveMsg=document.getElementById("saveMsg"),settingsTitle=document.getElementById("settingsTitle"),canvasBgColor=document.getElementById("canvasBgColor"),canvasBgReset=document.getElementById("canvasBgReset"),saveStateChip=document.getElementById("saveStateChip"),saveStateLabel=document.getElementById("saveStateLabel"),saveStateTime=document.getElementById("saveStateTime"),fbModeBadge=document.getElementById("fbModeBadge"),exitBuilderBtn=document.getElementById("exitBuilderBtn");
+const publishReportBtn=document.getElementById("publishReportBtn");
+const fbPublishReportModal=document.getElementById("fbPublishReportModal");
+const fbPublishReportSummary=document.getElementById("fbPublishReportSummary");
+const fbPublishReportChecks=document.getElementById("fbPublishReportChecks");
+const fbPublishReportIssues=document.getElementById("fbPublishReportIssues");
+const fbPublishReportIssuesWrap=document.getElementById("fbPublishReportIssuesWrap");
+const fbPublishReportParity=document.getElementById("fbPublishReportParity");
+const fbPublishReportClose=document.getElementById("fbPublishReportClose");
+let _hasUnsavedChanges=false;
+let _lastSavedAtText="--";
+function setSaveState(stateLabel,timeText){
+    if(saveStateChip){
+        saveStateChip.classList.remove("is-saving","is-autosaving","is-saved","is-unsaved","is-failed");
+        if(stateLabel==="saving")saveStateChip.classList.add("is-saving");
+        else if(stateLabel==="autosaving")saveStateChip.classList.add("is-autosaving");
+        else if(stateLabel==="saved")saveStateChip.classList.add("is-saved");
+        else if(stateLabel==="failed")saveStateChip.classList.add("is-failed");
+        else saveStateChip.classList.add("is-unsaved");
+    }
+    if(saveStateLabel){
+        var labels={saving:"Saving...",autosaving:"Autosaving...",saved:"Saved",unsaved:"Unsaved changes",failed:"Save failed",idle:"Not saved yet"};
+        saveStateLabel.textContent=labels[stateLabel]||labels.idle;
+    }
+    if(typeof timeText==="string"){
+        _lastSavedAtText=timeText.trim()!==""?timeText:"--";
+    }
+    if(saveStateTime){
+        saveStateTime.textContent="Last saved: "+(_lastSavedAtText||"--");
+    }
+}
+function markUnsaved(){
+    _hasUnsavedChanges=true;
+    setSaveState("unsaved");
+}
+function markSaved(){
+    _hasUnsavedChanges=false;
+    setSaveState("saved",new Date().toLocaleTimeString());
+}
+function hasPendingBuilderChanges(){
+    return _hasUnsavedChanges||_autoSaveInFlight||!!_autoSaveTimer||_autoSavePending;
+}
+setSaveState("idle","--");
 const fbPurposeMeta=document.getElementById("fbPurposeMeta");
 const fbPurposeSelect=document.getElementById("fbPurposeTopBar");
 if(fbPurposeSelect){
@@ -1068,6 +1143,7 @@ function runAutoSave(){
     if(_autoSaveInFlight){_autoSavePending=true;return;}
     _autoSaveInFlight=true;
     _autoSaveMode=true;
+    setSaveState("autosaving");
     var p=persistCurrentStep();
     if(!p||typeof p.then!=="function"){
         _autoSaveMode=false;
@@ -1075,7 +1151,7 @@ function runAutoSave(){
         return;
     }
     _autoSavePromise=p;
-    p.catch(()=>{saveMsg.textContent="Auto-save failed";})
+    p.catch(()=>{saveMsg.textContent="Auto-save failed";setSaveState("failed");})
         .finally(()=>{
             _autoSaveMode=false;
             _autoSaveInFlight=false;
@@ -1113,6 +1189,7 @@ function renderStepOptions(){
     var hasCurrent=steps.some(function(s){return +s.id===+state.sid;});
     if(!hasCurrent && steps.length)state.sid=steps[0].id;
     stepSel.value=String(state.sid||"");
+    updateBuilderModeBadge();
 }
 function applyPurposeComponentVisibility(){
     var labels={
@@ -1132,6 +1209,7 @@ function applyPurposeComponentVisibility(){
     if(fbPurposeMeta){
         fbPurposeMeta.textContent=descriptions[builderPurpose]||descriptions.service;
     }
+    updateBuilderModeBadge();
     if(fbPurposeSelect&&fbPurposeSelect.value!==builderPurpose){
         fbPurposeSelect.value=builderPurpose;
     }
@@ -1147,6 +1225,20 @@ function applyPurposeComponentVisibility(){
         group.style.display=visibleButtons.length?"":"none";
     });
 }
+function isSinglePageBuilderMode(){
+    return !!builderSingleScrollMode || normalizeBuilderPurpose(builderPurpose)==="single_page";
+}
+function updateBuilderModeBadge(){
+    if(!fbModeBadge)return;
+    var activeCount=steps.filter(function(step){return step && step.is_active!==false;}).length;
+    if(isSinglePageBuilderMode()){
+        fbModeBadge.innerHTML='<i class="fas fa-scroll" aria-hidden="true"></i> Single Page Mode';
+        fbModeBadge.title='Single page mode: this funnel should run as one screen/page.';
+        return;
+    }
+    fbModeBadge.innerHTML='<i class="fas fa-shoe-prints" aria-hidden="true"></i> Step-by-Step Mode ('+String(activeCount)+' page'+(activeCount===1?'':'s')+')';
+    fbModeBadge.title='Step-by-step mode: multiple ordered pages are allowed.';
+}
 function normalizeBuilderPurpose(value){
     var normalized=String(value||"service").trim().toLowerCase();
     var valid=["service","single_page","digital_product","physical_product","hybrid"];
@@ -1155,6 +1247,12 @@ function normalizeBuilderPurpose(value){
 function setBuilderPurpose(nextPurpose){
     builderPurpose=normalizeBuilderPurpose(nextPurpose);
     applyPurposeComponentVisibility();
+    if(isSinglePageBuilderMode()){
+        var activeCount=steps.filter(function(step){return step && step.is_active!==false;}).length;
+        if(activeCount>1){
+            showBuilderToast("Single Page mode is active. Reduce active pages to one before publish.","error");
+        }
+    }
 }
 function syncBuilderPurposeFromTemplate(template){
     var nextPurpose=normalizeBuilderPurpose((template&&template.funnel_purpose)||(template&&template.template_type)||"service");
@@ -3405,6 +3503,7 @@ function applyPageTemplate(tpl){
     }
     layout=wireTemplateLayoutForStep(layout,s,steps);
     layout=normalizeTemplateLayout(layout);
+    layout=normalizeBuilderStructureLayout(layout);
     var derivedCheckoutAmount=normalizeTemplateType((s&&s.type)||"")==="checkout"?derivePrimaryPricingAmountFromLayout(layout):null;
     if(derivedCheckoutAmount!==null&&derivedCheckoutAmount>0){
         s.price=derivedCheckoutAmount;
@@ -3413,7 +3512,8 @@ function applyPageTemplate(tpl){
     state.carouselSel=null;
     state.editingEl=null;
     state.linkPick=null;
-    state.layout=layout;
+    state.layout=normalizeBuilderStructureLayout(layout);
+    ensureRootModel();
     normalizeElementStyle(state.layout);
     s.layout_json=clone(state.layout);
     s.background_color=(state.layout&&state.layout.__editor&&state.layout.__editor.canvasBg)?String(state.layout.__editor.canvasBg):"";
@@ -3536,7 +3636,11 @@ function applyFunnelTemplatePack(pack){
             state.carouselSel=null;
             state.editingEl=null;
             state.linkPick=null;
-            if(nextStateLayout)state.layout=nextStateLayout;
+            if(nextStateLayout){
+                state.layout=nextStateLayout;
+                ensureRootModel();
+                normalizeElementStyle(state.layout);
+            }
             applyCanvasBgPreference();
             syncCanvasBgControls();
             renderTemplateLibrary();
@@ -3688,7 +3792,11 @@ function applySharedFunnelTemplate(template){
                 }).then(function(){
                     renderStepOptions();
                     syncPageManagerList();
-                    if(nextStateLayout)state.layout=nextStateLayout;
+                    if(nextStateLayout){
+                        state.layout=nextStateLayout;
+                        ensureRootModel();
+                        normalizeElementStyle(state.layout);
+                    }
                     state.sel=null;
                     state.carouselSel=null;
                     state.editingEl=null;
@@ -4745,13 +4853,39 @@ function deletePageFromManager(){
         showBuilderToast((err&&err.message)||"Failed to delete page.","error");
     });
 }
+function changeStepWithSave(nextStepId){
+    var targetId=Number(nextStepId)||0;
+    var currentId=Number(state.sid)||0;
+    if(!targetId||targetId===currentId){
+        if(stepSel)stepSel.value=String(currentId||"");
+        return;
+    }
+    if(!hasPendingBuilderChanges()){
+        loadStep(targetId);
+        if(stepSel)stepSel.value=String(targetId);
+        return;
+    }
+    setSaveState("saving");
+    flushAutoSave()
+        .then(function(){ return persistCurrentStep(); })
+        .then(function(){
+            loadStep(targetId);
+            if(stepSel)stepSel.value=String(targetId);
+        })
+        .catch(function(err){
+            if(stepSel)stepSel.value=String(currentId||"");
+            saveMsg.textContent="Save failed";
+            setSaveState("failed");
+            showBuilderToast((err&&err.message)||"Could not switch page because save failed.","error");
+        });
+}
 function wireStepManagement(){
     if(stepSel){
-        stepSel.onchange=function(){loadStep(stepSel.value);};
+        stepSel.onchange=function(){changeStepWithSave(stepSel.value);};
     }
     if(stepAddBtn){
         stepAddBtn.onclick=function(){
-            if(builderSingleScrollMode){
+            if(isSinglePageBuilderMode()){
                 showBuilderToast("Single screen mode keeps this funnel as one scrollable page.","error");
                 return;
             }
@@ -4957,6 +5091,7 @@ function saveToHistory(){
     undoHistory.push({time:Date.now(),layout:clone(state.layout)});
     if(undoHistory.length>maxUndo)undoHistory.shift();
     redoHistory.length=0;
+    markUnsaved();
     queueAutoSave();
     if(typeof renderHistoryDrawer==='function')renderHistoryDrawer();
 }
@@ -4965,6 +5100,8 @@ function undo(){
     redoHistory.push({time:Date.now(),layout:clone(state.layout)});
     var popped=undoHistory.pop();
     state.layout=popped.layout;
+    ensureRootModel();
+    normalizeElementStyle(state.layout);
     render();
     queueAutoSave();
     if(typeof renderHistoryDrawer==='function')renderHistoryDrawer();
@@ -4974,6 +5111,8 @@ function redo(){
     undoHistory.push({time:Date.now(),layout:clone(state.layout)});
     var popped=redoHistory.pop();
     state.layout=popped.layout;
+    ensureRootModel();
+    normalizeElementStyle(state.layout);
     render();
     queueAutoSave();
     if(typeof renderHistoryDrawer==='function')renderHistoryDrawer();
@@ -4987,6 +5126,8 @@ function previewHistory(index,isRedo){
     var target=isRedo?redoHistory[index]:undoHistory[index];
     if(target){
         state.layout=clone(target.layout);
+        ensureRootModel();
+        normalizeElementStyle(state.layout);
         render();
     }
     renderHistoryDrawer();
@@ -4995,6 +5136,8 @@ function previewHistory(index,isRedo){
 function exitPreviewHistory(){
     if(!state.isPreviewingHistory)return;
     state.layout=realLayoutData;
+    ensureRootModel();
+    normalizeElementStyle(state.layout);
     realLayoutData=null;
     state.isPreviewingHistory=false;
     previewState=null;
@@ -5006,6 +5149,8 @@ function restorePreviewHistory(){
     if(!state.isPreviewingHistory||!previewState)return;
     var idx=previewState.index;var rdo=previewState.isRedo;
     state.layout=realLayoutData;
+    ensureRootModel();
+    normalizeElementStyle(state.layout);
     state.isPreviewingHistory=false;
     realLayoutData=null;
     previewState=null;
@@ -5015,6 +5160,8 @@ function restorePreviewHistory(){
 function restoreHistory(index,isRedo){
     if(state.isPreviewingHistory){
         state.layout=realLayoutData;
+        ensureRootModel();
+        normalizeElementStyle(state.layout);
         realLayoutData=null;
         state.isPreviewingHistory=false;
         previewState=null;
@@ -5039,6 +5186,8 @@ function restoreSavedRevision(index){
     realLayoutData=null;
     previewState=null;
     state.layout=clone(entry.layout);
+    ensureRootModel();
+    normalizeElementStyle(state.layout);
     s.layout_json=clone(entry.layout);
     s.background_color=(entry.layout&&entry.layout.__editor&&typeof entry.layout.__editor.canvasBg==="string"&&entry.layout.__editor.canvasBg.trim()!=="")
         ? entry.layout.__editor.canvasBg.trim()
@@ -5590,12 +5739,112 @@ function onRichTextKeys(node,onUpdate){
     });
 }
 
+function normalizeBuilderStructureLayout(layout){
+    var out=(layout&&typeof layout==="object"&&!Array.isArray(layout))?clone(layout):{root:[],sections:[]};
+    out.root=Array.isArray(out.root)?out.root:[];
+    out.sections=Array.isArray(out.sections)?out.sections:[];
+    if(!out.root.length&&out.sections.length){
+        out.root=out.sections
+            .filter(function(section){return !!section&&typeof section==="object"&&!Array.isArray(section);})
+            .map(function(section){
+                var next=clone(section);
+                next.kind="section";
+                return next;
+            });
+    }
+    var menuItems=[];
+    var pendingElements=[];
+    var normalizedRoot=[];
+    var firstSectionIndex=-1;
+    function normalizeMenuElement(item){
+        var normalized=clone(item||{});
+        normalized.kind="el";
+        normalized.settings=(normalized.settings&&typeof normalized.settings==="object"&&!Array.isArray(normalized.settings))?normalized.settings:{};
+        normalized.style=(normalized.style&&typeof normalized.style==="object"&&!Array.isArray(normalized.style))?normalized.style:{};
+        ["position","top","left","right","bottom","transform"].forEach(function(key){
+            if(Object.prototype.hasOwnProperty.call(normalized.style,key))delete normalized.style[key];
+        });
+        normalized.style.width="100%";
+        return normalized;
+    }
+    function splitMenus(elements){
+        var content=[];
+        (Array.isArray(elements)?elements:[]).forEach(function(element){
+            if(!element||typeof element!=="object"||Array.isArray(element))return;
+            if(String(element.type||"").toLowerCase()==="menu"){
+                menuItems.push(normalizeMenuElement(element));
+            }else{
+                content.push(element);
+            }
+        });
+        return content;
+    }
+    out.root.forEach(function(item){
+        if(!item||typeof item!=="object"||Array.isArray(item))return;
+        var kind=String(item.kind||"section").toLowerCase();
+        if(kind==="section"){
+            var normalizedSection=clone(item);
+            normalizedSection.kind="section";
+            normalizedSection.style=(normalizedSection.style&&typeof normalizedSection.style==="object"&&!Array.isArray(normalizedSection.style))?normalizedSection.style:{};
+            normalizedSection.settings=(normalizedSection.settings&&typeof normalizedSection.settings==="object"&&!Array.isArray(normalizedSection.settings))?normalizedSection.settings:{};
+            normalizedSection.elements=splitMenus(normalizedSection.elements);
+            normalizedSection.rows=(Array.isArray(normalizedSection.rows)?normalizedSection.rows:[]).map(function(row){
+                var nextRow=clone(row||{});
+                nextRow.columns=(Array.isArray(nextRow.columns)?nextRow.columns:[]).map(function(column){
+                    var nextCol=clone(column||{});
+                    nextCol.elements=splitMenus(nextCol.elements);
+                    return nextCol;
+                });
+                return nextRow;
+            });
+            if(firstSectionIndex===-1)firstSectionIndex=normalizedRoot.length;
+            normalizedRoot.push(normalizedSection);
+            return;
+        }
+        if(kind==="row"||kind==="column"||kind==="col"){
+            normalizedRoot.push(clone(item));
+            return;
+        }
+        if(String(item.type||"").toLowerCase()==="menu"){
+            menuItems.push(normalizeMenuElement(item));
+            return;
+        }
+        var nextEl=clone(item);
+        nextEl.kind="el";
+        pendingElements.push(nextEl);
+    });
+    if(pendingElements.length){
+        if(firstSectionIndex===-1){
+            normalizedRoot.push({
+                kind:"section",
+                id:"sec_"+Math.random().toString(36).slice(2,12),
+                style:{padding:"20px",backgroundColor:"#ffffff",minHeight:"30vh"},
+                settings:{contentWidth:"full"},
+                elements:[],
+                rows:[]
+            });
+            firstSectionIndex=normalizedRoot.length-1;
+        }
+        var existingEls=Array.isArray(normalizedRoot[firstSectionIndex].elements)?normalizedRoot[firstSectionIndex].elements:[];
+        normalizedRoot[firstSectionIndex].elements=existingEls.concat(pendingElements);
+    }
+    out.root=menuItems.concat(normalizedRoot);
+    out.sections=out.root.filter(function(item){
+        return !!item&&typeof item==="object"&&!Array.isArray(item)&&String(item.kind||"").toLowerCase()==="section";
+    }).map(function(item){
+        var next=clone(item);
+        delete next.kind;
+        return next;
+    });
+    out.__editor=(out.__editor&&typeof out.__editor==="object"&&!Array.isArray(out.__editor))?out.__editor:{};
+    return out;
+}
 function normalizeElementStyle(layout){
     function normalizeLegacyColBg(col){
         if(!col||typeof col!=="object")return;
         col.style=(col.style&&typeof col.style==="object")?col.style:{};
         var bg=String(col.style.backgroundColor||"").trim().toLowerCase();
-        if(bg==="#F3EEF7"||bg==="rgb(248, 250, 252)"||bg==="rgba(248, 250, 252, 1)"){
+        if(bg==="#f8fafc"||bg==="rgb(248, 250, 252)"||bg==="rgba(248, 250, 252, 1)"){
             col.style.backgroundColor="#ffffff";
         }
     }
@@ -5643,6 +5892,7 @@ function loadStep(id){
     if(s&&String(s.template||"").trim()!==""&&String(s.template||"").trim()!=="simple"){
         state.layout=repairTemplateFlowLayout(state.layout,s,steps);
     }
+    state.layout=normalizeBuilderStructureLayout(state.layout);
     var prefs=editorPrefs();
     var stepBg=(s&&typeof s.background_color==="string")?String(s.background_color).trim():"";
     if(/^#[0-9A-Fa-f]{6}$/.test(stepBg)){
@@ -5656,6 +5906,8 @@ function loadStep(id){
     state.carouselSel=null;
     undoHistory.length=0;
     redoHistory.length=0;
+    _hasUnsavedChanges=false;
+    setSaveState("saved");
     if(typeof renderHistoryDrawer==='function')renderHistoryDrawer();
     saveMsg.textContent="Loaded "+s.title;
     applyCanvasBgPreference();
@@ -8123,20 +8375,22 @@ function syncFlowContainerMinHeights(node,preferredHeight){
     }
     if(flowSec){
         requestAnimationFrame(function(){
-            applySectionMinHeight(flowSec,Math.max(80,getSectionContentMinHeight(flowSec)));
+            applySectionMinHeight(flowSec,Math.max(80,getSectionContentMinHeight(flowSec)),{persist:false});
         });
     }
 }
 
-function applySectionMinHeight(sectionNode,nextMin){
+function applySectionMinHeight(sectionNode,nextMin,opts){
     if(!sectionNode)return;
+    opts=opts&&typeof opts==="object"?opts:{};
+    var persist=opts.persist!==false;
     var value=Math.max(80,Number(nextMin)||0)+"px";
     sectionNode.style.minHeight=value;
     var inner=sectionNode.querySelector(".sec-inner");
     if(inner)inner.style.minHeight=value;
     var secId=String(sectionNode.getAttribute("data-sec-id")||"");
     var sObj=secId?sec(secId):null;
-    if(sObj){
+    if(persist&&sObj){
         sObj.style=sObj.style||{};
         sObj.style.minHeight=value;
     }
@@ -8703,6 +8957,7 @@ function renderElement(item,ctx){
     if(item.type==="video")w.classList.add("el--video");
     if(item.type!=="button")styleApply(w,item.style||{});
     else if(item.style&&item.style.margin)w.style.margin=item.style.margin;
+    w.style.position="relative";
     if((item.settings&&item.settings.positionMode)==="absolute"||String((item.style&&item.style.position)||"").toLowerCase()==="absolute"){
         w.classList.add("el--abs");
         w.style.position="absolute";
@@ -8867,20 +9122,37 @@ function renderElement(item,ctx){
         clearDropPreview();
         if(addComponentAt(t,dropTarget,place))render();
     };
-    if(item.type==="heading"||item.type==="text"){const n=document.createElement(item.type==="heading"?"h2":"div");n.setAttribute("data-editable","1");n.contentEditable=isEditing?"true":"false";n.style.margin="0";n.style.overflowWrap="break-word";n.style.wordBreak="break-word";n.style.maxWidth="100%";n.style.cursor=isEditing?"text":"move";n.innerHTML=item.content||"";contentStyleApply(n,item.style||{});if(!(item.style&&item.style.color))n.style.color="#000000";n.oninput=()=>{item.content=n.innerHTML||"";queueAutoSave();};onRichTextKeys(n,()=>{item.content=n.innerHTML||"";queueAutoSave();});w.appendChild(n);}
+    if(item.type==="heading"||item.type==="text"){
+        var textAlign=(item.settings&&item.settings.alignment)||(item.style&&item.style.textAlign)||"left";
+        w.style.display="flex";
+        w.style.width="100%";
+        w.style.justifyContent=textAlign==="right"?"flex-end":textAlign==="center"?"center":"flex-start";
+        const n=document.createElement(item.type==="heading"?"h2":"div");n.setAttribute("data-editable","1");n.contentEditable=isEditing?"true":"false";n.style.margin="0";n.style.overflowWrap="break-word";n.style.wordBreak="break-word";n.style.maxWidth="100%";n.style.cursor=isEditing?"text":"move";n.innerHTML=item.content||"";contentStyleApply(n,item.style||{});if(!(item.style&&item.style.color))n.style.color="#000000";n.oninput=()=>{item.content=n.innerHTML||"";queueAutoSave();};onRichTextKeys(n,()=>{item.content=n.innerHTML||"";queueAutoSave();});w.appendChild(n);
+    }
     else if(item.type==="button"){
         var wb=(item.settings&&item.settings.widthBehavior)||"fluid",al=(item.settings&&item.settings.alignment)||((item.style&&item.style.textAlign)||"center");
         var wrapBg=(item.settings&&item.settings.containerBgColor)||"";
         var hasManualWidth=!!(item.style&&String(item.style.width||"").trim()!=="");
         var hasManualHeight=!!(item.style&&String(item.style.height||"").trim()!=="");
+        var buttonStyle=Object.assign({},item.style||{});
+        if(Object.prototype.hasOwnProperty.call(buttonStyle,"margin"))delete buttonStyle.margin;
         w.classList.add(wb==="fill"?"el--button-fill":"el--button");
-        w.style.display="flex";w.style.justifyContent=al==="right"?"flex-end":al==="center"?"center":"flex-start";
-        w.style.alignItems=hasManualHeight?"stretch":"center";
+        w.style.display="flex";w.style.width=(wb==="fill"||hasManualWidth)?String(item.style.width||"100%"):"fit-content";w.style.maxWidth="100%";w.style.justifyContent="center";
+        w.style.alignItems=hasManualHeight?"stretch":"flex-start";
+        w.style.minHeight="0";
+        w.style.height=hasManualHeight?String(item.style.height):"auto";
         w.style.backgroundColor=wrapBg||"";
-        if(hasManualWidth)w.style.width=String(item.style.width);
-        if(hasManualHeight)w.style.height=String(item.style.height);
+        if(wb!=="fill"&&!hasManualWidth){
+            if(al==="center"){w.style.marginLeft="auto";w.style.marginRight="auto";}
+            else if(al==="right"){w.style.marginLeft="auto";w.style.marginRight="0";}
+            else{w.style.marginLeft="0";w.style.marginRight="0";}
+        }else{
+            w.style.marginLeft="";
+            w.style.marginRight="";
+            w.style.justifyContent=al==="right"?"flex-end":al==="center"?"center":"flex-start";
+        }
         const b=document.createElement("button");b.type="button";b.setAttribute("data-editable","1");b.contentEditable=isEditing?"true":"false";b.style.cursor=isEditing?"text":"move";b.innerHTML=item.content||"Button";
-        contentStyleApply(b,item.style||{});b.style.border="none";b.style.display="flex";b.style.width=(wb==="fill"||hasManualWidth)?"100%":"auto";b.style.height=hasManualHeight?"100%":"auto";b.style.boxSizing="border-box";b.style.alignItems="center";b.style.justifyContent="center";if(!(item.style&&item.style.backgroundColor))b.style.backgroundColor="#240E35";if(!(item.style&&item.style.color))b.style.color="#fff";if(!(item.style&&item.style.padding))b.style.padding="10px 18px";if(!(item.style&&item.style.borderRadius))b.style.borderRadius="999px";
+        contentStyleApply(b,buttonStyle);b.style.margin="0";b.style.border="none";b.style.display="flex";b.style.width=(wb==="fill"||hasManualWidth)?"100%":"auto";b.style.height=hasManualHeight?"100%":"auto";b.style.boxSizing="border-box";b.style.alignItems="center";b.style.justifyContent="center";if(!(item.style&&item.style.backgroundColor))b.style.backgroundColor="#240E35";if(!(item.style&&item.style.color))b.style.color="#fff";if(!(item.style&&item.style.padding))b.style.padding="10px 18px";if(!(item.style&&item.style.borderRadius))b.style.borderRadius="999px";
         b.oninput=()=>{item.content=b.innerHTML||"";queueAutoSave();};onRichTextKeys(b,()=>{item.content=b.innerHTML||"";queueAutoSave();});w.appendChild(b);
     }
     else if(item.type==="icon"){
@@ -8909,13 +9181,23 @@ function renderElement(item,ctx){
         w.appendChild(node);
     }
     else if(item.type==="image"){
+        var imageAlign=(item.settings&&item.settings.alignment)||"left";
         var hasFixedH=!!(item.style&&String(item.style.height||"").trim()!=="");
         var hasFixedW=!!(item.style&&String(item.style.width||"").trim()!=="");
+        var fixedImageWidth=hasFixedW?String(item.style.width):"100%";
+        if(!w.classList.contains("el--abs")){
+            w.style.display="flex";
+            w.style.width="100%";
+            w.style.justifyContent=imageAlign==="right"?"flex-end":imageAlign==="center"?"center":"flex-start";
+        }
         var _imgLoading=state.mediaLoading.has(item.id);
         if(item.settings&&item.settings.src){
             var imgWrap=document.createElement("div");
             imgWrap.style.position="relative";
-            imgWrap.style.width="100%";
+            imgWrap.style.width=fixedImageWidth;
+            if(!w.classList.contains("el--abs")){
+                imgWrap.style.maxWidth="100%";
+            }
             if(hasFixedH){imgWrap.style.height="100%";}
             else{imgWrap.style.minHeight="80px";}
             var img=document.createElement("img");
@@ -10468,10 +10750,17 @@ function renderElement(item,ctx){
         const videoSrc=isYoutubeVimeo
             ? embedUrl
             : (isHttp?raw:(raw!==""?((raw.charAt(0)==="/")?(window.location.origin+raw):(window.location.origin+"/"+raw.replace(/^\/+/,""))):""));
+        var hasFixedVideoW=!!(item.style&&String(item.style.width||"").trim()!=="");
         var hasFixedVideoH=!!(item.style&&String(item.style.height||"").trim()!=="");
+        var fixedVideoWidth=hasFixedVideoW
+            ? String(item.style.width)
+            : ((item.settings&&String(item.settings.width||"").trim()!=="")?String(item.settings.width):"400px");
         const wrap=document.createElement("div");
         wrap.style.position="relative";
-        wrap.style.width="100%";
+        wrap.style.width=w.classList.contains("el--abs")?"100%":fixedVideoWidth;
+        if(!w.classList.contains("el--abs")){
+            wrap.style.maxWidth="100%";
+        }
         wrap.style.background="#240E35";
         wrap.style.borderRadius=(item.style&&item.style.borderRadius)?String(item.style.borderRadius):"8px";
         wrap.style.overflow="hidden";
@@ -10549,6 +10838,13 @@ function renderElement(item,ctx){
     if(item.type==="image"||item.type==="video"||item.type==="icon"){
         var a=(item.settings&&item.settings.alignment)||(item.type==="icon"?"center":"left");
         w.style.setProperty("display","flex");
+        if(item.type==="video"){
+            var outerVideoWidth=(item.style&&String(item.style.width||"").trim())||(item.settings&&String(item.settings.width||"").trim())||"400px";
+            w.style.setProperty("width",w.classList.contains("el--abs")?outerVideoWidth:"fit-content");
+            w.style.setProperty("max-width","100%");
+        }else{
+            w.style.setProperty("width","100%");
+        }
         w.style.setProperty("justify-content",a==="right"?"flex-end":a==="center"?"center":"flex-start");
         w.style.setProperty("margin-left",a==="left"?"0":"auto");
         w.style.setProperty("margin-right",a==="right"?"0":"auto");
@@ -10556,6 +10852,13 @@ function renderElement(item,ctx){
     if(item.type==="image"||item.type==="video"){
         var a=(item.settings&&item.settings.alignment)||"left";
         w.style.setProperty("display","flex");
+        if(item.type==="video"){
+            var flowVideoWidth=(item.style&&String(item.style.width||"").trim())||(item.settings&&String(item.settings.width||"").trim())||"400px";
+            w.style.setProperty("width",w.classList.contains("el--abs")?flowVideoWidth:"fit-content");
+            w.style.setProperty("max-width","100%");
+        }else{
+            w.style.setProperty("width","100%");
+        }
         w.style.setProperty("justify-content",a==="right"?"flex-end":a==="center"?"center":"flex-start");
         w.style.setProperty("margin-left",a==="left"?"0":"auto");
         w.style.setProperty("margin-right",a==="right"?"0":"auto");
@@ -10569,7 +10872,8 @@ function renderElement(item,ctx){
     if(item.type==="carousel"){
         if(isSelected)attachCarouselResizeHandles(w,item);
     }
-    if(isSelected&&item.type!=="carousel")attachElResizeHandles(w,item);
+    if(isSelected&&(item.type==="image"||item.type==="video"))attachMediaResizeHandles(w,item);
+    else if(isSelected&&item.type!=="carousel")attachElResizeHandles(w,item);
     return w;
 }
 
@@ -10880,11 +11184,16 @@ function fitFlowImagesWithinSection(sectionNode,targetHeight){
         if(!node||node.classList.contains("el--abs"))return;
         var item=findElementById(node.getAttribute("data-el-id"));
         if(!item||item.type!=="image")return;
+        var hasManualHeight=!!String(item.style&&item.style.height||"").trim();
+        var host=node.parentElement||inner;
+        var isSectionLevelImage=host===inner;
+        // Flow images with explicit design widths should not be force-fit to section height.
+        // Persisting measured heights here makes autosave rewrite them into giant fixed boxes.
+        if(isSectionLevelImage || hasManualHeight)return;
         var nodeRect=node.getBoundingClientRect();
         var currentW=Math.max(1,Math.round(nodeRect.width||0));
         var currentH=Math.max(1,Math.round(nodeRect.height||0));
         if(currentW<=1||currentH<=1)return;
-        var host=node.parentElement||inner;
         var hostRect=host.getBoundingClientRect();
         var offsetTop=Math.max(0,Math.round(nodeRect.top-innerTop));
         var availableW=Math.max(40,Math.min(
@@ -10895,21 +11204,17 @@ function fitFlowImagesWithinSection(sectionNode,targetHeight){
         var shrink=Math.min(1,availableW/currentW,availableH/currentH);
         if(!(shrink<0.999))return;
         var nextW=Math.max(30,Math.round(currentW*shrink));
-        var nextH=Math.max(20,Math.round(currentH*shrink));
-        item.style=item.style||{};
-        item.style.width=nextW+"px";
-        item.style.height=nextH+"px";
-        node.style.width=item.style.width;
-        node.style.height=item.style.height;
+        node.style.width=nextW+"px";
+        node.style.height="";
         var imgWrap=node.firstElementChild;
         if(imgWrap){
-            imgWrap.style.width="100%";
-            imgWrap.style.height="100%";
+            imgWrap.style.width=node.style.width;
+            imgWrap.style.height="";
         }
         var img=node.querySelector("img");
         if(img){
             img.style.width="100%";
-            img.style.height="100%";
+            img.style.height="auto";
             img.style.maxWidth="100%";
             img.style.objectFit="contain";
             img.style.objectPosition="top center";
@@ -11427,7 +11732,12 @@ function uploadImage(file,done,label,onFail,elId){
         .then(r=>r.json().then(p=>({ok:r.ok,body:p})).catch(()=>({ok:false,body:null})))
         .then(({ok,body})=>{
             if(elId)state.mediaLoading.delete(elId);
-            if(ok&&body&&body.url){done(body.url);return;}
+            const resolvedUrl=body&&(
+                body.url
+                || (body.asset&&body.asset.url)
+                || (body.asset&&body.asset.path?("/storage/"+String(body.asset.path).replace(/^\/+/,"")):"")
+            );
+            if(ok&&resolvedUrl){done(resolvedUrl);return;}
             const err=body&&(body.message||(body.errors&&body.errors.image&&(Array.isArray(body.errors.image)?body.errors.image[0]:body.errors.image)));
             const reason=(err&&String(err).trim())?""+err:"Please check file type and size (max 100 MB).";
             if(typeof onFail==="function")onFail(reason);
@@ -11438,6 +11748,14 @@ function uploadImage(file,done,label,onFail,elId){
             if(typeof onFail==="function")onFail("Check your connection and try again.");
             alert(msg+" failed. Check your connection and try again.");
         });
+}
+
+function appendCacheVersion(url, version){
+    const src=String(url||"").trim();
+    if(!src)return "";
+    const token=String(version||"").trim();
+    if(!token)return src;
+    return src+(src.includes("?")?"&":"?")+"v="+encodeURIComponent(token);
 }
 
 function applyUploadedImageToElement(item,hostEl,url){
@@ -12017,7 +12335,36 @@ function renderSettings(){
     }
     if((!state.sel&&!inCarousel)||!t){settings.innerHTML='<p class="meta">Select a component to edit.</p>';return;}
     settingsTitle.textContent=titleCase(selectedType())+" Settings";
-    const sty=()=>{t.style=t.style||{};return t.style;};
+const sty=()=>{t.style=t.style||{};return t.style;};
+function normalizedMarginParts(raw){
+    var tokens=String(raw||"").trim().split(/\s+/).filter(Boolean);
+    if(tokens.length===1)return [tokens[0],tokens[0],tokens[0],tokens[0]];
+    if(tokens.length===2)return [tokens[0],tokens[1],tokens[0],tokens[1]];
+    if(tokens.length===3)return [tokens[0],tokens[1],tokens[2],tokens[1]];
+    if(tokens.length>=4)return [tokens[0],tokens[1],tokens[2],tokens[3]];
+    return ["0","0","0","0"];
+}
+function applyElementAlignmentStyle(item, alignment){
+    if(!item||typeof item!=="object")return;
+    item.style=item.style||{};
+    var next=String(alignment||"").trim().toLowerCase();
+    if(["left","center","right"].indexOf(next)<0)next="left";
+    item.style.textAlign=next;
+    if(item.type==="heading"||item.type==="text"||item.type==="button"||item.type==="image"||item.type==="video"||item.type==="icon"||item.type==="form"||item.type==="shipping_details"){
+        var parts=normalizedMarginParts(item.style.margin||"");
+        if(next==="center"){
+            parts[1]="auto";
+            parts[3]="auto";
+        }else if(next==="right"){
+            parts[1]="0";
+            parts[3]="auto";
+        }else{
+            parts[1]="0";
+            parts[3]="0";
+        }
+        item.style.margin=parts.join(" ");
+    }
+}
     const moveCtx=(selKind==="el")?selectedElementMoveContext():((selKind==="sec"||selKind==="row"||selKind==="col")?selectedStructureMoveContext():null);
     const canMoveUp=!!(moveCtx&&moveCtx.index>0);
     const canMoveDown=!!(moveCtx&&moveCtx.index<(moveCtx.list.length-1));
@@ -12253,7 +12600,7 @@ function renderSettings(){
             render();
         });
         bind("alt",(t.settings&&t.settings.alt)||"",v=>{t.settings=t.settings||{};t.settings.alt=v;},{undo:true});
-        bind("align",(t.settings&&t.settings.alignment)||"left",v=>{t.settings=t.settings||{};t.settings.alignment=v;},{undo:true});
+        bind("align",(t.settings&&t.settings.alignment)||"left",v=>{t.settings=t.settings||{};t.settings.alignment=v||"left";applyElementAlignmentStyle(t,v||"left");renderCanvas();},{undo:true});
         bind("w",(t.style&&t.style.width)||(t.settings&&t.settings.width)||"100%",v=>{sty().width=v;t.settings=t.settings||{};t.settings.width=v;},{px:true,undo:true});
         bind("h",(t.style&&t.style.height)||"auto",v=>{sty().height=v;},{px:true,undo:true});
         var marginLinked=false;
@@ -12287,13 +12634,24 @@ function renderSettings(){
         var videoRadiusLinked=t.settings.videoRadiusLinked!==false;
         var videoSourceType=(t.settings&&t.settings.videoSourceType)||"direct";
         var videoSourceFields=videoSourceType==="upload"
-            ? '<label>Upload file</label><input id="upv" type="file" accept="video/*"><div class="meta" id="vidCurrentFile"></div>'
-            : '<label>URL</label><input id="src">';
+            ? '<label>Upload file</label><input id="upv" type="file" accept="video/mp4,.mp4"><div class="meta">Recommended: upload an MP4 file up to 25 MB for best speed and playback.</div><div class="meta" id="vidCurrentFile"></div>'
+            : '<label>URL</label><input id="src"><div class="meta">External video links should start with https://</div>';
         settings.innerHTML='<div class="menu-section-title">Content</div><label>Video type</label><select id="vidSourceType"><option value="direct"'+(videoSourceType==="direct"?' selected':'')+'>Direct link</option><option value="upload"'+(videoSourceType==="upload"?' selected':'')+'>Upload file</option></select>'+videoSourceFields+'<div class="menu-split"></div><div class="menu-section-title">Layout</div>'+helpLabelHtml("mediaAlignment","Alignment")+'<select id="align"><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select><label>Width</label><input id="w" placeholder="100%"><label>Height</label><input id="h" placeholder="auto"><div class="menu-split"></div><div class="menu-section-title">Spacing</div><div class="size-position"><div class="size-label">Size and position</div><label class="size-label">Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>&harr;</span></button><span>Link</span></div></div></div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Border</label><input id="b">'+radiusHelpLabelHtml("vidRadiusHelp","Border radius")+'<div class="img-radius-panel"><button type="button" id="vidRadiusLink" class="img-radius-link'+(videoRadiusLinked?' linked':'')+'" title="Link corners"><i class="fas fa-link"></i></button><div class="img-radius-row"><input id="vidRadTl" type="number" value="'+rad[0]+'"><input id="vidRadTr" type="number" value="'+rad[1]+'"><input id="vidRadBr" type="number" value="'+rad[2]+'"><input id="vidRadBl" type="number" value="'+rad[3]+'"></div></div><label>Shadow</label><input id="sh"><div class="menu-split"></div><div class="menu-section-title">Behavior</div><label>Auto play</label><select id="vAutoplay"><option value="off">Off</option><option value="on">On</option></select><label>Controls</label><select id="vControls"><option value="on">On</option><option value="off">Off</option></select>'+posControls+moveControls+remove;
         var vidSourceType=document.getElementById("vidSourceType");
         if(vidSourceType)vidSourceType.onchange=()=>{saveToHistory();t.settings=t.settings||{};t.settings.videoSourceType=vidSourceType.value;renderSettings();};
         if(videoSourceType==="direct"){
-            bind("src",(t.settings&&t.settings.src)||"",v=>{t.settings=t.settings||{};var next=String(v||"").trim();t.settings.src=next;if(next==="")t.content="";},{undo:true});
+            bind("src",(t.settings&&t.settings.src)||"",v=>{
+                t.settings=t.settings||{};
+                var next=String(v||"").trim();
+                var isExternalLike=next!=="" && !/^(https?:)?\/\//i.test(next) && !/^(\/|data:|blob:)/i.test(next);
+                if(isExternalLike){
+                    next="https://"+next.replace(/^\/+/,"");
+                    var srcInput=document.getElementById("src");
+                    if(srcInput&&srcInput.value!==next)srcInput.value=next;
+                }
+                t.settings.src=next;
+                if(next==="")t.content="";
+            },{undo:true});
         } else {
             var curVid=document.getElementById("vidCurrentFile");
             if(curVid){
@@ -12301,7 +12659,25 @@ function renderSettings(){
                 curVid.textContent=vidName?("Current file: "+vidName):"Current file: none";
             }
             const upv=document.getElementById("upv");
-            if(upv)upv.onchange=()=>{if(upv.files&&upv.files[0]){saveToHistory();uploadImage(upv.files[0],url=>{t.settings=t.settings||{};t.settings.src=url;render();},"Video upload",null,t.id);}};
+            if(upv)upv.onchange=()=>{
+                if(upv.files&&upv.files[0]){
+                    var videoFile=upv.files[0];
+                    var fileName=String(videoFile.name||"");
+                    var isMp4=(String(videoFile.type||"").toLowerCase()==="video/mp4")||/\.mp4$/i.test(fileName);
+                    if(!isMp4){
+                        upv.value="";
+                        showBuilderToast("Please upload an MP4 video file for this component.","error");
+                        return;
+                    }
+                    if((Number(videoFile.size)||0)>(25*1024*1024)){
+                        upv.value="";
+                        showBuilderToast("Please keep MP4 uploads at 25 MB or less for best performance.","error");
+                        return;
+                    }
+                    saveToHistory();
+                    uploadImage(videoFile,url=>{t.settings=t.settings||{};t.settings.src=url;render();},"Video upload",null,t.id);
+                }
+            };
         }
         mountMediaAssetLibrary(videoSourceType==="upload"?"vidCurrentFile":"src","vidAssetLibraryBtn","video","Video Asset Library",function(url){
             saveToHistory();
@@ -12312,7 +12688,7 @@ function renderSettings(){
         });
         bind("vAutoplay",(t.settings&&t.settings.autoplay)?"on":"off",v=>{t.settings=t.settings||{};t.settings.autoplay=(v==="on");},{undo:true});
         bind("vControls",(t.settings&&typeof t.settings.controls==="boolean")?(t.settings.controls?"on":"off"):"on",v=>{t.settings=t.settings||{};t.settings.controls=(v!=="off");},{undo:true});
-        bind("align",(t.settings&&t.settings.alignment)||"left",v=>{t.settings=t.settings||{};t.settings.alignment=v;},{undo:true});
+        bind("align",(t.settings&&t.settings.alignment)||"left",v=>{t.settings=t.settings||{};t.settings.alignment=v||"left";applyElementAlignmentStyle(t,v||"left");renderCanvas();},{undo:true});
         bind("w",(t.style&&t.style.width)||(t.settings&&t.settings.width)||"100%",v=>{sty().width=v;t.settings=t.settings||{};t.settings.width=v;},{px:true,undo:true});
         bind("h",(t.style&&t.style.height)||"auto",v=>{sty().height=v;},{px:true,undo:true});
         var marginLinked=false;
@@ -12721,7 +13097,7 @@ function renderSettings(){
                 return '<div class="menu-item-card"><div class="menu-item-head"><strong>Menu item '+(idx+1)+'</strong><div class="menu-item-actions"><button type="button" class="menu-del" data-idx="'+idx+'" title="Delete"><i class="fas fa-trash"></i></button><button type="button" class="menu-toggle" data-idx="'+idx+'" title="Toggle"><i class="fas '+(collapsed?'fa-chevron-down':'fa-chevron-up')+'"></i></button></div></div>'+body+'</div>';
             }).join("");
             settings.innerHTML='<div class="menu-panel-title">Menu</div><div class="menu-section-title">Content</div>'+cards+'<button type="button" id="addMenuItem" class="fb-btn primary" style="width:100%;margin:6px 0 10px;">Add menu item</button><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Font family</label><select id="mFont"><option value="">Same font as the page</option>'+fonts.map(f=>'<option value="'+f.value.replace(/"/g,'&quot;')+'">'+f.label+'</option>').join('')+'</select><div class="menu-typo-grid"><div class="px-wrap"><input id="mFs" type="number" step="1"><span class="px-unit">px</span></div><div class="px-wrap"><input id="mLh" type="number" step="0.1"><span class="px-unit">lh</span></div></div><label>Text style</label><div class="menu-style-row"><button type="button" id="mBold" class="menu-align-btn" title="Bold (Ctrl+B)"><i class="fas fa-bold"></i></button><button type="button" id="mItalic" class="menu-align-btn" title="Italic (Ctrl+I)"><i class="fas fa-italic"></i></button></div><div class="menu-split"></div><div class="menu-section-title">Layout</div><div class="menu-align-row"><button type="button" class="menu-align-btn" data-align="left"><i class="fas fa-align-left"></i></button><button type="button" class="menu-align-btn" data-align="center"><i class="fas fa-align-center"></i></button><button type="button" class="menu-align-btn" data-align="right"><i class="fas fa-align-right"></i></button></div><div class="menu-split"></div><div class="menu-section-title">Style</div><label>Letter spacing</label><div class="menu-slider-row"><input id="mLsRange" type="range" min="0" max="20" step="0.1"><input id="mLsNum" type="number" min="0" max="20" step="0.1"></div><label>Text color</label><input id="mTextColor" type="color"><label>Menu items underline color</label><input id="mUnderlineColor" type="color"><label>Background color</label><input id="mBgColor" type="color"><label>Background image URL</label><input id="mBgImg" placeholder="https://..."><label>Upload background image</label><input id="mBgUp" type="file" accept="image/*"><div class="menu-split"></div><div class="menu-section-title">Spacing</div><label>Spacing between menu items</label><div class="menu-slider-row"><input id="mGapRange" type="range" min="0" max="64" step="1"><input id="mGapNum" type="number" min="0" max="64" step="1"></div><label>Padding</label><div class="size-grid"><div class="fld"><label>T</label><input id="pTop" type="number" value="'+pad[0]+'"></div><div class="fld"><label>R</label><input id="pRight" type="number" value="'+pad[1]+'"></div><div class="fld"><label>B</label><input id="pBottom" type="number" value="'+pad[2]+'"></div><div class="fld"><label>L</label><input id="pLeft" type="number" value="'+pad[3]+'"></div><div class="size-link"><button type="button" id="linkPad" title="Link padding"><span>&harr;</span></button><span>Link</span></div></div><label>Margin</label><div class="size-grid"><div class="fld"><label>T</label><input id="mTop" type="number" value="'+mar[0]+'"></div><div class="fld"><label>R</label><input id="mRight" type="number" value="'+mar[1]+'"></div><div class="fld"><label>B</label><input id="mBottom" type="number" value="'+mar[2]+'"></div><div class="fld"><label>L</label><input id="mLeft" type="number" value="'+mar[3]+'"></div><div class="size-link"><button type="button" id="linkMar" title="Link margin"><span>&harr;</span></button><span>Link</span></div></div>'+posControls+moveControls+remove;
-            settings.insertAdjacentHTML("beforeend",'<div class="menu-split"></div><div class="menu-section-title">Right CTA Button</div><label>Button label</label><input id="mLeftBtnLabel" placeholder="Get Started"><label>Button URL</label><input id="mLeftBtnUrl" placeholder="#"><label>Button background color</label><input id="mLeftBtnBg" type="color"><label>Button text color</label><input id="mLeftBtnText" type="color"><label>Button text size</label><div class="px-wrap"><input id="mLeftBtnTextSize" type="number" min="10" max="48" step="1"><span class="px-unit">px</span></div><label>Button text style</label><div class="menu-style-row"><button type="button" id="mLeftBtnBold" class="menu-align-btn" title="Bold"><i class="fas fa-bold"></i></button><button type="button" id="mLeftBtnItalic" class="menu-align-btn" title="Italic"><i class="fas fa-italic"></i></button></div><label>Button border radius</label><div class="px-wrap"><input id="mLeftBtnRadius" type="number" min="0" max="80" step="1"><span class="px-unit">px</span></div><label>Button size (vertical padding)</label><div class="px-wrap"><input id="mLeftBtnPadY" type="number" min="4" max="40" step="1"><span class="px-unit">px</span></div><label>Button size (horizontal padding)</label><div class="px-wrap"><input id="mLeftBtnPadX" type="number" min="8" max="80" step="1"><span class="px-unit">px</span></div><div class="menu-split"></div><div class="menu-section-title">Left Logo</div><label>Logo image URL</label><input id="mRightLogoUrl" placeholder="https://..."><label>Logo alt text</label><input id="mRightLogoAlt" placeholder="Logo"><label>Upload logo image</label><input id="mRightLogoUp" type="file" accept="image/*">');
+            settings.insertAdjacentHTML("beforeend",'<div class="menu-split"></div><div class="menu-section-title">Right CTA Button</div><label>Button label</label><input id="mLeftBtnLabel" placeholder="Get Started"><label>Button URL</label><input id="mLeftBtnUrl" placeholder="#"><label>Button background color</label><input id="mLeftBtnBg" type="color"><label>Button text color</label><input id="mLeftBtnText" type="color"><label>Button text size</label><div class="px-wrap"><input id="mLeftBtnTextSize" type="number" min="10" max="48" step="1"><span class="px-unit">px</span></div><label>Button text style</label><div class="menu-style-row"><button type="button" id="mLeftBtnBold" class="menu-align-btn" title="Bold"><i class="fas fa-bold"></i></button><button type="button" id="mLeftBtnItalic" class="menu-align-btn" title="Italic"><i class="fas fa-italic"></i></button></div><label>Button border radius</label><div class="px-wrap"><input id="mLeftBtnRadius" type="number" min="0" max="80" step="1"><span class="px-unit">px</span></div><label>Button size (vertical padding)</label><div class="px-wrap"><input id="mLeftBtnPadY" type="number" min="4" max="40" step="1"><span class="px-unit">px</span></div><label>Button size (horizontal padding)</label><div class="px-wrap"><input id="mLeftBtnPadX" type="number" min="8" max="80" step="1"><span class="px-unit">px</span></div><div class="menu-split"></div><div class="menu-section-title">Left Logo</div><label>Logo image URL</label><input id="mLeftLogoUrl" placeholder="https://..."><label>Logo alt text</label><input id="mLeftLogoAlt" placeholder="Logo"><label>Upload logo image</label><input id="mLeftLogoUp" type="file" accept="image/*">');
 
             items.forEach((it,idx)=>{
                 var lab=document.getElementById("miLabel_"+idx),url=document.getElementById("miUrl_"+idx),mode=document.getElementById("miMode_"+idx),anchor=document.getElementById("miAnchor_"+idx),sectionWrap=document.getElementById("miSectionWrap_"+idx),customWrap=document.getElementById("miCustomWrap_"+idx),nw=document.getElementById("miNew_"+idx),sm=document.getElementById("miSub_"+idx);
@@ -12799,16 +13175,16 @@ function renderSettings(){
             if(mLeftBtnBold)mLeftBtnBold.onclick=()=>{saveToHistory();t.settings=t.settings||{};t.settings.leftButtonBold=!t.settings.leftButtonBold;syncMenuBtnStyleButtons();renderCanvas();};
             if(mLeftBtnItalic)mLeftBtnItalic.onclick=()=>{saveToHistory();t.settings=t.settings||{};t.settings.leftButtonItalic=!t.settings.leftButtonItalic;syncMenuBtnStyleButtons();renderCanvas();};
             syncMenuBtnStyleButtons();
-            bind("mRightLogoUrl",(t.settings&&t.settings.rightLogoUrl)||"",v=>{t.settings=t.settings||{};t.settings.rightLogoUrl=v;renderCanvas();},{undo:true});
-            bind("mRightLogoAlt",(t.settings&&t.settings.rightLogoAlt)||"Logo",v=>{t.settings=t.settings||{};t.settings.rightLogoAlt=v;renderCanvas();},{undo:true});
-            var mRightLogoUp=document.getElementById("mRightLogoUp");
-            if(mRightLogoUp)mRightLogoUp.onchange=()=>{if(mRightLogoUp.files&&mRightLogoUp.files[0]){saveToHistory();var mRightLogoUrl=document.getElementById("mRightLogoUrl");uploadImage(mRightLogoUp.files[0],url=>{t.settings=t.settings||{};t.settings.rightLogoUrl=url;if(mRightLogoUrl)mRightLogoUrl.value=url;renderCanvas();},"Menu left logo upload");}};
-            mountMediaAssetLibrary("mRightLogoUp","mRightLogoAssetLibraryBtn","image","Menu Left Logo Asset Library",function(url){
+            bind("mLeftLogoUrl",(t.settings&&t.settings.rightLogoUrl)||"",v=>{t.settings=t.settings||{};t.settings.rightLogoUrl=v;renderCanvas();},{undo:true});
+            bind("mLeftLogoAlt",(t.settings&&t.settings.rightLogoAlt)||"Logo",v=>{t.settings=t.settings||{};t.settings.rightLogoAlt=v;renderCanvas();},{undo:true});
+            var mLeftLogoUp=document.getElementById("mLeftLogoUp");
+            if(mLeftLogoUp)mLeftLogoUp.onchange=()=>{if(mLeftLogoUp.files&&mLeftLogoUp.files[0]){saveToHistory();var mLeftLogoUrl=document.getElementById("mLeftLogoUrl");uploadImage(mLeftLogoUp.files[0],url=>{t.settings=t.settings||{};t.settings.rightLogoUrl=url;if(mLeftLogoUrl)mLeftLogoUrl.value=url;renderCanvas();},"Menu left logo upload");}};
+            mountMediaAssetLibrary("mLeftLogoUp","mLeftLogoAssetLibraryBtn","image","Menu Left Logo Asset Library",function(url){
                 saveToHistory();
                 t.settings=t.settings||{};
                 t.settings.rightLogoUrl=url;
-                var mRightLogoUrl=document.getElementById("mRightLogoUrl");
-                if(mRightLogoUrl)mRightLogoUrl.value=url;
+                var mLeftLogoUrl=document.getElementById("mLeftLogoUrl");
+                if(mLeftLogoUrl)mLeftLogoUrl.value=url;
                 renderCanvas();
             });
 
@@ -13954,7 +14330,7 @@ function renderSettings(){
                     refreshAfterSetting();
                 });
             }
-            bind("a",(t.settings&&t.settings.alignment)||(t.style&&t.style.textAlign)||"center",v=>{t.settings=t.settings||{};t.settings.alignment=v||"center";sty().textAlign=v||"center";},{undo:true});
+            bind("a",(t.settings&&t.settings.alignment)||(t.style&&t.style.textAlign)||"center",v=>{t.settings=t.settings||{};t.settings.alignment=v||"center";applyElementAlignmentStyle(t,v||"center");},{undo:true});
         } else {
             bind("a",(t.style&&t.style.textAlign)||"",v=>sty().textAlign=v,{undo:true});
         }
@@ -14278,7 +14654,7 @@ function persistCurrentStep(){
     if(_canvasLockedWidth>0)prefs.canvasWidth=_canvasLockedWidth;
     if(_canvasInnerWidth>0)prefs.canvasInnerWidth=_canvasInnerWidth;
     if(_canvasContentWidth>0)prefs.canvasContentWidth=_canvasContentWidth;
-    var layoutToSave=withMeasuredSectionStageWidths(state.layout);
+    var layoutToSave=normalizeBuilderStructureLayout(withMeasuredSectionStageWidths(state.layout));
     var canvasBg=normalizeCanvasBgValue(prefs.canvasBg||"");
     var requestHeaders={"Content-Type":"application/json","X-CSRF-TOKEN":csrf,"Accept":"application/json"};
     function saveStepLayout(stepId,layout,bg,skipRevision){
@@ -14292,18 +14668,24 @@ function persistCurrentStep(){
         });
     }
     saveMsg.textContent=_autoSaveMode?"Autosaving...":"Saving...";
+    setSaveState(_autoSaveMode?"autosaving":"saving");
     return saveStepLayout(s.id,layoutToSave,canvasBg,false)
         .then(function(p){
-            s.layout_json=p.layout_json||clone(layoutToSave);
+            s.layout_json=normalizeBuilderStructureLayout(p.layout_json||clone(layoutToSave));
             s.background_color=(p&&typeof p.background_color==="string"&&p.background_color.trim()!=="")?p.background_color.trim():null;
             s.revision_history=normalizeRevisionHistory(p&&p.revision_history);
+            if(+state.sid===+s.id){
+                state.layout=clone(s.layout_json);
+                ensureRootModel();
+                normalizeElementStyle(state.layout);
+            }
             var others=steps.filter(function(step){return +step.id!==+s.id;});
             if(!others.length)return null;
             var jobs=others.map(function(step){
                 var stepLayout=(step.layout_json&&typeof step.layout_json==="object")?step.layout_json:defaults(step.type);
                 stepLayout=withCanvasBgInLayout(stepLayout,canvasBg);
                 return saveStepLayout(step.id,stepLayout,canvasBg,true).then(function(resp){
-                    step.layout_json=resp.layout_json||clone(stepLayout);
+                    step.layout_json=normalizeBuilderStructureLayout(resp.layout_json||clone(stepLayout));
                     step.background_color=(resp&&typeof resp.background_color==="string"&&resp.background_color.trim()!=="")?resp.background_color.trim():null;
                     return true;
                 });
@@ -14312,12 +14694,161 @@ function persistCurrentStep(){
         })
         .then(function(){
             saveMsg.textContent=(_autoSaveMode?"Autosaved ":"Saved all pages ")+new Date().toLocaleTimeString();
+            markSaved();
             if(typeof renderHistoryDrawer==="function")renderHistoryDrawer();
         });
 }
 document.getElementById("saveBtn").onclick=()=>{
-    persistCurrentStep().catch(()=>{saveMsg.textContent="Save failed";alert("Save failed.");});
+    persistCurrentStep().catch(()=>{
+        saveMsg.textContent="Save failed";
+        setSaveState("failed");
+        alert("Save failed.");
+    });
 };
+function requiredTypesForBuilderPurpose(purpose){
+    var normalized=normalizeBuilderPurpose(purpose);
+    if(normalized==="single_page")return [];
+    if(normalized==="digital_product"||normalized==="physical_product")return ["sales","checkout","thank_you"];
+    if(normalized==="hybrid")return ["landing","sales","checkout","thank_you"];
+    return ["landing","opt_in","sales","checkout","thank_you"];
+}
+function collectPublishIssuesForBuilder(){
+    var active=steps.filter(function(step){return step && step.is_active!==false;}).slice().sort(function(a,b){
+        var ap=Number(a&&a.position)||0;
+        var bp=Number(b&&b.position)||0;
+        if(ap!==bp)return ap-bp;
+        return (Number(a&&a.id)||0)-(Number(b&&b.id)||0);
+    });
+    var issues=[];
+    var singleMode=isSinglePageBuilderMode();
+    if(!active.length){
+        issues.push("Add at least one active page before publishing.");
+        return issues;
+    }
+    if(singleMode && active.length!==1){
+        issues.push("Single Page mode requires exactly one active page.");
+    }
+    var required=requiredTypesForBuilderPurpose(builderPurpose);
+    required.forEach(function(type){
+        var exists=active.some(function(step){return String(step&&step.type||"").toLowerCase()===String(type||"").toLowerCase();});
+        if(!exists)issues.push("Add an active "+String(type||"").replace(/_/g,"-")+" page.");
+    });
+    var first=active[0],last=active[active.length-1];
+    if(first && String(first.type||"").toLowerCase()==="thank_you"){
+        issues.push("The first active page cannot be a Thank You page.");
+    }
+    if(!singleMode && last && String(last.type||"").toLowerCase()!=="thank_you"){
+        issues.push("The last active page must be a Thank You page.");
+    }
+    var seen={};
+    active.forEach(function(step){
+        var slug=String(step&&step.slug||"").trim().toLowerCase();
+        if(!slug){
+            issues.push("Every active page must have a slug.");
+            return;
+        }
+        if(seen[slug]){
+            issues.push('Duplicate active page slug: "'+slug+'".');
+            return;
+        }
+        seen[slug]=true;
+    });
+    return issues;
+}
+function escapeReportHtml(value){
+    return String(value==null?"":value)
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#39;");
+}
+function openPublishReportModal(){
+    if(!fbPublishReportModal)return;
+    fbPublishReportModal.classList.add("open");
+    fbPublishReportModal.setAttribute("aria-hidden","false");
+}
+function closePublishReportModal(){
+    if(!fbPublishReportModal)return;
+    fbPublishReportModal.classList.remove("open");
+    fbPublishReportModal.setAttribute("aria-hidden","true");
+}
+function renderPublishReport(data){
+    if(!fbPublishReportSummary||!fbPublishReportChecks||!fbPublishReportIssues||!fbPublishReportParity)return;
+    var modeLabel=String((data&&data.mode_label)||"Unknown Mode");
+    var statusLabel=String((data&&data.status)||builderCurrentStatus||"draft").toUpperCase();
+    var isValid=!!(data&&data.is_valid);
+    fbPublishReportSummary.textContent=(isValid?"Ready to publish. ":"Publish blocked. ")+modeLabel+" • Status: "+statusLabel;
+    fbPublishReportChecks.innerHTML="";
+    (Array.isArray(data&&data.checks)?data.checks:[]).forEach(function(check){
+        var passed=!!(check&&check.passed);
+        var wrap=document.createElement("div");
+        wrap.style.border="1px solid "+(passed?"#86efac":"#fecaca");
+        wrap.style.background=passed?"#ecfdf5":"#fef2f2";
+        wrap.style.borderRadius="10px";
+        wrap.style.padding="8px 10px";
+        wrap.innerHTML="<div style='font-size:13px;font-weight:800;color:"+(passed?"#065f46":"#991b1b")+";'>"+(passed?"PASS":"FAIL")+" • "+escapeReportHtml(check&&check.label||"Check")+"</div>"
+            +"<div style='font-size:12px;color:#475569;margin-top:2px;'>"+escapeReportHtml(check&&check.detail||"")+"</div>";
+        fbPublishReportChecks.appendChild(wrap);
+    });
+    var issues=Array.isArray(data&&data.issues)?data.issues:[];
+    fbPublishReportIssues.innerHTML="";
+    if(issues.length===0){
+        var li=document.createElement("li");
+        li.textContent="No blocking issues detected.";
+        fbPublishReportIssues.appendChild(li);
+    }else{
+        issues.forEach(function(issue){
+            var li=document.createElement("li");
+            li.textContent=String(issue||"");
+            fbPublishReportIssues.appendChild(li);
+        });
+    }
+    if(fbPublishReportIssuesWrap){
+        fbPublishReportIssuesWrap.style.display=issues.length===0?"none":"block";
+    }
+
+    var parity=Array.isArray(data&&data.parity_checklist)?data.parity_checklist:[];
+    if(!parity.length){
+        parity=[
+            {device:"Desktop",items:["Spacing parity","Typography parity","Component action parity"]},
+            {device:"Tablet",items:["Section/column stacking parity","Media scaling parity","Button/form alignment parity"]},
+            {device:"Mobile",items:["Breakpoint behavior parity","Touch target parity","Content overflow parity"]}
+        ];
+    }
+    fbPublishReportParity.innerHTML="";
+    parity.forEach(function(group){
+        var card=document.createElement("div");
+        card.style.border="1px solid #d9d4e8";
+        card.style.background="#fff";
+        card.style.borderRadius="10px";
+        card.style.padding="8px 10px";
+        var items=Array.isArray(group&&group.items)?group.items:[];
+        card.innerHTML="<div style='font-size:12px;font-weight:900;color:#1f1235;margin-bottom:4px;'>"
+            +escapeReportHtml(group&&group.device||"Device")+"</div>"
+            +"<ul style='margin:0;padding-left:16px;color:#475569;font-size:12px;line-height:1.4;'>"
+            +items.map(function(item){return "<li>"+escapeReportHtml(item)+"</li>";}).join("")
+            +"</ul>";
+        fbPublishReportParity.appendChild(card);
+    });
+    openPublishReportModal();
+}
+function fetchPublishValidationReport(){
+    if(!publishReportUrl){
+        return Promise.reject(new Error("Validation report URL not configured."));
+    }
+    return fetch(publishReportUrl,{
+        headers:{"Accept":"application/json","X-Requested-With":"XMLHttpRequest"}
+    }).then(function(r){
+        return r.json().catch(function(){return {};}).then(function(data){
+            if(!r.ok){
+                var msg=(data&&data.message)?String(data.message):("HTTP "+r.status);
+                throw new Error(msg);
+            }
+            return data;
+        });
+    });
+}
 function bindPublishForm(){
     var form=document.getElementById("builderPublishForm");
     var btn=document.getElementById("builderPublishBtn");
@@ -14326,27 +14857,90 @@ function bindPublishForm(){
     form.addEventListener("submit",function(e){
         if(submitting)return;
         e.preventDefault();
+        var localIssues=collectPublishIssuesForBuilder();
+        if(localIssues.length){
+            setSaveState("failed");
+            saveMsg.textContent="Publish blocked: fix required items";
+            showBuilderToast("Publish blocked: "+localIssues[0],"error");
+            renderPublishReport({
+                mode_label:isSinglePageBuilderMode()?"Single Page Mode":"Step-by-Step Mode",
+                status:builderCurrentStatus,
+                is_valid:false,
+                checks:[
+                    {label:"Local builder checks",passed:false,detail:localIssues.length+" issue(s) detected in current draft."}
+                ],
+                issues:localIssues,
+                parity_checklist:[]
+            });
+            return;
+        }
         submitting=true;
         btn.disabled=true;
         var originalLabel=btn.innerHTML;
         btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Saving...';
         flushAutoSave()
             .then(function(){ return persistCurrentStep(); })
-            .then(function(){ form.submit(); })
+            .then(function(){ return fetchPublishValidationReport(); })
+            .then(function(report){
+                if(!report || !report.is_valid){
+                    submitting=false;
+                    btn.disabled=false;
+                    btn.innerHTML=originalLabel;
+                    saveMsg.textContent="Publish blocked: fix required items";
+                    setSaveState("failed");
+                    renderPublishReport(report||{is_valid:false,issues:["Publish validation failed."]});
+                    return;
+                }
+                form.submit();
+            })
             .catch(function(){
                 submitting=false;
                 btn.disabled=false;
                 btn.innerHTML=originalLabel;
                 saveMsg.textContent="Save failed";
+                setSaveState("failed");
                 showBuilderToast("Save failed before publish. Please try again.","error");
             });
     });
 }
+if(publishReportBtn){
+    publishReportBtn.addEventListener("click",function(){
+        fetchPublishValidationReport()
+            .then(function(report){ renderPublishReport(report); })
+            .catch(function(err){
+                showBuilderToast((err&&err.message)?err.message:"Failed to load validation report.","error");
+            });
+    });
+}
+if(fbPublishReportClose){
+    fbPublishReportClose.addEventListener("click",closePublishReportModal);
+}
+if(fbPublishReportModal){
+    fbPublishReportModal.addEventListener("click",function(e){
+        if(e.target===fbPublishReportModal)closePublishReportModal();
+    });
+}
 function withPreviewDeviceParam(url, device){
     if(!url)return url;
-    if(url.indexOf("preview_device=")>=0)return url;
+    var nextDevice=String(device||"desktop").toLowerCase();
+    if(!(nextDevice==="desktop"||nextDevice==="tablet"||nextDevice==="mobile"))nextDevice="desktop";
+    try{
+        var parsed=new URL(url,window.location.origin);
+        parsed.searchParams.set("preview_device",nextDevice);
+        return parsed.pathname+parsed.search+parsed.hash;
+    }catch(_e){}
+    if(/([?&])preview_device=/.test(url)){
+        return url.replace(/([?&])preview_device=[^&]*/,"$1preview_device="+encodeURIComponent(nextDevice));
+    }
     var sep=url.indexOf("?")>=0?"&":"?";
-    return url+sep+"preview_device="+encodeURIComponent(device||"desktop");
+    return url+sep+"preview_device="+encodeURIComponent(nextDevice);
+}
+function getPreferredPreviewDevice(){
+    try{
+        var stored=String(localStorage.getItem("fbPreviewDevice")||"").toLowerCase();
+        if(stored==="desktop"||stored==="tablet"||stored==="mobile")return stored;
+    }catch(_e){}
+    return "desktop";
 }
 
 document.getElementById("previewBtn").onclick=()=>{
@@ -14354,11 +14948,12 @@ document.getElementById("previewBtn").onclick=()=>{
     flushAutoSave()
         .then(()=>persistCurrentStep())
         .then(()=>{
-            try{localStorage.setItem("fbPreviewDevice","desktop");}catch(_e){}
-            var url=withPreviewDeviceParam(previewTpl.replace("__STEP__",String(s.id)),"desktop");
+            var device=getPreferredPreviewDevice();
+            try{localStorage.setItem("fbPreviewDevice",device);}catch(_e){}
+            var url=withPreviewDeviceParam(previewTpl.replace("__STEP__",String(s.id)),device);
             window.open(url,"_blank");
         })
-        .catch(()=>{saveMsg.textContent="Save failed";alert("Save failed.");});
+        .catch(()=>{saveMsg.textContent="Save failed";setSaveState("failed");alert("Save failed.");});
 };
 var testFlowBtn=document.getElementById("testFlowBtn");
 if(testFlowBtn){
@@ -14367,12 +14962,36 @@ if(testFlowBtn){
         flushAutoSave()
             .then(()=>persistCurrentStep())
             .then(()=>{
-                try{localStorage.setItem("fbPreviewDevice","desktop");}catch(_e){}
-                var url=withPreviewDeviceParam(testFlowTpl.replace("__STEP__",String(s.id)),"desktop");
+                var device=getPreferredPreviewDevice();
+                try{localStorage.setItem("fbPreviewDevice",device);}catch(_e){}
+                var url=withPreviewDeviceParam(testFlowTpl.replace("__STEP__",String(s.id)),device);
                 window.open(url,"_blank");
             })
-            .catch(()=>{saveMsg.textContent="Save failed";alert("Save failed.");});
+            .catch(()=>{saveMsg.textContent="Save failed";setSaveState("failed");alert("Save failed.");});
     };
+}
+window.addEventListener("beforeunload",function(e){
+    if(!hasPendingBuilderChanges())return;
+    e.preventDefault();
+    e.returnValue="";
+});
+if(exitBuilderBtn){
+    exitBuilderBtn.addEventListener("click",function(e){
+        if(!hasPendingBuilderChanges())return;
+        e.preventDefault();
+        var href=String(exitBuilderBtn.getAttribute("href")||"");
+        if(!href)return;
+        if(!window.confirm("You have unsaved changes. Save before exiting builder?"))return;
+        setSaveState("saving");
+        flushAutoSave()
+            .then(function(){ return persistCurrentStep(); })
+            .then(function(){ window.location.href=href; })
+            .catch(function(){
+                saveMsg.textContent="Save failed";
+                setSaveState("failed");
+                showBuilderToast("Could not exit because save failed. Please try again.","error");
+            });
+    });
 }
 document.addEventListener("keydown",e=>{
     const key=String(e.key||"").toLowerCase();
@@ -14469,3 +15088,4 @@ loadStep(state.sid);
 })();
 </script>
 @endsection
+

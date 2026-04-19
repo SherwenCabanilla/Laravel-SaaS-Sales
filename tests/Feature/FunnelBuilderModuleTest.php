@@ -185,6 +185,160 @@ class FunnelBuilderModuleTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_single_page_mode_blocks_adding_a_second_active_page(): void
+    {
+        [$tenant, $user] = $this->createTenantUserWithRole('marketing-manager');
+        $funnel = Funnel::create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'name' => 'Single Page Funnel',
+            'slug' => 'single-page-funnel',
+            'purpose' => 'single_page',
+            'status' => 'draft',
+        ]);
+
+        FunnelStep::create([
+            'funnel_id' => $funnel->id,
+            'title' => 'Single Page',
+            'slug' => 'single-page',
+            'type' => 'landing',
+            'position' => 1,
+            'is_active' => true,
+            'layout_json' => $this->buttonLayout('next_step'),
+        ]);
+
+        $response = $this->actingAs($user)
+            ->postJson(route('funnels.steps.store', $funnel), [
+                'title' => 'Another Page',
+                'slug' => 'another-page',
+                'type' => 'sales',
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('message', 'Single Page mode allows exactly one active page.');
+    }
+
+    public function test_single_page_publish_is_blocked_when_more_than_one_active_step_exists(): void
+    {
+        [$tenant, $user] = $this->createTenantUserWithRole('marketing-manager');
+        $funnel = Funnel::create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'name' => 'Single Page Publish Guard',
+            'slug' => 'single-page-publish-guard',
+            'purpose' => 'single_page',
+            'status' => 'draft',
+        ]);
+
+        FunnelStep::create([
+            'funnel_id' => $funnel->id,
+            'title' => 'Single Page',
+            'slug' => 'single-page',
+            'type' => 'landing',
+            'position' => 1,
+            'is_active' => true,
+            'layout_json' => $this->buttonLayout('next_step'),
+        ]);
+        FunnelStep::create([
+            'funnel_id' => $funnel->id,
+            'title' => 'Unexpected Extra',
+            'slug' => 'unexpected-extra',
+            'type' => 'sales',
+            'position' => 2,
+            'is_active' => true,
+            'layout_json' => $this->buttonLayout('next_step'),
+        ]);
+
+        $response = $this->actingAs($user)->post(route('funnels.publish', $funnel));
+
+        $response->assertRedirect();
+        $response->assertSessionHas('error', function (string $message): bool {
+            return str_contains($message, 'Single Page funnels must have exactly one active step.');
+        });
+    }
+
+    public function test_publish_report_endpoint_returns_validation_payload(): void
+    {
+        [$tenant, $user] = $this->createTenantUserWithRole('marketing-manager');
+        $funnel = Funnel::create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'name' => 'Single Page Report',
+            'slug' => 'single-page-report',
+            'purpose' => 'single_page',
+            'status' => 'draft',
+        ]);
+
+        FunnelStep::create([
+            'funnel_id' => $funnel->id,
+            'title' => 'Single',
+            'slug' => 'single',
+            'type' => 'landing',
+            'position' => 1,
+            'is_active' => true,
+            'layout_json' => $this->buttonLayout('next_step'),
+        ]);
+        FunnelStep::create([
+            'funnel_id' => $funnel->id,
+            'title' => 'Extra',
+            'slug' => 'extra',
+            'type' => 'sales',
+            'position' => 2,
+            'is_active' => true,
+            'layout_json' => $this->buttonLayout('next_step'),
+        ]);
+
+        $response = $this->actingAs($user)->getJson(route('funnels.publish.report', $funnel));
+
+        $response->assertOk();
+        $response->assertJsonPath('mode', 'single_page');
+        $response->assertJsonPath('is_valid', false);
+        $response->assertJsonStructure([
+            'checks',
+            'issues',
+            'active_steps',
+            'parity_checklist',
+        ]);
+    }
+
+    public function test_edit_normalizes_existing_legacy_layout_schema_for_saved_steps(): void
+    {
+        [$tenant, $user] = $this->createTenantUserWithRole('marketing-manager');
+        $funnel = Funnel::create([
+            'tenant_id' => $tenant->id,
+            'created_by' => $user->id,
+            'name' => 'Legacy Schema Funnel',
+            'slug' => 'legacy-schema-funnel',
+            'status' => 'draft',
+        ]);
+
+        $step = FunnelStep::create([
+            'funnel_id' => $funnel->id,
+            'title' => 'Legacy Step',
+            'slug' => 'legacy-step',
+            'type' => 'landing',
+            'position' => 1,
+            'is_active' => true,
+            'layout_json' => [
+                'sections' => [
+                    [
+                        'id' => 'sec-old',
+                        'rows' => [],
+                        'elements' => [],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->actingAs($user)->get(route('funnels.edit', $funnel))->assertOk();
+
+        $normalized = $step->fresh()->layout_json;
+        $this->assertIsArray($normalized);
+        $this->assertArrayHasKey('root', $normalized);
+        $this->assertArrayHasKey('sections', $normalized);
+        $this->assertNotEmpty($normalized['root']);
+    }
+
     public function test_funnel_analytics_exposes_enhanced_metrics_and_filter_state(): void
     {
         [$tenant, $user] = $this->createTenantUserWithRole('marketing-manager');

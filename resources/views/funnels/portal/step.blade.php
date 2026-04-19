@@ -126,6 +126,9 @@
             padding: 10px 1.5rem 24px;
             box-sizing: border-box;
         }
+        body.is-preview-iframe.portal-has-freeform-canvas .step-content--full {
+            padding: 10px;
+        }
         body.is-preview .step-content--full { padding: 0; overflow-x: auto; overflow-y: visible; }
         body.portal-has-freeform-canvas .step-content--full { opacity: 0; }
         body.portal-has-freeform-canvas .step-content--full.is-scale-ready { opacity: 1; }
@@ -614,6 +617,26 @@
             margin-left:2px;
             transform:translateX(0);
         }
+        .preview-step-chip{
+            height:44px;
+            padding:0 9px;
+            border-radius:12px;
+            display:inline-flex;
+            align-items:center;
+            gap:5px;
+            color:#240E35;
+            background:#ffffff;
+            border:1px solid #E6E1EF;
+            font-size:10px;
+            font-weight:800;
+            box-shadow:none;
+            max-width:188px;
+        }
+        .preview-step-chip-label{
+            overflow:hidden;
+            text-overflow:ellipsis;
+            white-space:nowrap;
+        }
         .preview-device-switcher{
             display:flex;
             align-items:center;
@@ -687,15 +710,14 @@
             min-height: 0 !important;
             height: auto !important;
         }
-        body[data-preview-device="tablet"] .builder-el{
+        body[data-preview-device="tablet"] .builder-el:not([data-abs-pos="1"]){
             position: static !important;
             left: auto !important;
             top: auto !important;
             max-width: 100% !important;
         }
-        body[data-preview-device="tablet"] .builder-col-inner--section-elements > .builder-el,
-        body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el{
-            width: 100% !important;
+        body[data-preview-device="tablet"] .builder-col-inner--section-elements > .builder-el:not([data-abs-pos="1"]),
+        body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el:not([data-abs-pos="1"]){
             text-align: center !important;
         }
         body[data-preview-device="tablet"] .builder-carousel-content-row{
@@ -708,15 +730,6 @@
         body[data-preview-device="tablet"] .step-content--full{
             padding: 10px 1rem 24px !important;
         }
-        body[data-preview-device="tablet"] .builder-section{
-            padding: 0 !important;
-            min-height: 0 !important;
-            height: auto !important;
-        }
-        body[data-preview-device="tablet"] .builder-section-inner{
-            min-height: 0 !important;
-            height: auto !important;
-        }
         body[data-preview-device="tablet"] .builder-heading{
             font-size: clamp(18px, 4vw, 28px) !important;
         }
@@ -726,11 +739,23 @@
         body[data-preview-device="tablet"] .builder-pricing-grid{
             grid-template-columns: 1fr !important;
         }
-        body[data-preview-device="tablet"] .builder-el[data-element-type="image"]{
+        body[data-preview-device="tablet"] .builder-el[data-element-type="image"]:not([data-abs-pos="1"]){
             max-width: 100% !important;
             height: auto !important;
         }
-        body[data-preview-device="tablet"] .builder-el[data-element-type="image"] img{
+        body[data-preview-device="tablet"] .builder-col-inner--section-elements > .builder-el{
+            width: auto !important;
+            max-width: 100% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        body[data-preview-device="tablet"] .builder-col-inner--section-elements > .builder-el[data-element-type="image"],
+        body[data-preview-device="tablet"] .builder-col-inner--section-elements > .builder-el[data-element-type="video"],
+        body[data-preview-device="tablet"] .builder-col-inner--section-elements > .builder-el[data-element-type="button"]{
+            display: flex !important;
+            justify-content: center !important;
+        }
+        body[data-preview-device="tablet"] .builder-el[data-element-type="image"]:not([data-abs-pos="1"]) img{
             max-width: 100% !important;
             height: auto !important;
             object-fit: contain !important;
@@ -764,13 +789,24 @@
             height: auto !important;
             padding: 6px !important;
         }
-        body[data-preview-device="mobile"] .builder-el{
+        body[data-preview-device="mobile"] .builder-el:not([data-abs-pos="1"]){
             position: static !important;
             left: auto !important;
             top: auto !important;
-            width: 100% !important;
             max-width: 100% !important;
             height: auto !important;
+        }
+        body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el{
+            width: auto !important;
+            max-width: 100% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el[data-element-type="image"],
+        body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el[data-element-type="video"],
+        body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el[data-element-type="button"]{
+            display: flex !important;
+            justify-content: center !important;
         }
         body[data-preview-device="mobile"] .builder-col:empty,
         body[data-preview-device="mobile"] .builder-col:not(:has(.builder-el)){
@@ -785,22 +821,7 @@
             width: 100% !important;
         }
         body[data-preview-device="mobile"] .step-content--full{
-            padding: 0 !important;
-        }
-        body[data-preview-device="mobile"] .builder-section{
-            padding: 0 !important;
-            margin-bottom: 0 !important;
-            border-radius: 0 !important;
-            min-height: 0 !important;
-            height: auto !important;
-        }
-        body[data-preview-device="mobile"] .builder-section-inner{
-            min-height: 0 !important;
-            height: auto !important;
-        }
-        body[data-preview-device="mobile"] .builder-row{
-            padding: 0 !important;
-            gap: 0 !important;
+            padding: 0 12px 20px !important;
         }
         body[data-preview-device="mobile"] .builder-heading{
             font-size: clamp(16px, 5vw, 22px) !important;
@@ -826,14 +847,21 @@
         body[data-preview-device="mobile"] .builder-pricing-price{
             font-size: clamp(22px, 6vw, 32px) !important;
         }
-        body[data-preview-device="mobile"] .builder-el[data-element-type="image"]{
+        body[data-preview-device="mobile"] .builder-el[data-element-type="image"]:not([data-abs-pos="1"]){
             max-width: 100% !important;
             height: auto !important;
         }
-        body[data-preview-device="mobile"] .builder-el[data-element-type="image"] img{
+        body[data-preview-device="mobile"] .builder-el[data-element-type="image"]:not([data-abs-pos="1"]) img{
             max-width: 100% !important;
             height: auto !important;
             object-fit: contain !important;
+        }
+        body[data-preview-device="tablet"] .builder-el[data-abs-pos="1"][data-element-type="heading"] .builder-heading,
+        body[data-preview-device="tablet"] .builder-el[data-abs-pos="1"][data-element-type="text"] .builder-text,
+        body[data-preview-device="mobile"] .builder-el[data-abs-pos="1"][data-element-type="heading"] .builder-heading,
+        body[data-preview-device="mobile"] .builder-el[data-abs-pos="1"][data-element-type="text"] .builder-text{
+            overflow-wrap:anywhere !important;
+            word-break:normal !important;
         }
         body[data-preview-device="mobile"] .builder-video-wrap{
             max-width: 100% !important;
@@ -949,7 +977,6 @@
                 max-width: 100% !important;
             }
             body.is-published .builder-col-inner--section-elements > .builder-el{
-                width: 100% !important;
                 text-align: center !important;
             }
             body.is-published .builder-carousel-content-row{
@@ -961,15 +988,6 @@
             }
             body.is-published .step-content--full{
                 padding: 0;
-            }
-            body.is-published .builder-section{
-                padding: 0;
-                min-height: 0 !important;
-                height: auto !important;
-            }
-            body.is-published .builder-section-inner{
-                min-height: 0 !important;
-                height: auto !important;
             }
             body.is-published .builder-heading{
                 font-size: clamp(18px, 5vw, 28px);
@@ -990,6 +1008,18 @@
             body.is-published .builder-el[data-element-type="image"]{
                 max-width: 100%;
                 height: auto;
+            }
+            body.is-published .builder-col-inner--section-elements > .builder-el{
+                width: auto;
+                max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            body.is-published .builder-col-inner--section-elements > .builder-el[data-element-type="image"],
+            body.is-published .builder-col-inner--section-elements > .builder-el[data-element-type="video"],
+            body.is-published .builder-col-inner--section-elements > .builder-el[data-element-type="button"]{
+                display: flex;
+                justify-content: center;
             }
             body.is-published .builder-el[data-element-type="image"] img{
                 max-width: 100%;
@@ -1012,12 +1042,21 @@
                 position: static !important;
                 left: auto !important;
                 top: auto !important;
-                width: 100% !important;
                 max-width: 100% !important;
                 height: auto !important;
             }
             body.is-published .builder-col-inner--section-elements > .builder-el{
                 text-align: center !important;
+                width: auto !important;
+                max-width: 100% !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
+            }
+            body.is-published .builder-col-inner--section-elements > .builder-el[data-element-type="image"],
+            body.is-published .builder-col-inner--section-elements > .builder-el[data-element-type="video"],
+            body.is-published .builder-col-inner--section-elements > .builder-el[data-element-type="button"]{
+                display: flex !important;
+                justify-content: center !important;
             }
             body.is-published .builder-col:empty,
             body.is-published .builder-col:not(:has(.builder-el)){
@@ -1025,21 +1064,7 @@
                 display: none;
             }
             body.is-published .step-content--full{
-                padding: 0;
-            }
-            body.is-published .builder-section{
-                padding: 0;
-                margin-bottom: 0;
-                min-height: 0 !important;
-                height: auto !important;
-            }
-            body.is-published .builder-section-inner{
-                min-height: 0 !important;
-                height: auto !important;
-            }
-            body.is-published .builder-row{
-                padding: 0;
-                gap: 0;
+                padding: 0 12px 20px;
             }
             body.is-published .builder-heading{
                 font-size: clamp(16px, 5vw, 22px);
@@ -1150,7 +1175,10 @@
         .preview-device-switcher{ pointer-events:auto; }
     </style>
 </head>
-<body class="{{ ($isPreview ?? false) ? 'is-preview' : 'is-published' }}{{ ($portalHasFreeformCanvas ?? false) ? ' portal-has-freeform-canvas' : '' }}" data-funnel-slug="{{ $funnel->slug }}">
+@php
+    $previewRuntimeClass = (($isPreview ?? false) && ! $previewIframeMode) ? 'is-preview' : 'is-published';
+@endphp
+<body class="{{ $previewRuntimeClass }}{{ $previewIframeMode ? ' is-preview-iframe' : '' }}{{ ($portalHasFreeformCanvas ?? false) ? ' portal-has-freeform-canvas' : '' }}" data-funnel-slug="{{ $funnel->slug }}">
     <div class="portal-loading-overlay" id="portalLoadingOverlay" aria-hidden="true">
         <div class="portal-loading-card" role="status" aria-live="polite" aria-label="Loading next page">
             <div class="portal-loading-spinner" aria-hidden="true"></div>
@@ -1251,6 +1279,19 @@
         }
         if ($derivedCanvasWidth > $editorCanvasWidth) {
             $editorCanvasWidth = $derivedCanvasWidth;
+        }
+        $previewDevice = strtolower(trim((string) request()->query('preview_device', 'desktop')));
+        if (!in_array($previewDevice, ['desktop', 'tablet', 'mobile'], true)) {
+            $previewDevice = 'desktop';
+        }
+        $previewDeviceTargetWidth = match ($previewDevice) {
+            'tablet' => 768,
+            'mobile' => 375,
+            default => 0,
+        };
+        $previewDeviceScale = 1.0;
+        if ($previewDeviceTargetWidth > 0 && $editorCanvasWidth > 0) {
+            $previewDeviceScale = max(0.35, min(1.0, $previewDeviceTargetWidth / $editorCanvasWidth));
         }
         $hasBuilderLayout = count($renderSections) > 0;
         $activeSteps = collect($allSteps ?? [])->values()->filter(fn ($s) => isset($s->id, $s->slug));
@@ -1695,6 +1736,31 @@
 
     <div class="wrap">
         @if($isPreview && !$previewIframeMode)
+        @php
+            $previewSteps = collect($allSteps ?? [])->values();
+            $previewCurrentIndex = $previewSteps->search(fn ($candidate) => (int) ($candidate->id ?? 0) === (int) ($step->id ?? 0));
+            $previewCurrentIndex = $previewCurrentIndex === false ? 0 : (int) $previewCurrentIndex;
+            $previewStepLabel = trim((string) ($step->title ?? 'Step'));
+            $previewModeSource = method_exists($funnel, 'resolvedFunnelPurpose')
+                ? $funnel->resolvedFunnelPurpose()
+                : ($funnel->purpose ?? 'service');
+            $previewNormalizedPurpose = \App\Models\Funnel::normalizePurpose((string) $previewModeSource);
+            $previewNormalizedTemplateType = method_exists($funnel, 'templateTypeLabel')
+                ? \App\Models\FunnelTemplate::normalizeTemplateType((string) ($funnel->template_type ?? ''))
+                : null;
+            $previewTagSource = method_exists($funnel, 'resolvedFunnelPurpose')
+                ? ($funnel->template_tags ?? [])
+                : ($funnel->default_tags ?? []);
+            $previewTagSet = collect($previewTagSource)
+                ->map(fn ($tag) => mb_strtolower(trim((string) $tag)))
+                ->filter();
+            $previewIsSinglePageMode = $previewSteps->count() <= 1
+                || $previewNormalizedPurpose === 'single_page'
+                || $previewNormalizedTemplateType === 'single_page'
+                || $previewTagSet->contains('__single_scroll')
+                || $previewTagSet->contains('single-scroll');
+            $previewModeLabel = $previewIsSinglePageMode ? 'Single Page Mode' : 'Step-by-Step Mode';
+        @endphp
         <div class="preview-toolbar">
             <div class="preview-toolbar-left">
                 <a
@@ -1709,7 +1775,11 @@
             <div class="preview-toolbar-right">
                 <span class="preview-mode-chip" aria-label="Preview Mode" title="Preview Mode">
                     <i class="fas fa-eye" aria-hidden="true"></i>
-                    <span class="preview-mode-label">Preview Mode</span>
+                    <span class="preview-mode-label">{{ $previewModeLabel }}</span>
+                </span>
+                <span class="preview-step-chip" aria-label="Current step" title="{{ $previewStepLabel }}">
+                    <i class="fas fa-list-ol" aria-hidden="true"></i>
+                    <span class="preview-step-chip-label">{{ 'Step ' . ($previewCurrentIndex + 1) . ' of ' . max(1, $previewSteps->count()) }}</span>
                 </span>
             </div>
             <div class="preview-device-switcher" role="group" aria-label="Preview device">
@@ -1946,13 +2016,20 @@
                                         $colContentWidth = trim((string) ($colSettings['contentWidth'] ?? 'full'));
                                         $colInnerMax = $widthMap[$colContentWidth] ?? '';
                                         $elements = is_array($column['elements'] ?? null) ? $column['elements'] : [];
+                                        $isSectionElementCarrierCol = (bool) ($column['isSectionElementCarrier'] ?? false);
                                         $colMinHeight = 0;
                                         $colMinWidth = 0;
                                         $hasAbsEl = false;
                                         foreach ($elements as $_el) {
                                             $_elSettings = is_array($_el['settings'] ?? null) ? $_el['settings'] : [];
                                             $_elStyle = is_array($_el['style'] ?? null) ? $_el['style'] : [];
-                                            if (trim((string) ($_elSettings['positionMode'] ?? '')) === 'absolute' || trim((string) ($_elStyle['position'] ?? '')) === 'absolute') {
+                                            $_wantsAbs = trim((string) ($_elSettings['positionMode'] ?? '')) === 'absolute'
+                                                || trim((string) ($_elStyle['position'] ?? '')) === 'absolute';
+                                            $_hasAbsCoords = (int) ($_elSettings['freeX'] ?? 0) > 0
+                                                || (int) ($_elSettings['freeY'] ?? 0) > 0
+                                                || trim((string) ($_elStyle['left'] ?? '')) !== ''
+                                                || trim((string) ($_elStyle['top'] ?? '')) !== '';
+                                            if ($_wantsAbs && ($isFreeformCanvas || $isSectionElementCarrierCol || $_hasAbsCoords)) {
                                                 $hasAbsEl = true;
                                                 $_ey = (int) ($_elSettings['freeY'] ?? 0);
                                                 if ($_ey <= 0) $_ey = (int) str_replace('px', '', (string) ($_elStyle['top'] ?? '0'));
@@ -1969,8 +2046,7 @@
                                             }
                                         }
                                         $colWidthStyle = $isFreeformCanvas ? 'width:100%;margin-left:0;margin-right:0;' : '';
-                                        $isSectionElementCarrierCol = (bool) ($column['isSectionElementCarrier'] ?? false);
-                                        $colHeightStyle = ($colMinHeight > 0 && !$isFreeformCanvas && $isSectionElementCarrierCol) ? 'min-height:' . $colMinHeight . 'px;' : '';
+                                        $colHeightStyle = ($colMinHeight > 0 && !$isFreeformCanvas) ? 'min-height:' . $colMinHeight . 'px;' : '';
 
                                         if ($hasAbsEl && !$isFreeformCanvas && !$isSectionElementCarrierCol) {
                                             usort($elements, function ($a, $b) {
@@ -1995,11 +2071,17 @@
                                                 $content = (string) ($element['content'] ?? '');
                                                 $rawStyle = is_array($element['style'] ?? null) ? $element['style'] : [];
                                                 $settings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
-                                                $allowAbsPos = $isFreeformCanvas || $isSectionElementCarrierCol;
+                                                $allowAbsPos = $isFreeformCanvas || $isSectionElementCarrierCol || $hasAbsEl;
+                                                $wantsAbsPos = (trim((string) ($settings['positionMode'] ?? '')) === 'absolute')
+                                                    || (trim((string) ($rawStyle['position'] ?? '')) === 'absolute');
+                                                $hasAbsCoords = (int) ($settings['freeX'] ?? 0) > 0
+                                                    || (int) ($settings['freeY'] ?? 0) > 0
+                                                    || trim((string) ($rawStyle['left'] ?? '')) !== ''
+                                                    || trim((string) ($rawStyle['top'] ?? '')) !== '';
+                                                $isAbsPos = $allowAbsPos && $wantsAbsPos && ($isFreeformCanvas || $isSectionElementCarrierCol || $hasAbsCoords);
                                                 $flowStyle = $rawStyle;
-                                                if (!$allowAbsPos) {
-                                                    $wasAbsolute = (trim((string) ($rawStyle['position'] ?? '')) === 'absolute')
-                                                        || (trim((string) ($settings['positionMode'] ?? '')) === 'absolute');
+                                                if (!$isAbsPos) {
+                                                    $wasAbsolute = $wantsAbsPos;
                                                     foreach (['position','left','top','right','bottom','zIndex','z-index'] as $k) {
                                                         if (array_key_exists($k, $flowStyle)) {
                                                             unset($flowStyle[$k]);
@@ -2022,9 +2104,19 @@
                                                 if (!in_array($alignment, ['left', 'center', 'right'], true)) {
                                                     $fallbackAlign = strtolower(trim((string) ($rawStyle['textAlign'] ?? '')));
                                                     $defaultAlign = in_array($type, ['image', 'video', 'form', 'menu'], true) ? 'left' : 'center';
+                                                    $marginTokens = preg_split('/\s+/', trim((string) ($rawStyle['margin'] ?? ''))) ?: [];
+                                                    $marginTop = $marginTokens[0] ?? '0';
+                                                    $marginRight = $marginTokens[1] ?? $marginTop;
+                                                    $marginBottom = $marginTokens[2] ?? $marginTop;
+                                                    $marginLeft = $marginTokens[3] ?? $marginRight;
+                                                    $marginCenter = strtolower($marginLeft) === 'auto' && strtolower($marginRight) === 'auto';
+                                                    $marginRightAlign = strtolower($marginLeft) === 'auto' && strtolower($marginRight) !== 'auto';
                                                     $alignment = in_array($fallbackAlign, ['left', 'center', 'right'], true)
                                                         ? $fallbackAlign
-                                                        : $defaultAlign;
+                                                        : ($marginCenter
+                                                            ? 'center'
+                                                            : ($marginRightAlign ? 'right' : $defaultAlign))
+                                                        ;
                                                 }
                                                 $alignStyle = 'display:flex;justify-content:' . ($alignment === 'right' ? 'flex-end' : ($alignment === 'center' ? 'center' : 'flex-start')) . ';margin-left:' . ($alignment === 'left' ? '0' : 'auto') . ';margin-right:' . ($alignment === 'right' ? '0' : 'auto') . ';';
                                                 $menuAlign = $settings['menuAlign'] ?? 'left';
@@ -2086,10 +2178,6 @@
                                                 $hasFixedWidth = !empty(trim((string) ($rawStyle['width'] ?? '')));
                                                 $hasFixedHeight = !empty(trim((string) ($rawStyle['height'] ?? '')));
                                                 $hasSizedImageBox = $type === 'image' && $hasFixedHeight && $isAbsPos;
-                                                $isAbsPos = $allowAbsPos && (
-                                                    (trim((string) ($settings['positionMode'] ?? '')) === 'absolute')
-                                                    || (trim((string) ($rawStyle['position'] ?? '')) === 'absolute')
-                                                );
                                                 $absPosStyle = '';
                                                 if ($isAbsPos) {
                                                     $absFreeX = (int) ($settings['freeX'] ?? 0);
@@ -2100,6 +2188,12 @@
                                                     if ($absTop === '' && $absFreeY > 0) $absTop = $absFreeY . 'px';
                                                     $absWidth = trim((string) ($rawStyle['width'] ?? ''));
                                                     $absHeight = trim((string) ($rawStyle['height'] ?? ''));
+                                                    if ($previewDeviceScale < 1.0) {
+                                                        $absLeft = $scalePxValue($absLeft, $previewDeviceScale);
+                                                        $absTop = $scalePxValue($absTop, $previewDeviceScale);
+                                                        $absWidth = $scalePxValue($absWidth, $previewDeviceScale);
+                                                        $absHeight = $scalePxValue($absHeight, $previewDeviceScale);
+                                                    }
                                                     $absPosStyle = 'position:absolute;left:' . ($absLeft !== '' ? $absLeft : '0px') . ';top:' . ($absTop !== '' ? $absTop : '0px') . ';margin:0;box-sizing:border-box;';
                                                     if ($absWidth !== '') $absPosStyle .= 'width:' . preg_replace('/[^#(),.%\-\sA-Za-z0-9]/', '', $absWidth) . ';';
                                                     if ($absHeight !== '') $absPosStyle .= 'height:' . preg_replace('/[^#(),.%\-\sA-Za-z0-9]/', '', $absHeight) . ';';
@@ -2112,6 +2206,18 @@
                                             @endphp
 
                                             @php
+                                                if ($isAbsPos && $previewDeviceScale < 1.0) {
+                                                    foreach (['fontSize' => 'font-size', 'font-size' => 'font-size', 'lineHeight' => 'line-height', 'line-height' => 'line-height', 'letterSpacing' => 'letter-spacing', 'letter-spacing' => 'letter-spacing'] as $_styleKey => $_cssKey) {
+                                                        $rawVal = trim((string) ($rawStyle[$_styleKey] ?? ''));
+                                                        if ($rawVal !== '') {
+                                                            $contentStyle .= ($contentStyle !== '' ? ';' : '') . $_cssKey . ':' . $scalePxValue($rawVal, $previewDeviceScale);
+                                                        }
+                                                    }
+                                                    $scaledPadding = $scalePaddingValue($rawStyle['padding'] ?? '', $previewDeviceScale);
+                                                    if ($scaledPadding !== '') {
+                                                        $contentStyle .= ($contentStyle !== '' ? ';' : '') . 'padding:' . $scaledPadding;
+                                                    }
+                                                }
                                                 $elWrapStyle = '';
                                                 if ($isAbsPos) {
                                                     $elWrapStyle = $absPosStyle;
@@ -2140,7 +2246,7 @@
                                                     }
                                                 }
                                             @endphp
-                                            <div class="builder-el" data-element-type="{{ $type }}" @if($elWrapStyle !== '') style="{{ $elWrapStyle }}" @endif>
+                                            <div class="builder-el" data-element-type="{{ $type }}" data-abs-pos="{{ $isAbsPos ? '1' : '0' }}" @if($elWrapStyle !== '') style="{{ $elWrapStyle }}" @endif>
                                                 @if($type === 'heading')
                                                     <h2 class="builder-heading" style="{{ $contentStyle }}">{!! $content !!}</h2>
                                                 @elseif($type === 'text')
@@ -5755,41 +5861,68 @@
         });
         setTimeout(function(){scaleSectionElementCarriers();},200);
         var isPreview={{ ($isPreview ?? false) ? 'true' : 'false' }};
+        var isPreviewIframe={{ $previewIframeMode ? 'true' : 'false' }};
         var editorCanvasWidth={{ (int) (($editorCanvasWidth ?? 0) + (($isPreview ?? false) ? $previewFreeformRightInset : 0)) }};
         var previewDeviceWidths={desktop:null,tablet:768,mobile:375};
         var previewDevice="desktop";
         if(isPreview){
             var hasDeviceParam=false;
+            var allowed={desktop:1,tablet:1,mobile:1};
+            var normalizePreviewDevice=function(value){
+                var v=String(value||"").toLowerCase();
+                if(v==="phone"||v==="smartphone")v="mobile";
+                return allowed[v]?v:"desktop";
+            };
+            var syncPreviewRuntimeState=function(){
+                try{localStorage.setItem("fbPreviewDevice",previewDevice);}catch(_e){}
+                document.body.setAttribute("data-preview-device", previewDevice);
+            };
+            var syncOuterPreviewUrl=function(){
+                if(isPreviewIframe||!window.history||typeof window.history.replaceState!=="function")return;
+                try{
+                    var nextUrl=new URL(window.location.href);
+                    nextUrl.searchParams.set("preview_device",previewDevice);
+                    nextUrl.searchParams.delete("preview_iframe");
+                    window.history.replaceState(null,"",nextUrl.pathname+nextUrl.search+nextUrl.hash);
+                }catch(_e){}
+            };
+            var syncPreviewIframe=function(){
+                var iframe=document.getElementById("previewDeviceFrame");
+                if(!iframe)return;
+                var desktopCanvasWidth=(editorCanvasWidth&&editorCanvasWidth>0)?editorCanvasWidth:1400;
+                var deviceWidthMap={desktop:desktopCanvasWidth+"px",tablet:"768px",mobile:"375px"};
+                iframe.style.width=deviceWidthMap[previewDevice]||"100%";
+                iframe.style.maxWidth="100%";
+                try{
+                    var frameUrl=new URL(window.location.href);
+                    frameUrl.searchParams.set("preview_iframe","1");
+                    frameUrl.searchParams.set("preview_device",previewDevice);
+                    var nextSrc=frameUrl.pathname+frameUrl.search+frameUrl.hash;
+                    if(iframe.getAttribute("src")!==nextSrc)iframe.src=nextSrc;
+                }catch(_e){
+                    var frameParams=new URLSearchParams(window.location.search||"");
+                    frameParams.set("preview_iframe","1");
+                    frameParams.set("preview_device",previewDevice);
+                    var nextSrc=window.location.pathname+"?"+frameParams.toString();
+                    if(iframe.getAttribute("src")!==nextSrc)iframe.src=nextSrc;
+                }
+            };
             try{
-                var allowed={desktop:1,tablet:1,mobile:1};
                 var sp=new URLSearchParams(window.location.search||"");
-                var q=sp.get("preview_device")||sp.get("previewDevice")||sp.get("device")||"";
-                q=String(q||"").toLowerCase();
-                if(allowed[q]){previewDevice=q;hasDeviceParam=true;}
+                var q=normalizePreviewDevice(sp.get("preview_device")||sp.get("previewDevice")||sp.get("device")||"");
+                if(allowed[q]&&String(sp.get("preview_device")||sp.get("previewDevice")||sp.get("device")||"").trim()!==""){previewDevice=q;hasDeviceParam=true;}
             }catch(_e){}
             if(!hasDeviceParam){
                 try{
-                    var stored=localStorage.getItem("fbPreviewDevice");
-                    stored=String(stored||"").toLowerCase();
-                    if(stored==="tablet"||stored==="mobile"||stored==="desktop")previewDevice=stored;
+                    previewDevice=normalizePreviewDevice(localStorage.getItem("fbPreviewDevice"));
                 }catch(_e){}
             }
             if(!hasDeviceParam){
                 previewDevice="desktop";
-                try{localStorage.setItem("fbPreviewDevice","desktop");}catch(_e){}
             }
-
-            document.body.setAttribute("data-preview-device", previewDevice);
-            // Outer-mode only: keep the iframe synced with the selected device.
-            var maybeIframe=document.getElementById("previewDeviceFrame");
-            if(maybeIframe){
-                var deviceWidthMap={desktop:"100%",tablet:"768px",mobile:"375px"};
-                maybeIframe.style.width=deviceWidthMap[previewDevice]||"100%";
-                var frameParams=new URLSearchParams(window.location.search||"");
-                frameParams.set("preview_iframe","1");
-                frameParams.set("preview_device",previewDevice);
-                maybeIframe.src=window.location.pathname+"?"+frameParams.toString();
-            }
+            syncPreviewRuntimeState();
+            syncOuterPreviewUrl();
+            syncPreviewIframe();
 
             var deviceBtns=Array.from(document.querySelectorAll("[data-preview-device]")||[]);
             var setActiveDeviceUI=function(){
@@ -5803,21 +5936,11 @@
                 setActiveDeviceUI();
                 deviceBtns.forEach(function(btn){
                     btn.addEventListener("click",function(){
-                        var d=String(btn.getAttribute("data-preview-device")||"desktop").toLowerCase();
-                        if(!(d==="desktop"||d==="tablet"||d==="mobile"))d="desktop";
-                        previewDevice=d;
-                        try{localStorage.setItem("fbPreviewDevice",previewDevice);}catch(_e){}
-                        document.body.setAttribute("data-preview-device", previewDevice);
+                        previewDevice=normalizePreviewDevice(btn.getAttribute("data-preview-device")||"desktop");
+                        syncPreviewRuntimeState();
+                        syncOuterPreviewUrl();
                         setActiveDeviceUI();
-                        var iframe=document.getElementById("previewDeviceFrame");
-                        if(iframe){
-                            var deviceWidthMap={desktop:"100%",tablet:"768px",mobile:"375px"};
-                            iframe.style.width=deviceWidthMap[previewDevice]||"100%";
-                            var frameParams=new URLSearchParams(window.location.search||"");
-                            frameParams.set("preview_iframe","1");
-                            frameParams.set("preview_device",previewDevice);
-                            iframe.src=window.location.pathname+"?"+frameParams.toString();
-                        }
+                        syncPreviewIframe();
                         if(typeof window.__fbSchedulePreviewScale==="function"){
                             window.__fbSchedulePreviewScale();
                         }

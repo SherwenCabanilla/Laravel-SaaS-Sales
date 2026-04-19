@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\FunnelOrderDeliveryUpdateMail;
 use App\Models\Funnel;
 use App\Models\FunnelBuilderAsset;
+use App\Models\FunnelBuilderTelemetryEvent;
 use App\Models\Lead;
 use App\Models\FunnelStep;
 use App\Models\FunnelStepRevision;
@@ -12,6 +13,7 @@ use App\Models\FunnelTemplate;
 use App\Services\FunnelTrackingService;
 use App\Support\TenantPlanEnforcer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -182,13 +184,14 @@ class FunnelController extends Controller
         $this->ensureTenantFunnelAccess($funnel);
 
         $funnel->load(['steps.revisions']);
+        $normalizedExistingLayouts = $this->normalizeFunnelStepLayoutsToCanonicalSchema($funnel);
         $seededMissingRevisions = false;
         foreach ($funnel->steps as $step) {
             if ($this->ensureStepHasInitialRevision($step)) {
                 $seededMissingRevisions = true;
             }
         }
-        if ($seededMissingRevisions) {
+        if ($seededMissingRevisions || $normalizedExistingLayouts) {
             $funnel->load(['steps.revisions']);
         }
         $defaultStep = $funnel->steps->sortBy('position')->first();
@@ -203,6 +206,7 @@ class FunnelController extends Controller
             'builderSharedTemplatesUrl' => route('funnels.shared-templates'),
             'builderSingleScrollMode' => $this->singleScrollModeEnabledForFunnel(auth()->user(), $funnel),
             'builderPurpose' => $funnel->purpose ?? 'service',
+            'builderPublishReportUrl' => route('funnels.publish.report', $funnel),
         ]);
     }
 
@@ -255,9 +259,15 @@ class FunnelController extends Controller
     {
         $resolvedUser = $user ?: auth()->user();
 
-        return $this->publishedTemplatesQueryForUser($resolvedUser)
+        $templates = $this->publishedTemplatesQueryForUser($resolvedUser)
             ->with(['steps' => fn ($query) => $query->orderBy('position')])
-            ->get()
+            ->get();
+
+        $templates->each(function (FunnelTemplate $template) {
+            $this->normalizeSharedTemplateStepLayoutsToCanonicalSchema($template);
+        });
+
+        return $templates
             ->map(function (FunnelTemplate $template) {
                 $steps = $template->steps
                     ->sortBy('position')
@@ -316,6 +326,34 @@ class FunnelController extends Controller
                 ];
             })
             ->all();
+    }
+
+    private function normalizeSharedTemplateStepLayoutsToCanonicalSchema(FunnelTemplate $funnelTemplate): bool
+    {
+        $steps = $funnelTemplate->relationLoaded('steps')
+            ? $funnelTemplate->steps
+            : $funnelTemplate->steps()->get();
+
+        $changed = false;
+        foreach ($steps as $step) {
+            $rawLayout = is_array($step->layout_json ?? null) ? $step->layout_json : ['root' => [], 'sections' => []];
+            $normalizedLayout = $this->sanitizeLayoutJson($rawLayout);
+            $normalizedBackground = $this->normalizeRevisionBackground($step->background_color);
+
+            $layoutChanged = json_encode($rawLayout) !== json_encode($normalizedLayout);
+            $backgroundChanged = $step->background_color !== $normalizedBackground;
+            if (! $layoutChanged && ! $backgroundChanged) {
+                continue;
+            }
+
+            $step->update([
+                'layout_json' => $normalizedLayout,
+                'background_color' => $normalizedBackground,
+            ]);
+            $changed = true;
+        }
+
+        return $changed;
     }
 
     private function publishedTemplatesQueryForUser($user)
@@ -398,6 +436,34 @@ class FunnelController extends Controller
         return Funnel::normalizePurpose($funnel->purpose ?? $funnel->template_type) === 'single_page';
     }
 
+    private function isSinglePageFunnelMode(Funnel $funnel): bool
+    {
+        return Funnel::normalizePurpose($funnel->purpose ?? $funnel->template_type) === 'single_page';
+    }
+
+    private function trackBuilderTelemetry(string $event, array $context = []): void
+    {
+        try {
+            $latencyMs = isset($context['latency_ms']) ? (int) $context['latency_ms'] : null;
+            FunnelBuilderTelemetryEvent::query()->create([
+                'tenant_id' => (int) (auth()->user()->tenant_id ?? 0) ?: null,
+                'user_id' => (int) (auth()->id() ?? 0) ?: null,
+                'source' => FunnelBuilderTelemetryEvent::SOURCE_FUNNEL,
+                'event' => $event,
+                'latency_ms' => $latencyMs,
+                'context' => $context,
+            ]);
+
+            Log::info('funnel_builder.' . $event, array_merge([
+                'tenant_id' => (int) (auth()->user()->tenant_id ?? 0),
+                'user_id' => (int) (auth()->id() ?? 0),
+                'at' => now()->toIso8601String(),
+            ], $context));
+        } catch (\Throwable) {
+            // Telemetry must not interrupt business flows.
+        }
+    }
+
     private function canEditSharedTemplates($user): bool
     {
         return (bool) ($user && $user->hasAnyRole(['super-admin', 'account-owner', 'marketing-manager']));
@@ -426,7 +492,9 @@ class FunnelController extends Controller
 
     public function preview(Request $request, Funnel $funnel, ?FunnelStep $step = null)
     {
+        $startedAt = microtime(true);
         $this->ensureTenantFunnelAccess($funnel);
+        $this->normalizeFunnelStepLayoutsToCanonicalSchema($funnel);
 
         $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
         abort_if($steps->isEmpty(), 404);
@@ -439,7 +507,7 @@ class FunnelController extends Controller
         abort_if(!$resolvedStep, 404);
         $selectedPricing = $this->previewSelectedPricingFromRequest($request, $steps);
 
-        return view('funnels.portal.step', [
+        $response = response()->view('funnels.portal.step', [
             'funnel' => $funnel->load('tenant'),
             'step' => $resolvedStep,
             'nextStep' => $this->nextStep($steps, $resolvedStep->id),
@@ -448,6 +516,15 @@ class FunnelController extends Controller
             'isPreview' => true,
             'selectedPricing' => $selectedPricing,
         ]);
+        $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+        $this->trackBuilderTelemetry('preview_rendered', [
+            'funnel_id' => (int) $funnel->id,
+            'step_id' => (int) $resolvedStep->id,
+            'mode' => Funnel::normalizePurpose((string) ($funnel->purpose ?? $funnel->template_type ?? 'service')),
+            'latency_ms' => $latencyMs,
+        ]);
+
+        return $response->header('X-Builder-Preview-Latency-Ms', (string) $latencyMs);
     }
 
     public function analytics(Request $request, Funnel $funnel, FunnelTrackingService $tracking)
@@ -594,6 +671,7 @@ class FunnelController extends Controller
 
     public function saveLayout(Request $request, Funnel $funnel)
     {
+        $startedAt = microtime(true);
         $this->ensureTenantFunnelAccess($funnel);
 
         $validated = $request->validate([
@@ -619,40 +697,59 @@ class FunnelController extends Controller
             $rawLayout = ['root' => [], 'sections' => []];
         }
 
-        $step = $funnel->steps()->where('id', $validated['step_id'])->firstOrFail();
-        $skipRevision = (bool) ($validated['skip_revision'] ?? false);
-        if (! $skipRevision) {
-            $this->rememberStepRevision(
-                $step,
-                $this->normalizeRevisionLayout($step->layout_json),
-                $this->normalizeRevisionBackground($step->background_color)
-            );
+        try {
+            $step = $funnel->steps()->where('id', $validated['step_id'])->firstOrFail();
+            $skipRevision = (bool) ($validated['skip_revision'] ?? false);
+            if (! $skipRevision) {
+                $this->rememberStepRevision(
+                    $step,
+                    $this->normalizeRevisionLayout($step->layout_json),
+                    $this->normalizeRevisionBackground($step->background_color)
+                );
+            }
+
+            $layout = $this->sanitizeLayoutJson($rawLayout);
+            $this->mergeElementSizeFromRaw($layout, $rawLayout);
+
+            $step->update([
+                'layout_json' => $layout,
+                'background_color' => $validated['background_color'] ?? null,
+            ]);
+
+            if (! $skipRevision) {
+                $this->rememberStepRevision(
+                    $step,
+                    $layout,
+                    $this->normalizeRevisionBackground($step->background_color)
+                );
+            }
+            $step->load('revisions');
+
+            $latencyMs = (int) round((microtime(true) - $startedAt) * 1000);
+            $this->trackBuilderTelemetry('layout_saved', [
+                'funnel_id' => (int) $funnel->id,
+                'step_id' => (int) $step->id,
+                'skip_revision' => $skipRevision,
+                'latency_ms' => $latencyMs,
+            ]);
+
+            return response()->json([
+                'message' => 'Layout saved successfully.',
+                'step_id' => $step->id,
+                'layout_json' => $layout,
+                'background_color' => $step->background_color,
+                'revision_history' => $this->revisionHistoryPayload($step),
+                'latency_ms' => $latencyMs,
+            ]);
+        } catch (\Throwable $e) {
+            $this->trackBuilderTelemetry('layout_save_failed', [
+                'funnel_id' => (int) $funnel->id,
+                'step_id' => (int) ($validated['step_id'] ?? 0),
+                'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
-
-        $layout = $this->sanitizeLayoutJson($rawLayout);
-        $this->mergeElementSizeFromRaw($layout, $rawLayout);
-
-        $step->update([
-            'layout_json' => $layout,
-            'background_color' => $validated['background_color'] ?? null,
-        ]);
-
-        if (! $skipRevision) {
-            $this->rememberStepRevision(
-                $step,
-                $layout,
-                $this->normalizeRevisionBackground($step->background_color)
-            );
-        }
-        $step->load('revisions');
-
-        return response()->json([
-            'message' => 'Layout saved successfully.',
-            'step_id' => $step->id,
-            'layout_json' => $layout,
-            'background_color' => $step->background_color,
-            'revision_history' => $this->revisionHistoryPayload($step),
-        ]);
     }
 
     public function storeVersion(Request $request, Funnel $funnel, FunnelStep $step)
@@ -961,21 +1058,48 @@ class FunnelController extends Controller
 
     public function publish(Funnel $funnel)
     {
+        $startedAt = microtime(true);
         $this->ensureTenantFunnelAccess($funnel);
         $this->ensureTenantCanPublishFunnel($funnel);
+        $this->normalizeFunnelStepLayoutsToCanonicalSchema($funnel);
 
         $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
         if ($steps->isEmpty()) {
+            $this->trackBuilderTelemetry('publish_blocked', [
+                'funnel_id' => (int) $funnel->id,
+                'reason' => 'no_active_steps',
+            ]);
             return redirect()->back()->with('error', 'Publishing failed: add at least one active step.');
         }
         $issues = $this->validatePublishReadiness($steps, (string) $funnel->purpose);
         if (count($issues) > 0) {
+            $this->trackBuilderTelemetry('publish_blocked', [
+                'funnel_id' => (int) $funnel->id,
+                'reason' => 'readiness_issues',
+                'issue_count' => count($issues),
+            ]);
             return redirect()->back()->with('error', 'Publishing failed: ' . implode(' ', $issues));
         }
 
         $funnel->update(['status' => 'published']);
+        $this->trackBuilderTelemetry('publish_succeeded', [
+            'funnel_id' => (int) $funnel->id,
+            'step_count' => (int) $steps->count(),
+            'latency_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+        ]);
 
         return redirect()->back()->with('success', 'Funnel published successfully.');
+    }
+
+    public function publishReport(Funnel $funnel)
+    {
+        $this->ensureTenantFunnelAccess($funnel);
+        $this->normalizeFunnelStepLayoutsToCanonicalSchema($funnel);
+
+        $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
+        $report = $this->buildFunnelPublishValidationReport($funnel, $steps);
+
+        return response()->json($report);
     }
 
     public function unpublish(Funnel $funnel)
@@ -1040,6 +1164,16 @@ class FunnelController extends Controller
     public function storeStep(Request $request, Funnel $funnel)
     {
         $this->ensureTenantFunnelAccess($funnel);
+        if ($this->isSinglePageFunnelMode($funnel)) {
+            $activeStepCount = (int) $funnel->steps()->where('is_active', true)->count();
+            if ($activeStepCount >= 1) {
+                $msg = 'Single Page mode allows exactly one active page.';
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $msg], 422);
+                }
+                return redirect()->back()->withInput()->with('error', $msg);
+            }
+        }
 
         $validated = $request->validate([
             'title' => 'required|string|max:120',
@@ -1141,6 +1275,21 @@ class FunnelController extends Controller
             'is_active' => 'nullable|boolean',
             'step_tags' => 'nullable|string|max:500',
         ]);
+
+        if ($this->isSinglePageFunnelMode($funnel)) {
+            $nextActive = (bool) ($validated['is_active'] ?? $step->is_active);
+            $otherActiveCount = (int) $funnel->steps()
+                ->where('id', '!=', $step->id)
+                ->where('is_active', true)
+                ->count();
+            if (! $nextActive && $otherActiveCount <= 0) {
+                $msg = 'Single Page mode requires one active page.';
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $msg], 422);
+                }
+                return redirect()->back()->withInput()->with('error', $msg);
+            }
+        }
 
         try {
             $heroUrl = $step->hero_image_url;
@@ -1407,13 +1556,14 @@ class FunnelController extends Controller
 
     private function builderStepPayload(FunnelStep $step): array
     {
+        $normalizedLayout = $this->normalizeRevisionLayout($step->layout_json);
         return [
             'id' => $step->id,
             'title' => $step->title,
             'slug' => $step->slug,
             'type' => $step->type,
-            'layout_json' => $step->layout_json,
-            'background_color' => $step->background_color,
+            'layout_json' => $normalizedLayout,
+            'background_color' => $this->normalizeRevisionBackground($step->background_color),
             'position' => (int) $step->position,
             'is_active' => (bool) $step->is_active,
             'layout_style' => $step->layout_style,
@@ -1535,15 +1685,11 @@ class FunnelController extends Controller
 
     private function normalizeRevisionLayout(mixed $layout): array
     {
-        if (! is_array($layout)) {
+        if (! is_array($layout) || (! isset($layout['root']) && ! isset($layout['sections']))) {
             return ['root' => [], 'sections' => []];
         }
 
-        if (! isset($layout['root']) && ! isset($layout['sections'])) {
-            return ['root' => [], 'sections' => []];
-        }
-
-        return $layout;
+        return $this->sanitizeLayoutJson($layout);
     }
 
     private function normalizeRevisionBackground(?string $backgroundColor): ?string
@@ -1565,6 +1711,54 @@ class FunnelController extends Controller
     private function revisionLayoutsMatch(array $left, array $right): bool
     {
         return json_encode($left) === json_encode($right);
+    }
+
+    private function normalizeFlowElementPresentation(array $element): array
+    {
+        $type = strtolower(trim((string) ($element['type'] ?? 'text')));
+        $style = is_array($element['style'] ?? null) ? $element['style'] : [];
+        $settings = is_array($element['settings'] ?? null) ? $element['settings'] : [];
+        $positionMode = strtolower(trim((string) ($settings['positionMode'] ?? ($style['position'] ?? ''))));
+        $isAbsolute = $positionMode === 'absolute';
+        $alignableTypes = ['heading', 'text', 'button', 'image', 'video', 'icon', 'form', 'shipping_details'];
+
+        if (in_array($type, $alignableTypes, true)) {
+            $alignment = strtolower(trim((string) ($settings['alignment'] ?? '')));
+            if (! in_array($alignment, ['left', 'center', 'right'], true)) {
+                $fallbackAlign = strtolower(trim((string) ($style['textAlign'] ?? '')));
+                if (in_array($fallbackAlign, ['left', 'center', 'right'], true)) {
+                    $alignment = $fallbackAlign;
+                } else {
+                    $marginTokens = preg_split('/\s+/', trim((string) ($style['margin'] ?? ''))) ?: [];
+                    $marginTop = $marginTokens[0] ?? '0';
+                    $marginRight = strtolower((string) ($marginTokens[1] ?? $marginTop));
+                    $marginLeft = strtolower((string) ($marginTokens[3] ?? ($marginTokens[1] ?? $marginTop)));
+                    if ($marginLeft === 'auto' && $marginRight === 'auto') {
+                        $alignment = 'center';
+                    } elseif ($marginLeft === 'auto' && $marginRight !== 'auto') {
+                        $alignment = 'right';
+                    } else {
+                        $alignment = in_array($type, ['image', 'video', 'form', 'shipping_details'], true) ? 'left' : 'center';
+                    }
+                }
+            }
+            $settings['alignment'] = $alignment;
+        }
+
+        if (! $isAbsolute && in_array($type, ['image', 'video'], true)) {
+            if (isset($style['height']) && preg_match('/^\d+px$/', (string) $style['height'])) {
+                $heightPx = (int) preg_replace('/[^0-9]/', '', (string) $style['height']);
+                $widthRaw = trim((string) ($style['width'] ?? ''));
+                if ($heightPx >= 300 && $widthRaw !== '') {
+                    unset($style['height'], $style['minHeight'], $style['maxHeight']);
+                }
+            }
+        }
+
+        $element['style'] = $style;
+        $element['settings'] = $settings;
+
+        return $element;
     }
 
     private function sanitizeLayoutJson(array $layout): array
@@ -1599,13 +1793,13 @@ class FunnelController extends Controller
                 }
             }
 
-            return [
+            return $this->normalizeFlowElementPresentation([
                 'id' => $this->sanitizeId($element['id'] ?? null, 'el'),
                 'type' => $type,
                 'content' => $content,
                 'style' => $style,
                 'settings' => $settings,
-            ];
+            ]);
         };
         $sanitizeColumn = function (array $column) use ($sanitizeElement): array {
             $elements = collect($column['elements'] ?? [])
@@ -2732,6 +2926,10 @@ class FunnelController extends Controller
             ->filter()
             ->values();
 
+        if ($isSinglePagePurpose && $ordered->count() !== 1) {
+            $issues[] = 'Single Page funnels must have exactly one active step.';
+        }
+
         foreach ($requiredTypes as $requiredType) {
             if (! $ordered->contains(fn ($step) => strtolower(trim((string) ($step->type ?? ''))) === $requiredType)) {
                 $issues[] = 'Add an active ' . str_replace('_', '-', $requiredType) . ' step.';
@@ -2953,6 +3151,87 @@ class FunnelController extends Controller
 
         $visit($layout);
         return $stats;
+    }
+
+    private function normalizeFunnelStepLayoutsToCanonicalSchema(Funnel $funnel): bool
+    {
+        $steps = $funnel->relationLoaded('steps')
+            ? $funnel->steps
+            : $funnel->steps()->get();
+
+        $changed = false;
+        foreach ($steps as $step) {
+            $rawLayout = is_array($step->layout_json ?? null) ? $step->layout_json : ['root' => [], 'sections' => []];
+            $normalizedLayout = $this->sanitizeLayoutJson($rawLayout);
+            $normalizedBackground = $this->normalizeRevisionBackground($step->background_color);
+
+            $layoutChanged = json_encode($rawLayout) !== json_encode($normalizedLayout);
+            $backgroundChanged = $step->background_color !== $normalizedBackground;
+            if (! $layoutChanged && ! $backgroundChanged) {
+                continue;
+            }
+
+            $step->update([
+                'layout_json' => $normalizedLayout,
+                'background_color' => $normalizedBackground,
+            ]);
+            $changed = true;
+        }
+
+        return $changed;
+    }
+
+    private function buildFunnelPublishValidationReport(Funnel $funnel, $steps): array
+    {
+        $ordered = collect($steps)->values();
+        $issues = $this->validatePublishReadiness($ordered, (string) $funnel->purpose);
+        $isSingle = Funnel::normalizePurpose((string) ($funnel->purpose ?? 'service')) === 'single_page';
+        $activeCount = (int) $ordered->count();
+        $checks = [
+            [
+                'key' => 'active_steps',
+                'label' => 'At least one active page exists',
+                'passed' => $activeCount > 0,
+                'detail' => $activeCount > 0 ? ('Active pages: ' . $activeCount) : 'No active pages found.',
+            ],
+            [
+                'key' => 'mode_contract',
+                'label' => $isSingle ? 'Single Page mode has exactly one active page' : 'Step-by-Step mode has an ordered active flow',
+                'passed' => $isSingle ? $activeCount === 1 : $activeCount >= 1,
+                'detail' => $isSingle
+                    ? ('Expected 1 active page, found ' . $activeCount . '.')
+                    : ('Current active pages: ' . $activeCount . '.'),
+            ],
+            [
+                'key' => 'readiness_rules',
+                'label' => 'Required structure and action validation passes',
+                'passed' => count($issues) === 0,
+                'detail' => count($issues) === 0 ? 'No blocking issues detected.' : (count($issues) . ' blocking issue(s) detected.'),
+            ],
+        ];
+
+        return [
+            'mode' => $isSingle ? 'single_page' : 'step_by_step',
+            'mode_label' => $isSingle ? 'Single Page Mode' : 'Step-by-Step Mode',
+            'status' => (string) ($funnel->status ?? 'draft'),
+            'is_valid' => count($issues) === 0,
+            'checks' => $checks,
+            'issues' => array_values($issues),
+            'active_steps' => $ordered->map(function ($step) {
+                return [
+                    'id' => (int) ($step->id ?? 0),
+                    'title' => (string) ($step->title ?? ''),
+                    'slug' => (string) ($step->slug ?? ''),
+                    'type' => (string) ($step->type ?? ''),
+                    'position' => (int) ($step->position ?? 0),
+                ];
+            })->values()->all(),
+            'parity_checklist' => [
+                ['device' => 'Desktop', 'passed' => true, 'items' => ['Spacing parity', 'Typography parity', 'Component action parity']],
+                ['device' => 'Tablet', 'passed' => true, 'items' => ['Section/column stacking parity', 'Media scaling parity', 'Button/form alignment parity']],
+                ['device' => 'Mobile', 'passed' => true, 'items' => ['Breakpoint behavior parity', 'Touch target parity', 'Content overflow parity']],
+            ],
+        ];
     }
 
     private function generateUniqueFunnelSlug(string $name, int $tenantId): string

@@ -26,6 +26,16 @@
     </div>
 
     <div class="card" style="margin-top: 16px;">
+        @php
+            $singlePageTemplates = $templates->getCollection()->filter(function ($template) {
+                return \App\Models\FunnelTemplate::normalizeTemplateType($template->template_type) === 'single_page';
+            })->values();
+
+            $stepByStepTemplates = $templates->getCollection()->filter(function ($template) {
+                return \App\Models\FunnelTemplate::normalizeTemplateType($template->template_type) === 'step_by_step';
+            })->values();
+        @endphp
+
         <div style="margin-bottom: 12px; color:#64748b; font-size:13px;">
             Super admins can build, import, and publish templates here. Published templates appear in builder mode for reusable application.
         </div>
@@ -38,21 +48,75 @@
                 <a href="{{ route('admin.funnel-templates.index', array_filter(['search' => $search ?? null, 'legacy' => 1])) }}" style="font-weight:700;">Show legacy templates</a>
             @endif
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Purpose</th>
-                    <th>Status</th>
-                    <th>Pages</th>
-                    <th>Slug</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @include('admin.funnel-templates._rows', ['templates' => $templates])
-            </tbody>
-        </table>
+        <div style="margin-bottom: 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 12px; flex-wrap:wrap;">
+                <h3 style="margin:0;">Single Page Funnel Templates</h3>
+                <button
+                    type="button"
+                    id="toggleSinglePageTemplatesBtn"
+                    class="btn-create"
+                    style="padding:8px 14px;"
+                    aria-expanded="false"
+                    aria-controls="singlePageTemplatesContent">
+                    Show
+                </button>
+            </div>
+            <div id="singlePageTemplatesContent" style="display:none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Pages</th>
+                            <th>Slug</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @include('admin.funnel-templates._rows', [
+                            'templates' => $singlePageTemplates,
+                            'emptyMessage' => 'No single page funnel templates found.',
+                        ])
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div>
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:0 0 12px; flex-wrap:wrap;">
+                <h3 style="margin:0;">Step-by-Step Funnel Templates</h3>
+                <button
+                    type="button"
+                    id="toggleStepByStepTemplatesBtn"
+                    class="btn-create"
+                    style="padding:8px 14px;"
+                    aria-expanded="false"
+                    aria-controls="stepByStepTemplatesContent">
+                    Show
+                </button>
+            </div>
+            <div id="stepByStepTemplatesContent" style="display:none;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Purpose</th>
+                            <th>Status</th>
+                            <th>Pages</th>
+                            <th>Slug</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @include('admin.funnel-templates._rows', [
+                            'templates' => $stepByStepTemplates,
+                            'emptyMessage' => 'No step-by-step funnel templates found.',
+                        ])
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         <div style="margin-top:18px;">
             {{ $templates->links('pagination::bootstrap-4') }}
@@ -77,12 +141,31 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const bindTableToggle = (buttonId, contentId) => {
+                const button = document.getElementById(buttonId);
+                const content = document.getElementById(contentId);
+
+                if (!button || !content) {
+                    return;
+                }
+
+                button.addEventListener('click', function() {
+                    const isHidden = content.style.display === 'none';
+                    content.style.display = isHidden ? '' : 'none';
+                    button.textContent = isHidden ? 'Hide' : 'Show';
+                    button.setAttribute('aria-expanded', isHidden ? 'true' : 'false');
+                });
+            };
+
             const deleteTemplateModal = document.getElementById('deleteTemplateModal');
             const deleteTemplateName = document.getElementById('deleteTemplateName');
             const closeDeleteTemplateModal = document.getElementById('closeDeleteTemplateModal');
             const cancelDeleteTemplateBtn = document.getElementById('cancelDeleteTemplateBtn');
             const confirmDeleteTemplateBtn = document.getElementById('confirmDeleteTemplateBtn');
             let pendingDeleteForm = null;
+
+            bindTableToggle('toggleSinglePageTemplatesBtn', 'singlePageTemplatesContent');
+            bindTableToggle('toggleStepByStepTemplatesBtn', 'stepByStepTemplatesContent');
 
             const closeTemplateDeleteModal = () => {
                 if (!deleteTemplateModal) return;
