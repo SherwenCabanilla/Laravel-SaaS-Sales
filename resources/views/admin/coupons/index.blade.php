@@ -2,6 +2,20 @@
 
 @section('title', 'Platform Coupons')
 
+@section('styles')
+    <style>
+        .sa-table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sa-table {
+            min-width: 980px;
+        }
+    </style>
+@endsection
+
 @section('content')
     @php
         $openCreateModal = $errors->any() || session('coupon_created');
@@ -20,12 +34,11 @@
     @endif
 
     <div class="actions" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
-        <button type="button" id="openAdminCouponWizard" class="btn-create"><i class="fas fa-plus"></i> Create Coupon</button>
-        <form method="GET" action="{{ route('admin.coupons.index') }}" style="display:flex;gap:10px;align-items:center;">
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Search coupon code or title"
-                style="padding:10px 12px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;min-width:280px;">
-            <button type="submit" class="btn-create" style="padding:10px 16px;">Search</button>
-        </form>
+        <button type="button" id="openAdminCouponWizard" class="btn-create btn-create--icon-expand" aria-label="Create Coupon"><i class="fas fa-plus"></i><span class="btn-create__label">Create Coupon</span></button>
+        <div class="search-box">
+            <input type="text" id="searchInput" value="{{ request('search') }}" placeholder="🔍 Search coupon code or title"
+                style="padding:10px 12px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;width:300px;">
+        </div>
     </div>
 
     <div class="card">
@@ -44,52 +57,13 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @forelse($coupons as $coupon)
-                        <tr>
-                            <td style="font-weight:800;letter-spacing:.08em;">{{ $coupon->code }}</td>
-                            <td>{{ $coupon->title ?: 'Untitled coupon' }}</td>
-                            <td>
-                                @if($coupon->discount_type === \App\Models\Coupon::DISCOUNT_PERCENT)
-                                    {{ number_format((float) $coupon->discount_value, 2) }}%
-                                @else
-                                    PHP {{ number_format((float) $coupon->discount_value, 2) }}
-                                @endif
-                            </td>
-                            <td>
-                                {{ $coupon->usage_mode === \App\Models\Coupon::USAGE_SINGLE ? 'Single use' : 'Multi use' }}
-                                @if($coupon->max_total_uses)
-                                    <div style="font-size:12px;color:#64748b;">Max {{ $coupon->max_total_uses }} total</div>
-                                @endif
-                            </td>
-                            <td>{{ ucfirst($coupon->status) }}</td>
-                            <td>
-                                @if($coupon->assignedTenants->isEmpty())
-                                    <span style="color:#64748b;">None</span>
-                                @else
-                                    {{ $coupon->assignedTenants->pluck('company_name')->implode(', ') }}
-                                @endif
-                            </td>
-                            <td>{{ (int) $coupon->times_used }}</td>
-                            <td style="white-space:nowrap;">
-                                <a href="{{ route('admin.coupons.edit', $coupon) }}" class="btn-create" style="padding:8px 12px;">Edit</a>
-                                <form method="POST" action="{{ route('admin.coupons.destroy', $coupon) }}" style="display:inline-block;" onsubmit="return confirm('Delete this coupon?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn-create" style="padding:8px 12px;background:#991b1b;">Delete</button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" style="text-align:center;color:#64748b;">No platform coupons yet.</td>
-                        </tr>
-                    @endforelse
+                <tbody id="tableBody">
+                    @include('admin.coupons._rows', ['coupons' => $coupons])
                 </tbody>
             </table>
         </div>
 
-        <div style="margin-top:20px;">
+        <div style="margin-top:20px;" id="paginationLinks">
             {{ $coupons->links('pagination::bootstrap-4') }}
         </div>
     </div>
@@ -257,7 +231,11 @@
             const generateBtn = document.getElementById('adminGenerateCouponCodeBtn');
             const hint = document.getElementById('adminCouponCodeModeHint');
             const modeInputs = document.querySelectorAll('input[name="code_mode"]');
+            const searchInput = document.getElementById('searchInput');
+            const tableBody = document.getElementById('tableBody');
+            const paginationLinks = document.getElementById('paginationLinks');
             let currentStep = {{ $errors->has('tenant_ids') || $errors->has('tenant_ids.*') ? 3 : (($errors->has('discount_type') || $errors->has('discount_value') || $errors->has('usage_mode') || $errors->has('max_total_uses') || $errors->has('max_uses_per_user') || $errors->has('starts_at') || $errors->has('ends_at')) ? 2 : 1) }};
+            let searchTimeout = null;
 
             const openModal = () => backdrop.style.display = 'flex';
             const closeModal = () => backdrop.style.display = 'none';
@@ -329,6 +307,30 @@
                 }
                 syncCodeMode();
             }));
+
+            if (searchInput && tableBody && paginationLinks) {
+                searchInput.addEventListener('keyup', function () {
+                    clearTimeout(searchTimeout);
+                    const query = searchInput.value;
+                    if (query.length > 0 && query.length < 2) return;
+
+                    searchTimeout = setTimeout(() => {
+                        fetch(`{{ route('admin.coupons.index') }}?search=${encodeURIComponent(query)}`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        })
+                        .then((response) => response.text())
+                        .then((html) => {
+                            tableBody.innerHTML = html;
+                            if (query.length > 0) {
+                                paginationLinks.style.display = 'none';
+                            } else {
+                                paginationLinks.style.display = 'block';
+                                window.location.reload();
+                            }
+                        });
+                    }, 300);
+                });
+            }
 
             syncCodeMode();
             renderStep();

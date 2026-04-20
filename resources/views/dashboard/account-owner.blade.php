@@ -19,6 +19,11 @@
     $servicePaidRevenue = (float) ($serviceSalesTotal ?? 0);
     $physicalPaidRevenue = (float) ($physicalProductSalesTotal ?? 0);
     $teamActivityOpen = request()->has('activity_page');
+    $usageUsers = (int) data_get($analyticsSummary, 'usage.users.used', 0);
+    $usageFunnels = (int) data_get($analyticsSummary, 'usage.funnels.used', 0);
+    $usageLeads = (int) data_get($analyticsSummary, 'usage.leads.used', 0);
+    $availableCoupons = (int) (($activeCouponCount ?? 0) + ($platformCouponCount ?? 0));
+    $conversionTone = $conversionRate >= 20 ? 'positive' : ($conversionRate >= 10 ? 'warning' : 'danger');
 @endphp
 
 @section('content')
@@ -82,55 +87,118 @@
         </div>
     @endif
 
-    <div class="kpi-cards">
-        <div class="card">
-            <h3>Leads This Month</h3>
-            <p>{{ $leadsThisMonth }}</p>
-        </div>
-        <div class="card">
-            <h3>Closed Won</h3>
-            <p>{{ $wonCount }}</p>
-        </div>
-        <div class="card">
-            <h3>Closed Lost</h3>
-            <p>{{ $lostCount }}</p>
-        </div>
-        <div class="card">
-            <h3>Conversion Rate</h3>
-            <p>{{ $conversionRate }}%</p>
-        </div>
-        <div class="card">
-            <h3>Funnel Paid Revenue</h3>
-            <p>{{ number_format($revenueTotal, 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Service Sales</h3>
-            <p>{{ number_format($servicePaidRevenue, 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Physical Product Sales</h3>
-            <p>{{ number_format($physicalPaidRevenue, 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Total Users</h3>
-            <p>{{ data_get($analyticsSummary, 'usage.users.used', 0) }}</p>
-        </div>
-        <div class="card">
-            <h3>Total Funnels</h3>
-            <p>{{ data_get($analyticsSummary, 'usage.funnels.used', 0) }}</p>
-        </div>
-        <div class="card">
-            <h3>Total Leads</h3>
-            <p>{{ data_get($analyticsSummary, 'usage.leads.used', 0) }}</p>
-        </div>
-        <div class="card">
-            <h3>Active Coupons</h3>
-            <p>{{ $activeCouponCount ?? 0 }}</p>
-        </div>
-        <div class="card">
-            <h3>Platform Coupons</h3>
-            <p>{{ $platformCouponCount ?? 0 }}</p>
-        </div>
+    <div class="admin-kpi-board">
+        <section class="admin-kpi-group" aria-label="Pipeline Overview">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Pipeline Overview</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--4">
+                <article class="admin-kpi-card admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Leads This Month</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-calendar-alt" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($leadsThisMonth) }}</div>
+                    <div class="admin-kpi-card__meta">New leads captured in the current month</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--success">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Closed Won</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-check-circle" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($wonCount) }}</div>
+                    <div class="admin-kpi-card__meta">Deals successfully converted to revenue</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--danger">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Closed Lost</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-times-circle" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($lostCount) }}</div>
+                    <div class="admin-kpi-card__meta">Opportunities that did not convert</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--{{ $conversionTone }}">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Conversion Rate</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-percent" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($conversionRate, 2) }}<span class="admin-kpi-card__suffix">%</span></div>
+                    <div class="admin-kpi-card__meta">Share of tracked opportunities that closed won</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="admin-kpi-group" aria-label="Revenue Snapshot">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Revenue Snapshot</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--3">
+                <article class="admin-kpi-card admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Funnel Paid Revenue</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-coins" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format($revenueTotal, 2) }}</div>
+                    <div class="admin-kpi-card__meta">Combined paid revenue from all funnel transactions</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Service Sales</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-briefcase" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format($servicePaidRevenue, 2) }}</div>
+                    <div class="admin-kpi-card__meta">Revenue earned from service-based offers</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Physical Product Sales</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-box" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format($physicalPaidRevenue, 2) }}</div>
+                    <div class="admin-kpi-card__meta">Revenue earned from physical product purchases</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="admin-kpi-group" aria-label="Workspace Health">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Workspace Health</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--4">
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Total Users</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-users" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($usageUsers) }}</div>
+                    <div class="admin-kpi-card__meta">Team members currently using this workspace</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Total Funnels</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-filter" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($usageFunnels) }}</div>
+                    <div class="admin-kpi-card__meta">Funnels created across the account</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Total Leads</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-bullseye" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($usageLeads) }}</div>
+                    <div class="admin-kpi-card__meta">Lead records currently stored in the CRM</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--warning">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Available Coupons</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-tags" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($availableCoupons) }}</div>
+                    <div class="admin-kpi-card__meta">{{ (int) ($activeCouponCount ?? 0) }} active and {{ (int) ($platformCouponCount ?? 0) }} platform coupons</div>
+                </article>
+            </div>
+        </section>
     </div>
 
     <div class="charts">

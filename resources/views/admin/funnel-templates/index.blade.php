@@ -9,8 +9,8 @@
 
     <div class="actions" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <a href="{{ route('admin.funnel-templates.create') }}" class="btn-create"><i class="fas fa-plus"></i> New Template</a>
-            <a href="{{ route('admin.funnel-templates.import') }}" class="btn-create" style="background:#fff; color:var(--theme-primary, #240E35); border:1px solid var(--theme-border, #E6E1EF);"><i class="fas fa-file-import"></i> Import JSON Template</a>
+            <a href="{{ route('admin.funnel-templates.create') }}" class="btn-create btn-create--icon-expand" aria-label="New Template"><i class="fas fa-plus"></i><span class="btn-create__label">New Template</span></a>
+            <a href="{{ route('admin.funnel-templates.import') }}" class="btn-create btn-create--icon-expand" style="background:#fff; color:var(--theme-primary, #240E35); border:1px solid var(--theme-border, #E6E1EF);" aria-label="Import JSON Template"><i class="fas fa-file-import"></i><span class="btn-create__label">Import JSON Template</span></a>
         </div>
         <form method="GET" action="{{ route('admin.funnel-templates.index') }}">
             @if(!empty($showLegacy))
@@ -20,7 +20,7 @@
                 type="text"
                 name="search"
                 value="{{ $search ?? '' }}"
-                placeholder="Search templates..."
+                placeholder="🔍 Search templates..."
                 style="width:min(320px, 100%); padding:10px 12px; border:1px solid var(--theme-border, #E6E1EF); border-radius:10px; background:#fff;">
         </form>
     </div>

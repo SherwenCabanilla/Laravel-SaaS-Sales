@@ -32,23 +32,46 @@
         </div>
     </div>
 
-    <div class="kpi-cards">
-        <div class="card">
-            <h3>Subscription Status</h3>
-            <p>{{ $subscriptionStatus }}</p>
-        </div>
-        <div class="card">
-            <h3>Subscription Plan</h3>
-            <p>{{ $subscriptionPlan }}</p>
-        </div>
-        <div class="card">
-            <h3>Profile</h3>
-            <p style="font-size: 18px;">{{ auth()->user()->name }}</p>
-        </div>
-        <div class="card">
-            <h3>Company</h3>
-            <p style="font-size: 18px;">{{ $companyName }}</p>
-        </div>
+    <div class="admin-kpi-board">
+        <section class="admin-kpi-group" aria-label="Customer Overview">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Customer Overview</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--4">
+                <article class="admin-kpi-card admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Subscription Status</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-signal" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value admin-kpi-card__value--text">{{ $subscriptionStatus }}</div>
+                    <div class="admin-kpi-card__meta">Current billing and access state for your account</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Subscription Plan</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-layer-group" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value admin-kpi-card__value--text">{{ $subscriptionPlan }}</div>
+                    <div class="admin-kpi-card__meta">Plan currently attached to your tenant workspace</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Profile</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-user" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value admin-kpi-card__value--text">{{ auth()->user()->name }}</div>
+                    <div class="admin-kpi-card__meta">Primary account identity for this customer portal</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Company</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-building" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value admin-kpi-card__value--text">{{ $companyName }}</div>
+                    <div class="admin-kpi-card__meta">Organization currently associated with your login</div>
+                </article>
+            </div>
+        </section>
     </div>
 
     <div class="card">

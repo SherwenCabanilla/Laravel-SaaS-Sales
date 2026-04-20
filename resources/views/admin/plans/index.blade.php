@@ -12,9 +12,9 @@
     </div>
 
     <div class="actions" style="display:flex;justify-content:space-between;align-items:center;">
-        <a href="{{ route('admin.plans.create') }}" class="btn-create"><i class="fas fa-plus"></i> Add New Plan</a>
+        <a href="{{ route('admin.plans.create') }}" class="btn-create btn-create--icon-expand" aria-label="Add New Plan"><i class="fas fa-plus"></i><span class="btn-create__label">Add New Plan</span></a>
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search plans..."
+            <input type="text" id="searchInput" placeholder="🔍 Search plans..."
                 style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 300px;">
         </div>
     </div>

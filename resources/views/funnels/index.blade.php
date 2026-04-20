@@ -78,7 +78,7 @@
                 name="search"
                 value="{{ $search ?? '' }}"
                 class="funnels-search-input"
-                placeholder="Search funnels...">
+                placeholder="🔍 Search funnels...">
         </form>
     </div>
 
