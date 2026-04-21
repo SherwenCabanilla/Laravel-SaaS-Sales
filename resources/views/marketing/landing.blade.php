@@ -314,15 +314,6 @@
                             <label for="email" style="display:block;margin-bottom:6px;font-weight:600;color:#0F172A;">Email Address</label>
                             <input id="email" name="email" type="email" maxlength="255" required value="{{ old('email', (string) ($googleVerified['email'] ?? $googleContext['email'] ?? '')) }}" {{ $hasGoogleVerified ? 'readonly' : '' }} style="width:100%;padding:10px 12px;border:1px solid #CBD5E1;border-radius:10px;">
                             <small style="display:block;margin-top:6px;color:#280137;">Please enter a valid email address</small>
-                            <div style="display:flex;align-items:center;gap:12px;margin-top:12px;color:#64748B;">
-                                <span style="flex:1;height:1px;background:#CBD5E1;"></span>
-                                <span style="font-size:12px;font-weight:700;letter-spacing:.08em;">OR</span>
-                                <span style="flex:1;height:1px;background:#CBD5E1;"></span>
-                            </div>
-                            <button type="button" id="onboardingGoogleButton" style="margin:10px auto 0;padding:10px 16px;border:1px solid #CBD5E1;border-radius:10px;background:#FFFFFF;color:#0F172A;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">
-                                <span aria-hidden="true" style="display:inline-flex;width:18px;height:18px;border-radius:50%;align-items:center;justify-content:center;background:#fff;border:1px solid #CBD5E1;color:#ea4335;font-weight:800;font-size:12px;">G</span>
-                                Continue with Google
-                            </button>
                         </div>
 
                         <div>
@@ -343,7 +334,11 @@
 
                     <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap;">
                         <button type="button" id="onboardingModalCancel" style="padding:10px 16px;border:none;border-radius:10px;background:#E2E8F0;color:#0F172A;font-weight:600;cursor:pointer;">Cancel</button>
-                        <button type="submit" id="onboardingContinueButton" style="display:none;padding:10px 16px;border:none;border-radius:10px;background:#240E35;color:#ffffff;font-weight:700;cursor:pointer;">Continue</button>
+                        <button type="button" id="onboardingGoogleButton" style="padding:10px 16px;border:1px solid #CBD5E1;border-radius:10px;background:#FFFFFF;color:#0F172A;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                            <span aria-hidden="true" style="display:inline-flex;width:18px;height:18px;border-radius:50%;align-items:center;justify-content:center;background:#fff;border:1px solid #CBD5E1;color:#ea4335;font-weight:800;font-size:12px;">G</span>
+                            Continue with Google
+                        </button>
+                        <button type="submit" style="padding:10px 16px;border:none;border-radius:10px;background:#240E35;color:#ffffff;font-weight:700;cursor:pointer;">Continue to Payment</button>
                     </div>
                 </form>
                 <form id="landingGoogleSignupForm" method="POST" action="{{ route('auth.google.signup.redirect') }}" style="display:none;">
@@ -435,35 +430,8 @@
         const onboardingModalClose = document.getElementById('onboardingModalClose');
         const onboardingModalCancel = document.getElementById('onboardingModalCancel');
         const onboardingForm = document.getElementById('landingOnboardingForm');
-        const onboardingContinueButton = document.getElementById('onboardingContinueButton');
         const onboardingGoogleButton = document.getElementById('onboardingGoogleButton');
         const landingGoogleSignupForm = document.getElementById('landingGoogleSignupForm');
-
-        const trimFieldValue = (field) => String(field?.value || '').trim();
-
-        const isOnboardingFormComplete = () => {
-            if (!onboardingForm) return false;
-
-            const fullName = onboardingForm.querySelector('#full_name');
-            const email = onboardingForm.querySelector('#email');
-            const mobile = onboardingForm.querySelector('#mobile');
-            const companyName = onboardingForm.querySelector('#company_name');
-            const plan = onboardingForm.querySelector('#onboardingPlanInput');
-            const emailValue = trimFieldValue(email);
-            const mobileValue = trimFieldValue(mobile);
-
-            return trimFieldValue(fullName) !== ''
-                && trimFieldValue(companyName) !== ''
-                && trimFieldValue(plan) !== ''
-                && emailValue !== ''
-                && (!email || email.checkValidity())
-                && /^09\d{9}$/.test(mobileValue);
-        };
-
-        const syncOnboardingContinueButton = () => {
-            if (!onboardingContinueButton) return;
-            onboardingContinueButton.style.display = isOnboardingFormComplete() ? 'inline-flex' : 'none';
-        };
 
         const openOnboardingModal = (planCode) => {
             if (!onboardingModal) return;
@@ -475,7 +443,6 @@
             }
             onboardingModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            syncOnboardingContinueButton();
         };
 
         const closeOnboardingModal = () => {
@@ -486,20 +453,18 @@
 
         const validateOnboardingForm = () => {
             if (!onboardingForm) return false;
+            const nativeValid = onboardingForm.reportValidity();
+            if (!nativeValid) return false;
             const mobileInput = onboardingForm.querySelector('#mobile');
             if (mobileInput) {
-                const mobileValue = trimFieldValue(mobileInput);
-                if (mobileValue !== '' && !/^09\d{9}$/.test(mobileValue)) {
+                const mobileValue = String(mobileInput.value || '').trim();
+                const isValidMobile = /^09\d{9}$/.test(mobileValue);
+                if (!isValidMobile) {
                     mobileInput.setCustomValidity('Mobile number must be in 09XXXXXXXXX format.');
-                } else {
-                    mobileInput.setCustomValidity('');
+                    onboardingForm.reportValidity();
+                    return false;
                 }
-            }
-
-            const nativeValid = onboardingForm.reportValidity();
-            if (!nativeValid) {
-                syncOnboardingContinueButton();
-                return false;
+                mobileInput.setCustomValidity('');
             }
 
             return true;
@@ -541,18 +506,6 @@
                 landingGoogleSignupForm.submit();
             });
         }
-        if (onboardingForm) {
-            onboardingForm.querySelectorAll('input').forEach((field) => {
-                field.addEventListener('input', syncOnboardingContinueButton);
-                field.addEventListener('change', syncOnboardingContinueButton);
-            });
-
-            onboardingForm.addEventListener('submit', (event) => {
-                if (!validateOnboardingForm()) {
-                    event.preventDefault();
-                }
-            });
-        }
         document.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') {
                 closeOnboardingModal();
@@ -562,8 +515,6 @@
         @if(session('open_onboarding_modal') || $errors->any())
             openOnboardingModal(@json((string) request('plan', 'growth')));
         @endif
-
-        syncOnboardingContinueButton();
 
         const setActiveNavHash = (hash) => {
             if (!landingNav) return;

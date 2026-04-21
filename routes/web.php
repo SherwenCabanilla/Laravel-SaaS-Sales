@@ -101,7 +101,6 @@ Route::middleware(['auth', 'tenant.subscription', 'role:super-admin'])->group(fu
     Route::put('/admin/funnel-templates/{funnel_template}', [AdminFunnelTemplateController::class, 'update'])->name('admin.funnel-templates.update');
     Route::delete('/admin/funnel-templates/{funnel_template}', [AdminFunnelTemplateController::class, 'destroy'])->name('admin.funnel-templates.destroy');
     Route::post('/admin/funnel-templates/{funnel_template}/publish', [AdminFunnelTemplateController::class, 'publish'])->name('admin.funnel-templates.publish');
-    Route::get('/admin/funnel-templates/{funnel_template}/publish-report', [AdminFunnelTemplateController::class, 'publishReport'])->name('admin.funnel-templates.publish.report');
     Route::post('/admin/funnel-templates/{funnel_template}/unpublish', [AdminFunnelTemplateController::class, 'unpublish'])->name('admin.funnel-templates.unpublish');
     Route::get('/admin/funnel-templates/{funnel_template}/preview/{step?}', [AdminFunnelTemplateController::class, 'preview'])->name('admin.funnel-templates.preview');
     Route::get('/admin/funnel-templates/{funnel_template}/test/{step?}', [AdminFunnelTemplateController::class, 'test'])->name('admin.funnel-templates.test');
@@ -192,7 +191,6 @@ Route::middleware(['auth', 'tenant.subscription', 'role:sales-agent,marketing-ma
         Route::post('/funnels/{funnel}/builder/assets/delete', [FunnelController::class, 'destroyBuilderAssets'])->name('funnels.builder.assets.destroy');
         Route::post('/funnels/{funnel}/builder/upload-image', [FunnelController::class, 'uploadBuilderImage'])->name('funnels.builder.image.upload');
         Route::post('/funnels/{funnel}/publish', [FunnelController::class, 'publish'])->name('funnels.publish');
-        Route::get('/funnels/{funnel}/publish-report', [FunnelController::class, 'publishReport'])->name('funnels.publish.report');
         Route::post('/funnels/{funnel}/unpublish', [FunnelController::class, 'unpublish'])->name('funnels.unpublish');
         Route::get('/funnels/{funnel}/analytics', [FunnelController::class, 'analytics'])->name('funnels.analytics');
         Route::get('/funnels/{funnel}/analytics/export', [FunnelController::class, 'exportAnalytics'])->name('funnels.analytics.export');
