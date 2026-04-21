@@ -765,6 +765,7 @@ table tr:hover {
     outline-offset: 2px;
 }
 
+
 table a {
     color: var(--theme-primary, #240E35);
     text-decoration: none;
