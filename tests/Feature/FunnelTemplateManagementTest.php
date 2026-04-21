@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Funnel;
 use App\Models\FunnelTemplate;
+use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -26,6 +27,8 @@ class FunnelTemplateManagementTest extends TestCase
         $template = FunnelTemplate::query()->firstOrFail();
 
         $createResponse->assertRedirect(route('admin.funnel-templates.edit', $template));
+        $this->assertSame(FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP, $template->template_type);
+        $this->assertContains(FunnelTemplate::PURPOSE_TAG_PREFIX . 'service', $template->template_tags ?? []);
         $this->assertDatabaseCount('funnel_template_steps', 5);
 
         $publishResponse = $this->actingAs($admin)->post(route('admin.funnel-templates.publish', $template));
@@ -49,6 +52,8 @@ class FunnelTemplateManagementTest extends TestCase
             'name' => 'SaaS Demo Funnel',
             'slug' => 'saas-demo-funnel',
             'description' => 'Shared demo template',
+            'template_type' => FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP,
+            'template_tags' => [FunnelTemplate::PURPOSE_TAG_PREFIX . 'service'],
             'status' => 'published',
             'published_at' => now(),
         ]);
@@ -69,6 +74,7 @@ class FunnelTemplateManagementTest extends TestCase
         $storeResponse = $this->actingAs($owner)->post(route('funnels.store'), [
             'name' => 'Workspace Funnel',
             'description' => 'Tenant copy',
+            'funnel_purpose' => 'service',
             'template_id' => $template->id,
         ]);
 
@@ -77,6 +83,7 @@ class FunnelTemplateManagementTest extends TestCase
         $storeResponse->assertRedirect(route('funnels.edit', $funnel));
         $this->assertSame($ownerTenant->id, $funnel->tenant_id);
         $this->assertSame('Workspace Funnel', $funnel->name);
+        $this->assertSame('service', $funnel->purpose);
         $this->assertCount(5, $funnel->steps);
         $this->assertDatabaseHas('funnel_steps', [
             'funnel_id' => $funnel->id,
@@ -86,6 +93,101 @@ class FunnelTemplateManagementTest extends TestCase
         $this->assertDatabaseHas('funnel_step_revisions', [
             'funnel_step_id' => $funnel->steps()->where('type', 'landing')->firstOrFail()->id,
         ]);
+    }
+
+    public function test_customer_create_flow_hides_single_page_templates_and_allows_manual_step_by_step_build(): void
+    {
+        $admin = $this->createUserWithRole('super-admin', null);
+        $ownerTenant = Tenant::create([
+            'company_name' => 'Customer Workspace',
+            'status' => 'active',
+        ]);
+        $owner = $this->createUserWithRole('account-owner', $ownerTenant);
+
+        FunnelTemplate::create([
+            'created_by' => $admin->id,
+            'name' => 'Visible Step Template',
+            'slug' => 'visible-step-template',
+            'description' => 'Shared step template',
+            'template_type' => FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP,
+            'template_tags' => [FunnelTemplate::PURPOSE_TAG_PREFIX . 'service'],
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        FunnelTemplate::create([
+            'created_by' => $admin->id,
+            'name' => 'Hidden Single Page Template',
+            'slug' => 'hidden-single-page-template',
+            'description' => 'Legacy single page template',
+            'template_type' => 'single_page',
+            'template_tags' => [FunnelTemplate::PURPOSE_TAG_PREFIX . 'service'],
+            'status' => 'published',
+            'published_at' => now()->addMinute(),
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('funnels.create'))
+            ->assertOk()
+            ->assertSee('Step-by-Step Page')
+            ->assertSee('Visible Step Template')
+            ->assertDontSee('Hidden Single Page Template');
+
+        $storeResponse = $this->actingAs($owner)->post(route('funnels.store'), [
+            'name' => 'Manual Physical Product Funnel',
+            'description' => 'Built from scratch',
+            'template_type' => 'step_by_step',
+            'funnel_purpose' => 'physical_product',
+        ]);
+
+        $funnel = Funnel::query()->firstOrFail();
+
+        $storeResponse->assertRedirect(route('funnels.edit', $funnel));
+        $this->assertSame('physical_product', $funnel->purpose);
+        $this->assertCount(4, $funnel->steps);
+        $this->assertDatabaseHas('funnel_steps', [
+            'funnel_id' => $funnel->id,
+            'type' => 'checkout',
+        ]);
+    }
+
+    public function test_template_visibility_is_limited_by_subscribed_plan(): void
+    {
+        $admin = $this->createUserWithRole('super-admin', null);
+        Plan::query()->where('code', 'starter')->update(['max_templates' => 1]);
+
+        $ownerTenant = Tenant::create([
+            'company_name' => 'Plan Limited Workspace',
+            'subscription_plan' => 'starter',
+            'status' => 'active',
+        ]);
+        $owner = $this->createUserWithRole('account-owner', $ownerTenant);
+
+        FunnelTemplate::create([
+            'created_by' => $admin->id,
+            'name' => 'Older Step Template',
+            'slug' => 'older-step-template',
+            'template_type' => FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP,
+            'template_tags' => [FunnelTemplate::PURPOSE_TAG_PREFIX . 'service'],
+            'status' => 'published',
+            'published_at' => now()->subDay(),
+        ]);
+
+        FunnelTemplate::create([
+            'created_by' => $admin->id,
+            'name' => 'Newest Step Template',
+            'slug' => 'newest-step-template',
+            'template_type' => FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP,
+            'template_tags' => [FunnelTemplate::PURPOSE_TAG_PREFIX . 'service'],
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('funnels.create'))
+            ->assertOk()
+            ->assertSee('Newest Step Template')
+            ->assertDontSee('Older Step Template');
     }
 
     public function test_account_owner_cannot_access_super_admin_template_management(): void

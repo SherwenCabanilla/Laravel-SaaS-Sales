@@ -48,11 +48,11 @@
             </div>
             <div class="card payment-stat-card">
                 <h3>Current Plan</h3>
-                <p class="payment-stat-card__value">{{ $tenant->subscription_plan ?? 'N/A' }}</p>
+                <p class="payment-stat-card__value">{{ $tenant->subscription_plan ?? $emptyDash }}</p>
             </div>
             <div class="card payment-stat-card">
                 <h3>Grace Ends</h3>
-                <p class="payment-stat-card__value payment-stat-card__value--compact">{{ optional($tenant->billing_grace_ends_at)->format('Y-m-d H:i') ?? 'N/A' }}</p>
+                <p class="payment-stat-card__value payment-stat-card__value--compact">{{ optional($tenant->billing_grace_ends_at)->format('Y-m-d H:i') ?? $emptyDash }}</p>
             </div>
         </div>
 
@@ -211,7 +211,7 @@
                             data-section-toggle
                             data-target="platform-subscriptions-content"
                             aria-expanded="false"
-                            class="payment-toggle-btn">
+                            class="payment-toggle-btn ui-show-hide-toggle">
                             Show
                         </button>
                     </div>
@@ -254,12 +254,12 @@
                         <tbody>
                             @forelse($platformSubscriptions as $payment)
                                 <tr>
-                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? 'N/A' }}</td>
+                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? $emptyDash }}</td>
                                     <td>PHP {{ number_format((float) $payment->amount, 2) }}</td>
                                     <td>{{ \App\Models\Payment::STATUSES[$payment->status] ?? ucfirst($payment->status) }}</td>
-                                    <td>{{ $payment->provider ?? 'N/A' }}</td>
-                                    <td>{{ $payment->payment_method ?? 'N/A' }}</td>
-                                    <td>{{ $payment->provider_reference ?? 'N/A' }}</td>
+                                    <td>{{ $payment->provider ?? $emptyDash }}</td>
+                                    <td>{{ $payment->payment_method ?? $emptyDash }}</td>
+                                    <td>{{ $payment->provider_reference ?? $emptyDash }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -283,7 +283,7 @@
                         data-section-toggle
                         data-target="funnel-sales-content"
                         aria-expanded="false"
-                        class="payment-toggle-btn">
+                        class="payment-toggle-btn ui-show-hide-toggle">
                         Show
                     </button>
                 </div>
@@ -327,14 +327,14 @@
                         <tbody>
                             @forelse($funnelSales as $payment)
                                 <tr>
-                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? 'N/A' }}</td>
-                                    <td>{{ $payment->funnel->name ?? 'N/A' }}</td>
-                                    <td>{{ $payment->step->title ?? 'N/A' }}</td>
-                                    <td>{{ $payment->lead->name ?? 'N/A' }}</td>
+                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? $emptyDash }}</td>
+                                    <td>{{ $payment->funnel->name ?? $emptyDash }}</td>
+                                    <td>{{ $payment->step->title ?? $emptyDash }}</td>
+                                    <td>{{ $payment->lead->name ?? $emptyDash }}</td>
                                     <td>PHP {{ number_format((float) $payment->amount, 2) }}</td>
                                     <td>{{ \App\Models\Payment::STATUSES[$payment->status] ?? ucfirst($payment->status) }}</td>
-                                    <td>{{ $payment->provider ?? 'N/A' }}</td>
-                                    <td>{{ $payment->provider_reference ?? 'N/A' }}</td>
+                                    <td>{{ $payment->provider ?? $emptyDash }}</td>
+                                    <td>{{ $payment->provider_reference ?? $emptyDash }}</td>
                                 </tr>
                             @empty
                                 <tr>

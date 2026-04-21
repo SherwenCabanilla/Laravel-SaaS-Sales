@@ -41,6 +41,13 @@
             font-weight: 700;
         }
 
+        .payment-stat-card__value:has(.empty-value-dash),
+        .payment-summary-card__value:has(.empty-value-dash) {
+            display: flex;
+            justify-content: center;
+            text-align: center;
+        }
+
         .payment-summary-card__value {
             font-size: clamp(22px, 2vw, 32px);
         }
@@ -243,12 +250,15 @@
             }
 
             .payment-section-header {
-                flex-direction: column;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
             }
 
             .payment-section-header > h3,
             .payment-section-header > .payment-section-actions {
-                width: 100%;
+                width: auto;
             }
 
             .payment-section-actions {
@@ -257,14 +267,12 @@
 
             .payment-section-actions .payment-toggle-btn {
                 width: auto;
-                min-width: 88px;
-                align-self: flex-start;
+                align-self: center;
             }
 
             .payment-section-header > .payment-toggle-btn {
                 width: auto;
-                min-width: 88px;
-                align-self: flex-start;
+                align-self: center;
             }
 
             .payment-summary-grid {

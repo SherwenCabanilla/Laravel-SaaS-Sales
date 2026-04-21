@@ -367,6 +367,21 @@ body {
     font-weight: bold;
 }
 
+.empty-value-dash {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.35em;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.card p:has(> .empty-value-dash),
+.admin-kpi-card__value:has(.empty-value-dash) {
+    justify-content: center;
+    text-align: center;
+}
+
 .admin-kpi-board {
     display: grid;
     gap: 24px;
@@ -765,6 +780,65 @@ table tr:hover {
     outline-offset: 2px;
 }
 
+.ui-show-hide-toggle {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-width: 88px !important;
+    min-height: 40px !important;
+    padding: 10px 16px !important;
+    border: none !important;
+    border-radius: 6px !important;
+    background: var(--theme-primary, #240E35) !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.2 !important;
+    text-decoration: none !important;
+}
+
+.ui-show-hide-toggle:hover {
+    background: var(--theme-primary-dark, #2E1244) !important;
+    color: #fff !important;
+}
+
+.ui-show-hide-toggle > i {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .ui-show-hide-toggle {
+        width: 42px !important;
+        min-width: 42px !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        flex: 0 0 42px !important;
+        padding: 0 !important;
+        border-radius: 999px !important;
+        font-size: 0 !important;
+        line-height: 1 !important;
+        gap: 0 !important;
+        overflow: hidden;
+    }
+
+    .ui-show-hide-toggle > * {
+        display: none !important;
+    }
+
+    .ui-show-hide-toggle::before {
+        content: "\f06e";
+        font-family: "Font Awesome 6 Free";
+        font-size: 16px;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .ui-show-hide-toggle[aria-expanded="true"]::before {
+        content: "\f070";
+    }
+}
 
 table a {
     color: var(--theme-primary, #240E35);

@@ -55,8 +55,8 @@
         /* Consistent button sizing across app pages (colors remain unchanged). */
         .main-content a.btn-create,
         .main-content button.btn-create,
-        .main-content button[type="submit"]:not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
-        .main-content button[type="button"]:not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
+        .main-content button[type="submit"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
+        .main-content button[type="button"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
         .main-content input[type="submit"] {
             min-height: var(--ui-btn-min-height) !important;
             padding: var(--ui-btn-py) var(--ui-btn-px) !important;

@@ -287,7 +287,7 @@
     <div class="card" id="team-activity">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
             <h3 style="margin:0;">Team Activity Snapshot</h3>
-            <button type="button" id="toggleTeamActivityBtn"
+            <button type="button" id="toggleTeamActivityBtn" class="ui-show-hide-toggle"
                 style="padding:10px 16px;background:var(--theme-primary,#240E35);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-width:88px;"
                 aria-expanded="{{ $teamActivityOpen ? 'true' : 'false' }}">
                 {{ $teamActivityOpen ? 'Hide' : 'Show' }}
@@ -307,9 +307,9 @@
                     @forelse($teamActivity as $activity)
                         <tr>
                             <td>{{ $activity->created_at->format('Y-m-d H:i') }}</td>
-                            <td>{{ $activity->lead->name ?? 'N/A' }}</td>
+                            <td>{{ $activity->lead->name ?? $emptyDash }}</td>
                             <td>{{ $activity->activity_type }}</td>
-                            <td>{{ $activity->notes ?: 'N/A' }}</td>
+                            <td>{{ $activity->notes ?: $emptyDash }}</td>
                         </tr>
                     @empty
                         <tr>

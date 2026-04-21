@@ -38,13 +38,11 @@
                     @enderror
                 </div>
                 <div>
-                    <label for="template_type" style="display:block; margin-bottom:8px; font-weight:700;">Template Purpose</label>
-                    <select id="template_type" name="template_type" required
-                        style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
-                        @foreach(($templateTypeOptions ?? []) as $value => $label)
-                            <option value="{{ $value }}" {{ old('template_type', $template->template_type) === $value ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                    </select>
+                    <label style="display:block; margin-bottom:8px; font-weight:700;">Template Style</label>
+                    <input type="hidden" name="template_type" value="step_by_step">
+                    <div style="padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fbf9fd; font-weight:700; color:#240E35;">
+                        Step-by-Step Page
+                    </div>
                     @error('template_type')
                         <span style="color:red; font-size:12px;">{{ $message }}</span>
                     @enderror

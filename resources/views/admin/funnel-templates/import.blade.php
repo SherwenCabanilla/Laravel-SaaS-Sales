@@ -31,14 +31,11 @@
                     @enderror
                 </div>
                 <div>
-                    <label for="template_type" style="display:block; margin-bottom:8px; font-weight:700;">Template Purpose</label>
-                    <select id="template_type" name="template_type" required
-                        style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
-                        <option value="" disabled {{ old('template_type') ? '' : 'selected' }}>Select template purpose</option>
-                        @foreach(($templateTypeOptions ?? []) as $value => $label)
-                            <option value="{{ $value }}" {{ old('template_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                        @endforeach
-                    </select>
+                    <label style="display:block; margin-bottom:8px; font-weight:700;">Template Style</label>
+                    <input type="hidden" name="template_type" value="step_by_step">
+                    <div style="padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fbf9fd; font-weight:700; color:#240E35;">
+                        Step-by-Step Page
+                    </div>
                     @error('template_type')
                         <span style="color:red; font-size:12px;">{{ $message }}</span>
                     @enderror
@@ -110,7 +107,7 @@
                 <br>1. Full template JSON with <code>steps</code>
                 <br>2. Full template JSON with <code>pages</code>
                 <br>3. Single-page JSON with one <code>layout_json</code> object
-                <br><br>Template Purpose controls layout mode. Funnel Purpose controls Services vs Physical Product usage.
+                <br><br>Imported templates are saved as Step-by-Step Page templates. Funnel Purpose controls Services vs Physical Product usage.
                 <br><br>Each step can include fields like <code>title</code>, <code>slug</code>, <code>type</code>, <code>description</code>, <code>template</code>, <code>step_tags</code>, and <code>layout_json</code>.
             </div>
 

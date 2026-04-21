@@ -72,7 +72,7 @@
                         <span class="admin-kpi-card__label">Cost Proxy</span>
                         <span class="admin-kpi-card__icon"><i class="fas fa-wallet" aria-hidden="true"></i></span>
                     </div>
-                    <div class="admin-kpi-card__value admin-kpi-card__value--text">Ad Spend Data N/A</div>
+                    <div class="admin-kpi-card__value admin-kpi-card__value--text">{{ $emptyDash }}</div>
                     <div class="admin-kpi-card__meta">Connect spend sources to compare campaign cost against lead volume</div>
                 </article>
             </div>

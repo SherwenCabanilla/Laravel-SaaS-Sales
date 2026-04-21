@@ -2,6 +2,98 @@
 
 @section('title', 'Funnel Templates')
 
+@section('styles')
+    <style>
+        .template-table-card {
+            overflow: hidden;
+        }
+
+        .template-table-scroll {
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .template-table {
+            min-width: 760px;
+            margin-bottom: 0;
+        }
+
+        .template-table th,
+        .template-table td {
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .template-table th:nth-child(1),
+        .template-table td:nth-child(1) {
+            min-width: 130px;
+        }
+
+        .template-table th:nth-child(2),
+        .template-table td:nth-child(2) {
+            min-width: 128px;
+        }
+
+        .template-table th:nth-child(5),
+        .template-table td:nth-child(5) {
+            min-width: 170px;
+        }
+
+        .template-pagination {
+            margin-top: 18px;
+        }
+
+        @media (max-width: 768px) {
+            .template-table-card {
+                padding: 16px;
+            }
+
+            .template-table-scroll {
+                padding-bottom: 2px;
+            }
+
+            .template-table {
+                min-width: 720px;
+                border-radius: 0;
+            }
+
+            .template-table th,
+            .template-table td {
+                padding: 15px 20px;
+                line-height: 1.25;
+            }
+
+            .template-table th {
+                font-weight: 700;
+            }
+
+            .template-table td:nth-child(2) {
+                white-space: normal;
+            }
+
+            .template-pagination {
+                display: flex;
+                justify-content: flex-end;
+                padding-top: 12px;
+            }
+
+            .template-pagination .pagination {
+                flex-wrap: nowrap;
+                gap: 6px;
+                justify-content: flex-end;
+            }
+
+            .template-pagination .page-link {
+                min-width: 46px;
+                height: 46px;
+                border-radius: 6px;
+                font-size: 16px;
+            }
+        }
+    </style>
+@endsection
+
 @section('content')
     <div class="top-header">
         <h1>Shared Funnel Templates</h1>
@@ -13,9 +105,6 @@
             <a href="{{ route('admin.funnel-templates.import') }}" class="btn-create btn-create--icon-expand" style="background:#fff; color:var(--theme-primary, #240E35); border:1px solid var(--theme-border, #E6E1EF);" aria-label="Import JSON Template"><i class="fas fa-file-import"></i><span class="btn-create__label">Import JSON Template</span></a>
         </div>
         <form method="GET" action="{{ route('admin.funnel-templates.index') }}">
-            @if(!empty($showLegacy))
-                <input type="hidden" name="legacy" value="1">
-            @endif
             <input
                 type="text"
                 name="search"
@@ -25,36 +114,30 @@
         </form>
     </div>
 
-    <div class="card" style="margin-top: 16px;">
+    <div class="card template-table-card" style="margin-top: 16px;">
         <div style="margin-bottom: 12px; color:#64748b; font-size:13px;">
-            Super admins can build, import, and publish templates here. Published templates appear in builder mode for reusable application.
+            Super admins can build, import, and publish Step-by-Step Page templates here. Published templates appear for users based on their subscribed plan.
         </div>
-        <div style="margin-bottom: 14px; color:#64748b; font-size:13px;">
-            @if(!empty($showLegacy))
-                Showing uncategorized legacy templates too.
-                <a href="{{ route('admin.funnel-templates.index', array_filter(['search' => $search ?? null])) }}" style="font-weight:700;">Hide legacy templates</a>
-            @else
-                Legacy templates without a purpose are hidden from this list and from the builder libraries.
-                <a href="{{ route('admin.funnel-templates.index', array_filter(['search' => $search ?? null, 'legacy' => 1])) }}" style="font-weight:700;">Show legacy templates</a>
-            @endif
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Purpose</th>
-                    <th>Status</th>
-                    <th>Pages</th>
-                    <th>Slug</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @include('admin.funnel-templates._rows', ['templates' => $templates])
-            </tbody>
-        </table>
 
-        <div style="margin-top:18px;">
+        <div class="template-table-scroll" data-template-table-scroll>
+            <table class="template-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Purpose</th>
+                        <th>Status</th>
+                        <th>Pages</th>
+                        <th>Slug</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @include('admin.funnel-templates._rows', ['templates' => $templates])
+                </tbody>
+            </table>
+        </div>
+
+        <div class="template-pagination">
             {{ $templates->links('pagination::bootstrap-4') }}
         </div>
     </div>
@@ -140,6 +223,7 @@
                     closeTemplateDeleteModal();
                 }
             });
+
         });
     </script>
 @endsection

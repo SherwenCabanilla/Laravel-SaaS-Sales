@@ -115,7 +115,7 @@
                 @forelse($pendingInvoices as $invoice)
                     <tr>
                         <td>{{ $invoice->payment_date->format('Y-m-d') }}</td>
-                        <td>{{ $invoice->lead->name ?? 'N/A' }}</td>
+                        <td>{{ $invoice->lead->name ?? $emptyDash }}</td>
                         <td>{{ number_format((float) $invoice->amount, 2) }}</td>
                     </tr>
                 @empty

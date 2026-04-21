@@ -81,7 +81,7 @@
     <div class="card leads-list-card" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
             <h3 style="margin: 0;">Leads List</h3>
-            <button type="button" id="toggleLeadsListBtn"
+            <button type="button" id="toggleLeadsListBtn" class="ui-show-hide-toggle"
                 style="padding: 10px 16px; background: var(--theme-primary, #240E35); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; min-width: 88px;"
                 aria-expanded="false">
                 Show

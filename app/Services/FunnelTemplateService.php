@@ -14,7 +14,10 @@ class FunnelTemplateService
     public function createStarterTemplate(array $attributes, User $user): FunnelTemplate
     {
         return DB::transaction(function () use ($attributes, $user) {
-            $templateType = FunnelTemplate::normalizeTemplateType($attributes['template_type'] ?? 'service');
+            $templateType = FunnelTemplate::normalizeTemplateType($attributes['template_type'] ?? FunnelTemplate::defaultTemplateType());
+            if ($templateType !== FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP) {
+                $templateType = FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP;
+            }
             $template = FunnelTemplate::create([
                 'created_by' => $user->id,
                 'name' => $attributes['name'],

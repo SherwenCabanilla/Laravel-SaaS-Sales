@@ -1187,7 +1187,7 @@ function renderStepOptions(){
 function applyPurposeComponentVisibility(){
     var labels={
         service:"Service Funnel",
-        single_page:"Single Page Funnel",
+        single_page:"Service Funnel",
         digital_product:"Digital Product Funnel",
         physical_product:"Physical Product Funnel",
         hybrid:"Hybrid Funnel"
@@ -3853,7 +3853,7 @@ function renderTemplateLibrary(){
     });
     var purposeLabels={
         service:"Service Funnel",
-        single_page:"Single Page Funnel",
+        single_page:"Service Funnel",
         physical_product:"Physical Product Funnel"
     };
     var activePurposeLabel=purposeLabels[builderPurpose]||"Service Funnel";
