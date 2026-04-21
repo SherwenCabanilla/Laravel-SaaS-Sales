@@ -638,7 +638,6 @@
         <form method="POST" action="{{ $builderUpdateUrl ?? route('funnels.update', $funnel) }}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             @csrf
             @method('PUT')
-            <input type="hidden" name="name" value="{{ $funnel->name }}">
             <select
                 id="fbPurposeTopBar"
                 style="min-width:190px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;background:#fff;font-weight:700;"
@@ -651,15 +650,15 @@
             @if(($builderMode ?? 'funnel') === 'template')
                 <input
                     type="text"
-                    id="builderTemplateDescription"
-                    name="description"
-                    value="{{ old('description', $funnel->description) }}"
-                    placeholder="Template description"
-                    style="min-width:320px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
+                    name="name"
+                    value="{{ old('name', $funnel->name) }}"
+                    placeholder="Template name"
+                    style="min-width:260px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
                 >
             @else
-                <input type="hidden" name="description" value="{{ $funnel->description }}">
+                <input type="hidden" name="name" value="{{ $funnel->name }}">
             @endif
+            <input type="hidden" name="description" value="{{ old('description', $funnel->description) }}">
             <input type="hidden" name="status" value="{{ $funnel->status }}">
             <input
                 type="text"
@@ -669,9 +668,7 @@
                 @if($builderTagInputDisabled ?? false) disabled @endif
                 style="min-width:280px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
             >
-            @if(!(($builderMode ?? 'funnel') === 'template' && $funnel->status !== 'published'))
-                <button class="fb-btn" type="submit"><i class="fas fa-tags"></i> {{ ($builderMode ?? 'funnel') === 'template' ? 'Save Template' : 'Save Tags' }}</button>
-            @endif
+            <button class="fb-btn" type="submit"><i class="fas fa-tags"></i> {{ ($builderMode ?? 'funnel') === 'template' ? 'Save Template' : 'Save Tags' }}</button>
         </form>
         <button id="saveBtn" class="fb-btn primary" type="button"><i class="fas fa-save"></i> Save</button>
         <button id="previewBtn" class="fb-btn" type="button"><i class="fas fa-eye"></i> Preview</button>
@@ -684,12 +681,7 @@
         @if($funnel->status === 'published')
             <form method="POST" action="{{ $builderUnpublishUrl ?? route('funnels.unpublish', $funnel) }}" id="builderUnpublishForm">@csrf<button class="fb-btn danger" type="submit"><i class="fas fa-ban"></i> Unpublish</button></form>
         @else
-            <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">@csrf
-                @if(($builderMode ?? 'funnel') === 'template')
-                    <input type="hidden" name="description" id="builderPublishDescription" value="{{ old('description', $funnel->description) }}">
-                @endif
-                <button class="fb-btn success" type="submit" id="builderPublishBtn"><i class="fas fa-upload"></i> {{ ($builderMode ?? 'funnel') === 'template' ? 'Save as Template' : 'Publish' }}</button>
-            </form>
+            <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">@csrf<button class="fb-btn success" type="submit" id="builderPublishBtn"><i class="fas fa-upload"></i> Publish</button></form>
         @endif
         <a href="{{ $builderExitUrl ?? route('funnels.index') }}" class="fb-btn"><i class="fas fa-door-open"></i> Exit Builder</a>
     </div>
@@ -14331,16 +14323,11 @@ document.getElementById("saveBtn").onclick=()=>{
 function bindPublishForm(){
     var form=document.getElementById("builderPublishForm");
     var btn=document.getElementById("builderPublishBtn");
-    var descriptionInput=document.getElementById("builderTemplateDescription");
-    var publishDescriptionInput=document.getElementById("builderPublishDescription");
     if(!form||!btn)return;
     var submitting=false;
     form.addEventListener("submit",function(e){
         if(submitting)return;
         e.preventDefault();
-        if(descriptionInput&&publishDescriptionInput){
-            publishDescriptionInput.value=descriptionInput.value;
-        }
         submitting=true;
         btn.disabled=true;
         var originalLabel=btn.innerHTML;
