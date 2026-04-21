@@ -119,22 +119,9 @@
                 <h1>{{ $funnel->name }} Analytics</h1>
             </div>
             <div class="analytics-actions">
-                <a
-                    href="{{ route('funnels.index') }}"
-                    class="analytics-btn analytics-btn--icon-only"
-                    aria-label="Back to Funnels"
-                >
-                    <i class="fas fa-arrow-left" aria-hidden="true"></i>
-                    <span class="analytics-btn-tooltip" role="tooltip">Back to Funnels</span>
-                </a>
-                <a
-                    href="{{ route('funnels.edit', $funnel) }}"
-                    class="analytics-btn analytics-btn--icon-only primary"
-                    aria-label="Open Builder"
-                >
-                    <i class="fas fa-pen" aria-hidden="true"></i>
-                    <span class="analytics-btn-tooltip" role="tooltip">Open Builder</span>
-                </a>
+                <a href="{{ route('funnels.index') }}" class="analytics-btn"><i class="fas fa-arrow-left"></i> Back to Funnels</a>
+                <a href="{{ route('funnels.edit', $funnel) }}" class="analytics-btn primary"><i class="fas fa-pen"></i> Open Builder</a>
+                <a href="{{ route('funnels.analytics.export', array_merge(['funnel' => $funnel], request()->query())) }}" class="analytics-btn"><i class="fas fa-file-export"></i> Export CSV</a>
             </div>
         </div>
 
@@ -1412,3 +1399,4 @@
         }
     </script>
 @endsection
+
