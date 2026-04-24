@@ -1342,7 +1342,8 @@
         }
 
         /* ── REAL VIEWPORT responsive (published mode) ── */
-        @media (max-width: 1024px) {
+        /* Treat narrow laptops (e.g. 1366px wide) as "responsive" too. */
+        @media (max-width: 1400px) {
             body.is-published .builder-product-media .builder-carousel-wrap{
                 min-height: 0 !important;
                 aspect-ratio: 4 / 5 !important;
@@ -1418,6 +1419,47 @@
                 border: 0;
                 object-fit: cover;
             }
+        }
+
+        /* If JS forces published into fluid mode, apply the same narrow-laptop rules regardless of width. */
+        body.is-published.published-fluid .builder-product-media .builder-carousel-wrap{
+            min-height: 0 !important;
+            aspect-ratio: 4 / 5 !important;
+            max-height: min(62vw, 440px) !important;
+        }
+        body.is-published.published-fluid .builder-col-inner{
+            min-width: 0;
+            max-width: 100%;
+        }
+        body.is-published.published-fluid .builder-el[data-element-type="video"]{
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        body.is-published.published-fluid .builder-video-wrap{
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            min-height: 0;
+            padding-top: 0;
+            aspect-ratio: 16 / 9;
+            height: auto;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        body.is-published.published-fluid .builder-video-wrap iframe,
+        body.is-published.published-fluid .builder-video-wrap video{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        body.is-published.published-fluid .builder-video-wrap video{
+            object-fit: cover;
         }
         @media (max-width: 768px) {
             /* Mobile "best shot": disable display:contents for carrier sections so absolute layouts stack predictably. */
@@ -7109,8 +7151,14 @@
             var viewportW=document.documentElement?document.documentElement.clientWidth:window.innerWidth;
             /* Shrinking a 1200px-wide canvas to fit a ~390px phone made scale ~0.3 and illegible type.
                Published mode already has @media (max-width: 768px/1024px) rules — zoom was defeating them. */
-            var publishedFluidMaxVp=1024;
+            // Prefer fluid responsive rendering whenever the real viewport is narrower than the canvas.
+            // This avoids zoom/scale on narrow laptops and prevents layouts "messing up" across displays.
+            var baseCanvasGuess=Math.max(parseInt(editorCanvasWidth||0,10)||0, 0);
+            if(baseCanvasGuess<=0) baseCanvasGuess=1200;
+            // Give a small buffer so near-equal widths don't flip-flop due to scrollbars/padding.
+            var publishedFluidMaxVp=Math.max(1024, baseCanvasGuess+(targetPad*2)+80);
             if(viewportW<=publishedFluidMaxVp){
+                document.body.classList.add("published-fluid");
                 content.style.width="100%";
                 content.style.maxWidth="100%";
                 content.style.boxSizing="border-box";
@@ -7124,6 +7172,7 @@
                 content.classList.add("is-scale-ready");
                 return;
             }
+            document.body.classList.remove("published-fluid");
             content.style.width=editorCanvasWidth+"px";
             content.style.maxWidth="none";
             content.style.boxSizing="border-box";
