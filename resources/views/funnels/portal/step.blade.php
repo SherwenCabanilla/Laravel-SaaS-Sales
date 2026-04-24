@@ -377,13 +377,11 @@
         .builder-row--section-elements > .builder-row-inner,
         .builder-col--section-elements,
         .builder-col--section-elements > .builder-col-inner--section-elements { display: contents; }
-        /* Section-level elements (not inside normal columns) must still center like the builder canvas.
-           On desktop, they might not inherit `text-align:center` from `.builder-col`, so force it here. */
+        /* Section-level elements (not inside normal columns) should follow saved alignment.
+           Never force center here; it causes unexpected centering in preview/published. */
         body.is-preview .builder-col-inner--section-elements > .builder-el,
         body.is-published .builder-col-inner--section-elements > .builder-el{
-            /* Center carrier elements without forcing them to full-width.
-               Forcing width:100% breaks fixed-size media embeds (video/image). */
-            text-align: center !important;
+            text-align: inherit !important;
         }
         .builder-section-inner { width: 100%; box-sizing: border-box; position: relative; }
         /* When portal constrains max-width of section inner boxes, ensure they remain centered.
@@ -396,7 +394,11 @@
         .builder-row-inner { width: 100%; box-sizing: border-box; display: flex; flex-wrap: wrap; gap: 8px; position: relative; align-items: stretch; }
         .builder-col-inner { width: 100%; box-sizing: border-box; max-width: 100%; overflow: hidden; position: relative; min-height: 100%; }
         .builder-row { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px; }
-        .builder-col { min-width: 0; min-height: 0; flex: 1 1 0; position: relative; overflow: hidden; background: transparent; padding: 6px; box-sizing: border-box; text-align: center; }
+        /* IMPORTANT: do not force center alignment globally.
+           Builder heading/text use `text-align: inherit`, so the column must default to left unless user sets center. */
+        .builder-col { min-width: 0; min-height: 0; flex: 1 1 0; position: relative; overflow: hidden; background: transparent; padding: 6px; box-sizing: border-box; text-align: left; }
+        /* NOTE: do not hide empty columns globally. Some templates intentionally keep empty columns
+           (e.g., 3-column footer placeholders) and the builder shows them. */
         .builder-col > .builder-col-inner > .builder-el { max-width: 100%; overflow: hidden; box-sizing: border-box; }
         /* Must beat the rule above (section / column wrappers clip overflow by default). */
         .builder-el[data-element-type="menu"] { overflow: visible !important; }
@@ -1051,9 +1053,19 @@
            ═══════════════════════════════════════════════════════════ */
 
         /* ── MOBILE (375px viewport) ── */
+        /* Mobile "best shot": if a section uses the absolute carrier path, disable `display:contents`
+           so children stack predictably and avoid overlaps. */
+        body[data-preview-device="mobile"] .builder-row--section-elements,
+        body[data-preview-device="mobile"] .builder-col--section-elements{
+            display: block !important;
+        }
+        body[data-preview-device="mobile"] .builder-col--section-elements > .builder-col-inner--section-elements{
+            display: block !important;
+            width: 100% !important;
+        }
         body[data-preview-device="mobile"] .builder-col-inner--section-elements > .builder-el{
             width: 100% !important;
-            text-align: center !important;
+            text-align: inherit !important;
         }
         /* Stack every row: columns AND hoisted .builder-el (display:contents) share one vertical column */
         body[data-preview-device="mobile"] .builder-row-inner{
@@ -1101,6 +1113,14 @@
             width: 100% !important;
             max-width: 100% !important;
             height: auto !important;
+        }
+        /* Keep media from becoming huge on mobile; scale within viewport. */
+        body[data-preview-device="mobile"] .builder-el[data-element-type="image"] img,
+        body[data-preview-device="mobile"] .builder-el[data-element-type="video"] iframe,
+        body[data-preview-device="mobile"] .builder-el[data-element-type="video"] video{
+            max-width: 100% !important;
+            height: auto !important;
+            max-height: min(70vw, 320px) !important;
         }
         body[data-preview-device="mobile"] .builder-col:empty,
         body[data-preview-device="mobile"] .builder-col:not(:has(.builder-el)){
@@ -1400,6 +1420,15 @@
             }
         }
         @media (max-width: 768px) {
+            /* Mobile "best shot": disable display:contents for carrier sections so absolute layouts stack predictably. */
+            body.is-published .builder-row--section-elements,
+            body.is-published .builder-col--section-elements{
+                display: block !important;
+            }
+            body.is-published .builder-col--section-elements > .builder-col-inner--section-elements{
+                display: block !important;
+                width: 100% !important;
+            }
             body.is-published .builder-row-inner{
                 flex-wrap: nowrap !important;
                 flex-direction: column !important;
@@ -1429,7 +1458,15 @@
             }
             body.is-published .builder-col-inner--section-elements > .builder-el{
                 width: 100% !important;
-                text-align: center !important;
+                text-align: inherit !important;
+            }
+            /* Keep media from becoming huge on mobile. */
+            body.is-published .builder-el[data-element-type="image"] img,
+            body.is-published .builder-el[data-element-type="video"] iframe,
+            body.is-published .builder-el[data-element-type="video"] video{
+                max-width: 100% !important;
+                height: auto !important;
+                max-height: min(70vw, 320px) !important;
             }
             body.is-published .builder-carousel-content-row{
                 flex-direction: column;
@@ -1589,7 +1626,7 @@
                 object-fit: contain !important;
             }
             body.is-published .builder-col-inner--section-elements > .builder-el{
-                text-align: center !important;
+                text-align: inherit !important;
             }
             body.is-published .builder-col:empty,
             body.is-published .builder-col:not(:has(.builder-el)){
@@ -2498,6 +2535,22 @@
                         $sectionStageWidth = max(0, (int) ($sectionSettings['stageWidth'] ?? 0));
                         $widthMap = ['full' => '', 'wide' => '1200px', 'medium' => '992px', 'small' => '768px', 'xsmall' => '576px'];
                         $innerMax = $widthMap[$contentWidth] ?? '';
+                        $snapEvenPx = function ($value): string {
+                            $raw = trim((string) $value);
+                            if ($raw === '') return '';
+                            if (preg_match('/^\s*(\d+)\s*px\s*$/i', $raw, $m)) {
+                                $n = (int) $m[1];
+                                if ($n > 0 && ($n % 2) === 1) {
+                                    $n -= 1; // avoid half-pixel centers
+                                }
+                                return $n . 'px';
+                            }
+                            return $raw;
+                        };
+                        if ($sectionStageWidth > 0 && ($sectionStageWidth % 2) === 1) {
+                            $sectionStageWidth -= 1;
+                        }
+                        $innerMax = $snapEvenPx($innerMax);
                         $sectionElements = is_array($section['elements'] ?? null) ? $section['elements'] : [];
                         $hasAbsoluteSectionElement = false;
                         $hasNonZeroCssPos = function ($v): bool {
@@ -2704,7 +2757,7 @@
                                 $rowStyleArr = is_array($row['style'] ?? null) ? $row['style'] : [];
                                 $rowSettings = is_array($row['settings'] ?? null) ? $row['settings'] : [];
                                 $rowContentWidth = trim((string) ($rowSettings['contentWidth'] ?? 'full'));
-                                $rowInnerMax = $widthMap[$rowContentWidth] ?? '';
+                                $rowInnerMax = $snapEvenPx($widthMap[$rowContentWidth] ?? '');
                                 $rowGap = trim((string) ($rowStyleArr['gap'] ?? ''));
                                 $rowInnerStyle = [];
                                 if ($rowInnerMax !== '') {
@@ -2770,7 +2823,7 @@
                                         $colStyle = $styleToString($colStyleArr);
                                         $colSettings = is_array($column['settings'] ?? null) ? $column['settings'] : [];
                                         $colContentWidth = trim((string) ($colSettings['contentWidth'] ?? 'full'));
-                                        $colInnerMax = $widthMap[$colContentWidth] ?? '';
+                                        $colInnerMax = $snapEvenPx($widthMap[$colContentWidth] ?? '');
                                         $elements = is_array($column['elements'] ?? null) ? $column['elements'] : [];
                                         $colMinHeight = 0;
                                         $colMinWidth = 0;
@@ -2900,10 +2953,16 @@
                                                 $link = trim((string) ($settings['link'] ?? '#'));
                                                 $src = trim((string) ($settings['src'] ?? ''));
                                                 $alt = trim((string) ($settings['alt'] ?? 'Image'));
-                                                $alignment = trim((string) ($settings['alignment'] ?? ''));
+                                                $alignmentRaw = trim((string) ($settings['alignment'] ?? ''));
+                                                $fallbackAlign = strtolower(trim((string) ($rawStyle['textAlign'] ?? '')));
+                                                $alignmentIsExplicit = in_array($alignmentRaw, ['left', 'center', 'right'], true)
+                                                    || in_array($fallbackAlign, ['left', 'center', 'right'], true);
+                                                $alignment = $alignmentRaw;
                                                 if (!in_array($alignment, ['left', 'center', 'right'], true)) {
-                                                    $fallbackAlign = strtolower(trim((string) ($rawStyle['textAlign'] ?? '')));
-                                                    $defaultAlign = in_array($type, ['image', 'video', 'form', 'menu'], true) ? 'left' : 'center';
+                                                    // Default alignments:
+                                                    // - Media/forms/menu default left.
+                                                    // - Heading/text should NOT default to center; they should inherit column alignment.
+                                                    $defaultAlign = in_array($type, ['image', 'video', 'form', 'menu'], true) ? 'left' : '';
                                                     $alignment = in_array($fallbackAlign, ['left', 'center', 'right'], true)
                                                         ? $fallbackAlign
                                                         : $defaultAlign;
@@ -2916,10 +2975,10 @@
                                                 } else {
                                                     $alignStyle = 'display:flex;justify-content:' . ($alignment === 'right' ? 'flex-end' : ($alignment === 'center' ? 'center' : 'flex-start')) . ';margin-left:' . ($alignment === 'left' ? '0' : 'auto') . ';margin-right:' . ($alignment === 'right' ? '0' : 'auto') . ';';
                                                 }
-                                                // Portal previously did not apply `settings.alignment` to heading/text elements reliably.
-                                                // Force text-align here so builder "Center/Left/Right" behaves the same in preview/published.
+                                                // Only force `text-align` for heading/text when user explicitly set alignment or textAlign.
+                                                // Otherwise, inherit the column alignment (matches builder default).
                                                 $textAlignForHeadingText = '';
-                                                if ($type === 'heading' || $type === 'text') {
+                                                if (($type === 'heading' || $type === 'text') && $alignmentIsExplicit) {
                                                     $textAlignForHeadingText = 'text-align:' . ($alignment === 'right' ? 'right' : ($alignment === 'left' ? 'left' : 'center')) . ';';
                                                 }
                                                 $menuAlign = $settings['menuAlign'] ?? 'left';
@@ -3021,6 +3080,10 @@
                                                         $sectionStageWidth > 0
                                                         && in_array($type, ['heading', 'text', 'button'], true)
                                                         && ($alignment === 'center' || strtolower(trim((string) ($rawStyle['textAlign'] ?? ''))) === 'center')
+                                                        // Only auto-center when there is no explicit X positioning saved.
+                                                        // Otherwise, multiple absolute elements can collapse onto the same centered X.
+                                                        && $absFreeX === 0
+                                                        && $absLeft === ''
                                                         && preg_match('/^\s*(\d+)\s*px\s*$/i', $absWidth, $mW)
                                                     ) {
                                                         $wPx = (int) $mW[1];
@@ -7142,11 +7205,20 @@
                 // Let desktop preview/test fill the available viewport again so
                 // edge-aligned builder layouts do not look artificially centered.
                 if(scale>3.0)scale=3.0;
-                content.style.padding=(targetPad/scale)+"px";
+                // Desktop preview: avoid fractional zoom scaling (causes sub-pixel centering drift).
+                // Render at 1:1 and allow horizontal scroll when the canvas is wider than the viewport.
+                if(previewDevice==="desktop"){
+                    scale=1;
+                    content.style.padding=targetPad+"px";
+                    document.body.style.overflowX="auto";
+                }else{
+                    content.style.padding=(targetPad/scale)+"px";
+                    document.body.style.overflowX="hidden";
+                }
                 // Using `zoom` makes the browser reflow based on scaled layout, which is
                 // what we need for mobile "layout adjustment" in preview.
                 // Fallback to `transform` when zoom is not supported.
-                if(useZoom){
+                if(useZoom && scale!==1){
                     content.style.zoom=String(scale);
                     content.style.transform="none";
                     content.style.height="auto";
@@ -7154,10 +7226,14 @@
                     content.style.zoom="";
                     var h=measurePreviewContentHeight(content);
                     content.style.transformOrigin="top left";
-                    content.style.transform="scale("+scale+")";
-                    content.style.height=(h*scale)+"px";
+                    if(scale!==1){
+                        content.style.transform="scale("+scale+")";
+                        content.style.height=(h*scale)+"px";
+                    }else{
+                        content.style.transform="none";
+                        content.style.height="auto";
+                    }
                 }
-                document.body.style.overflowX="hidden";
                 content.classList.add("is-scale-ready");
             };
             var scheduleCanvasScale=function(){
@@ -7716,7 +7792,14 @@
 
                     function renderLayoutDebug() {
                         const sections = Array.from(document.querySelectorAll('.builder-section'));
-                        const targetIndex = 1; // 2nd section (0-based)
+                        let targetIndex = 1; // default to 2nd section (0-based)
+                        try{
+                            const sp = new URLSearchParams(window.location.search || "");
+                            const rawIdx = parseInt(sp.get("debug_section") || "", 10);
+                            if (Number.isFinite(rawIdx) && rawIdx > 0) {
+                                targetIndex = rawIdx - 1; // user provides 1-based index
+                            }
+                        }catch(_e){}
                         const targetSection = sections[targetIndex] || sections[0] || null;
                         if (!targetSection) return;
 
@@ -7731,6 +7814,10 @@
                             const colInner = sec.querySelector('.builder-col-inner');
                             const firstEl = sec.querySelector('.builder-el[data-element-type]');
                             const lastEl = Array.from(sec.querySelectorAll('.builder-el[data-element-type]')).slice(-1)[0] || null;
+                            const headingNode = sec.querySelector('.builder-heading');
+                            const textNode = sec.querySelector('.builder-text');
+                            const allCols = Array.from(sec.querySelectorAll('.builder-col')) || [];
+                            const allEls = Array.from(sec.querySelectorAll('.builder-el[data-element-type]')) || [];
 
                             const secRect = sec.getBoundingClientRect();
                             const innerRect = inner ? inner.getBoundingClientRect() : null;
@@ -7742,9 +7829,25 @@
                             const secStyle = window.getComputedStyle(sec);
                             const rowStyle = row ? window.getComputedStyle(row) : null;
                             const colStyle = col ? window.getComputedStyle(col) : null;
+                            const innerStyle = inner ? window.getComputedStyle(inner) : null;
+                            const rowInnerStyle = rowInner ? window.getComputedStyle(rowInner) : null;
+                            const colInnerStyle = colInner ? window.getComputedStyle(colInner) : null;
+                            const headingStyle = headingNode ? window.getComputedStyle(headingNode) : null;
+                            const textStyle = textNode ? window.getComputedStyle(textNode) : null;
 
                             const bottomGap = lastElRect ? roundPx(secRect.bottom - lastElRect.bottom) : null;
                             const topGap = firstElRect ? roundPx(firstElRect.top - secRect.top) : null;
+                            const sampleEls = allEls.slice(0, 8).map(function(n){
+                                try{
+                                    const r = n.getBoundingClientRect();
+                                    const cs = window.getComputedStyle(n);
+                                    return (n.getAttribute("data-element-type") || "?")
+                                        + " pos=" + (cs.position || "?")
+                                        + " w=" + Math.round(r.width) + " h=" + Math.round(r.height);
+                                }catch(_e){
+                                    return (n.getAttribute("data-element-type") || "?");
+                                }
+                            }).join(", ");
 
                             return [
                                 'Section #' + (idx + 1),
@@ -7752,6 +7855,17 @@
                                 '  paddingTop/Bottom: ' + secStyle.paddingTop + ' / ' + secStyle.paddingBottom,
                                 '  minHeight(inline): ' + (sec.style.minHeight || '(none)'),
                                 '  innerMaxWidth(inline): ' + (inner ? (inner.style.maxWidth || '(none)') : '(none)'),
+                                '  textAlign(sec/inner/rowInner/col/colInner): '
+                                    + secStyle.textAlign + ' / '
+                                    + (innerStyle ? innerStyle.textAlign : '(none)') + ' / '
+                                    + (rowInnerStyle ? rowInnerStyle.textAlign : '(none)') + ' / '
+                                    + (colStyle ? colStyle.textAlign : '(none)') + ' / '
+                                    + (colInnerStyle ? colInnerStyle.textAlign : '(none)'),
+                                '  textAlign(heading/text): '
+                                    + (headingStyle ? headingStyle.textAlign : '(none)') + ' / '
+                                    + (textStyle ? textStyle.textAlign : '(none)'),
+                                '  cols/els: ' + allCols.length + ' / ' + allEls.length,
+                                '  sampleEls: ' + (sampleEls || '(none)'),
                                 '  rowPaddingTop/Bottom: ' + (rowStyle ? (rowStyle.paddingTop + ' / ' + rowStyle.paddingBottom) : '(none)'),
                                 '  colPaddingTop/Bottom: ' + (colStyle ? (colStyle.paddingTop + ' / ' + colStyle.paddingBottom) : '(none)'),
                                 '  isCarrierRow: ' + (row && row.classList.contains('builder-row--section-elements') ? 'yes' : 'no'),
@@ -7824,6 +7938,7 @@
 
                         if (debugAlign) {
                             const debugEls = Array.from(document.querySelectorAll('.builder-el[data-element-type]'));
+                            const alignRows = [];
                             debugEls.forEach(el => {
                                 const type = String(el.getAttribute('data-element-type') || '').trim();
                                 if (!supportedTypes.has(type)) return;
@@ -7839,9 +7954,34 @@
                                 const dxInnerVsSec = cInner - cSec;
                                 const dyTop = rSec ? (rEl.top - rSec.top) : 0;
                                 const dyBottom = rSec ? (rSec.bottom - rEl.bottom) : 0;
+                                // For buttons, also measure the inner `.btn` (visual center).
+                                let btnDxInner = null;
+                                if (type === "button") {
+                                    try {
+                                        const btn = el.querySelector(".btn");
+                                        if (btn && btn.getBoundingClientRect) {
+                                            const rb = btn.getBoundingClientRect();
+                                            const cb = rb.left + rb.width / 2;
+                                            btnDxInner = roundPx(cb - cInner);
+                                        }
+                                    } catch (_e) {}
+                                }
 
                                 el.style.boxShadow = 'inset 0 0 0 2px rgba(99, 102, 241, .95) !important';
                                 el.setAttribute('data-fb-debug-align', '1');
+
+                                // Collect row for copy/paste panel.
+                                try{
+                                    alignRows.push({
+                                        type: type,
+                                        dxSec: roundPx(dxSec),
+                                        dxInner: roundPx(dxInner),
+                                        btnDxInner: btnDxInner,
+                                        innerDx: roundPx(dxInnerVsSec),
+                                        top: roundPx(dyTop),
+                                        bottom: roundPx(dyBottom)
+                                    });
+                                }catch(_e){}
 
                                 if (sec && !sec.getAttribute('data-fb-debug-sec')) {
                                     sec.style.outline = '2px solid rgba(245, 158, 11, .95)';
@@ -7876,6 +8016,53 @@
 
                                 document.body.appendChild(label);
                             });
+
+                            // Copyable panel (top-right) for debug_align.
+                            try{
+                                var existing=document.querySelector('[data-fb-debug-align-panel="1"]');
+                                if(existing)existing.remove();
+                                alignRows.sort(function(a,b){
+                                    var da=Math.abs(Number(a.dxInner)||0);
+                                    var db=Math.abs(Number(b.dxInner)||0);
+                                    return db-da;
+                                });
+                                var topRows=alignRows.slice(0,20);
+                                var panel=document.createElement("textarea");
+                                panel.setAttribute("data-fb-debug-align-panel","1");
+                                panel.readOnly=true;
+                                panel.style.position="fixed";
+                                panel.style.right="12px";
+                                panel.style.bottom="12px";
+                                panel.style.zIndex="999999";
+                                panel.style.width="min(520px, calc(100vw - 24px))";
+                                panel.style.height="min(260px, 40vh)";
+                                panel.style.padding="10px 12px";
+                                panel.style.borderRadius="12px";
+                                panel.style.border="1px solid rgba(148,163,184,.45)";
+                                panel.style.background="rgba(2,6,23,.88)";
+                                panel.style.color="#fff";
+                                panel.style.fontFamily="Consolas, Monaco, monospace";
+                                panel.style.fontSize="12px";
+                                panel.style.lineHeight="1.45";
+                                panel.style.whiteSpace="pre";
+                                panel.style.boxShadow="0 18px 48px rgba(15,23,42,.22)";
+                                panel.value=[
+                                    "Align Debug (copy/paste)",
+                                    "Top 20 by |dxInner| (element center vs section-inner center)",
+                                    "",
+                                    topRows.map(function(r){
+                                        return r.type
+                                            +" dxInner:"+r.dxInner+"px"
+                                            +(r.btnDxInner==null?"":" btnDxInner:"+r.btnDxInner+"px")
+                                            +" dxSec:"+r.dxSec+"px"
+                                            +" innerDx:"+r.innerDx+"px"
+                                            +" top:"+r.top+"px"
+                                            +" bottom:"+r.bottom+"px";
+                                    }).join("\\n")
+                                ].join("\\n");
+                                panel.addEventListener("focus",function(){ try{ panel.select(); }catch(_e){} });
+                                document.body.appendChild(panel);
+                            }catch(_e){}
                         }
 
                         if (debugLayout) {
