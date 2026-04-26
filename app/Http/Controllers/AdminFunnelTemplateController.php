@@ -21,12 +21,9 @@ class AdminFunnelTemplateController extends Controller
     public function index(Request $request)
     {
         $search = trim((string) $request->query('search', ''));
-        $showLegacy = $request->boolean('legacy');
 
         $templates = FunnelTemplate::query()
-            ->when(!$showLegacy, function ($query) {
-                $query->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED);
-            })
+            ->where('template_type', FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP)
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($inner) use ($search) {
                     $inner->where('name', 'like', "%{$search}%")
@@ -43,7 +40,7 @@ class AdminFunnelTemplateController extends Controller
             return view('admin.funnel-templates._rows', compact('templates'))->render();
         }
 
-        return view('admin.funnel-templates.index', compact('templates', 'search', 'showLegacy'));
+        return view('admin.funnel-templates.index', compact('templates', 'search'));
     }
 
     public function create()
@@ -85,7 +82,7 @@ class AdminFunnelTemplateController extends Controller
 
         try {
             $template = $templateService->importTemplateFromJson($decoded, auth()->user(), [
-                'template_type' => 'single_page',
+                'template_type' => FunnelTemplate::defaultTemplateType(),
                 'publish' => true,
             ]);
         } catch (\Throwable $e) {
@@ -102,12 +99,13 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
-            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
+            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['nullable', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
             'template_tags' => 'nullable|string|max:500',
         ]);
 
         try {
+            $validated['template_type'] = FunnelTemplate::defaultTemplateType();
             $validated['template_tags'] = $this->attachFunnelPurposeTag(
                 $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
                 (string) ($validated['funnel_purpose'] ?? 'service')
@@ -124,8 +122,8 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
-            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
+            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['nullable', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
             'template_tags' => 'nullable|string|max:500',
             'import_json' => 'required|string',
             'publish_now' => 'nullable|boolean',
@@ -141,7 +139,7 @@ class AdminFunnelTemplateController extends Controller
             $template = $templateService->importTemplateFromJson($decoded, auth()->user(), [
                 'name' => trim((string) ($validated['name'] ?? '')) !== '' ? $validated['name'] : null,
                 'description' => array_key_exists('description', $validated) ? $validated['description'] : null,
-                'template_type' => $validated['template_type'],
+                'template_type' => FunnelTemplate::defaultTemplateType(),
                 'template_tags' => $this->attachFunnelPurposeTag(
                     $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
                     (string) ($validated['funnel_purpose'] ?? 'service')
@@ -210,7 +208,7 @@ class AdminFunnelTemplateController extends Controller
             'name' => $funnelTemplate->name,
             'slug' => $funnelTemplate->slug,
             'description' => $funnelTemplate->description,
-            'template_type' => $funnelTemplate->template_type,
+            'template_type' => FunnelTemplate::defaultTemplateType(),
             'template_tags' => $funnelTemplate->template_tags ?? [],
             'steps' => $funnelTemplate->steps->sortBy('position')->values()->map(function ($step) {
                 return [
@@ -246,8 +244,8 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'nullable|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
-            'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
+            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'funnel_purpose' => ['nullable', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
             'template_tags' => 'nullable|string|max:500',
             'import_json' => 'required|string',
             'publish_now' => 'nullable|boolean',
@@ -263,7 +261,7 @@ class AdminFunnelTemplateController extends Controller
             $templateService->replaceTemplateFromJson($funnelTemplate, $decoded, [
                 'name' => trim((string) ($validated['name'] ?? '')) !== '' ? $validated['name'] : $funnelTemplate->name,
                 'description' => array_key_exists('description', $validated) ? $validated['description'] : $funnelTemplate->description,
-                'template_type' => $validated['template_type'],
+                'template_type' => FunnelTemplate::defaultTemplateType(),
                 'template_tags' => $this->attachFunnelPurposeTag(
                     $this->normalizeTemplateTags($validated['template_tags'] ?? ''),
                     (string) ($validated['funnel_purpose'] ?? 'service')
@@ -302,7 +300,7 @@ class AdminFunnelTemplateController extends Controller
     {
         return FunnelTemplate::query()
             ->where('status', 'published')
-            ->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED)
+            ->where('template_type', FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP)
             ->with(['steps' => fn ($query) => $query->orderBy('position')])
             ->latest('published_at')
             ->latest('id')
@@ -434,7 +432,7 @@ class AdminFunnelTemplateController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::TEMPLATE_TYPES))],
+            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
             'status' => ['nullable', Rule::in(array_keys(FunnelTemplate::STATUSES))],
             'template_tags' => ['nullable'],
         ]);
@@ -447,7 +445,7 @@ class AdminFunnelTemplateController extends Controller
                 'name' => $validated['name'],
                 'slug' => $templateService->generateUniqueTemplateSlug($validated['name'], $funnelTemplate->id),
                 'description' => $validated['description'] ?? null,
-                'template_type' => $validated['template_type'] ?? $funnelTemplate->template_type,
+                'template_type' => FunnelTemplate::defaultTemplateType(),
                 'template_tags' => $templateTags,
                 'status' => $validated['status'] ?? $funnelTemplate->status,
             ]);

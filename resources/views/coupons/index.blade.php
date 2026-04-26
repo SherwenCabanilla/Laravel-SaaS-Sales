@@ -2,6 +2,20 @@
 
 @section('title', 'Coupons')
 
+@section('styles')
+    <style>
+        .team-table-scroll {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .team-table {
+            min-width: 940px;
+        }
+    </style>
+@endsection
+
 @section('content')
     @php
         $openCreateModal = $errors->any() || session('coupon_created');
@@ -43,8 +57,8 @@
                     </div>
                 </button>
                 <div data-coupon-collapse-panel="my-coupons" style="padding:0 18px 18px;">
-                    <div class="sa-table-scroll">
-                        <table class="sa-table">
+                    <div class="team-table-scroll">
+                        <table class="team-table">
                             <thead>
                                 <tr>
                                     <th>Code</th>
@@ -132,8 +146,8 @@
                     </div>
                 </button>
                 <div data-coupon-collapse-panel="platform-coupons" style="padding:0 18px 18px;">
-                    <div class="sa-table-scroll">
-                        <table class="sa-table">
+                    <div class="team-table-scroll">
+                        <table class="team-table">
                             <thead>
                                 <tr>
                                     <th>Code</th>

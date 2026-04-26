@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class FunnelTemplate extends Model
 {
     public const TEMPLATE_TYPE_UNCATEGORIZED = 'uncategorized';
+    public const TEMPLATE_TYPE_STEP_BY_STEP = 'step_by_step';
     public const PURPOSE_TAG_PREFIX = '__funnel_purpose:';
 
     public const STATUSES = [
@@ -34,9 +35,13 @@ class FunnelTemplate extends Model
     public static function selectableTemplateTypes(): array
     {
         return [
-            'single_page' => self::TEMPLATE_TYPES['single_page'],
-            'step_by_step' => self::TEMPLATE_TYPES['step_by_step'],
+            self::TEMPLATE_TYPE_STEP_BY_STEP => self::TEMPLATE_TYPES[self::TEMPLATE_TYPE_STEP_BY_STEP],
         ];
+    }
+
+    public static function defaultTemplateType(): string
+    {
+        return self::TEMPLATE_TYPE_STEP_BY_STEP;
     }
 
     public static function normalizeFunnelPurpose(mixed $value): string

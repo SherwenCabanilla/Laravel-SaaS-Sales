@@ -12,7 +12,7 @@
         
         <!-- Live Search Input -->
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search leads..." 
+            <input type="text" id="searchInput" placeholder="🔍 Search leads..." 
                    style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 300px;">
         </div>
     </div>

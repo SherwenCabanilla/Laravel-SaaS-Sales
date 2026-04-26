@@ -24,7 +24,7 @@
         @endif
 
         <div class="search-box" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="searchInput" placeholder="Search leads..."
+            <input type="text" id="searchInput" placeholder="🔍 Search leads..."
                 style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 240px;">
             <select id="tagFilterInput" style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; min-width: 180px;">
                 <option value="">All tags</option>
@@ -55,7 +55,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
             <span style="font-weight: 600;">Filter by lead or agent</span>
             <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <input type="text" id="pipelineSearchInput" placeholder="Search pipeline..."
+                <input type="text" id="pipelineSearchInput" placeholder="🔍 Search pipeline..."
                     style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 220px;">
                 <select id="pipelineTagFilterInput" style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; min-width: 180px;">
                     <option value="">All tags</option>
@@ -81,7 +81,7 @@
     <div class="card leads-list-card" style="margin-bottom: 20px;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
             <h3 style="margin: 0;">Leads List</h3>
-            <button type="button" id="toggleLeadsListBtn"
+            <button type="button" id="toggleLeadsListBtn" class="ui-show-hide-toggle"
                 style="padding: 10px 16px; background: var(--theme-primary, #240E35); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; min-width: 88px;"
                 aria-expanded="false">
                 Show
@@ -158,7 +158,7 @@
                             </div>
                             <div class="custom-dropdown-menu" id="leadDropdownMenu" style="display: none; position: absolute; width: 100%; background: var(--theme-surface, #FFFFFF); border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 10000; max-height: 300px; overflow-y: auto;">
                                 <div style="padding: 8px; border-bottom: 1px solid var(--theme-border, #E6E1EF); position: sticky; top: 0; background: var(--theme-surface, #FFFFFF); z-index: 10;">
-                                    <input type="text" id="leadDropdownSearch" placeholder="Search leads..." style="width: 100%; padding: 8px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 4px; font-size: 14px;">
+                                    <input type="text" id="leadDropdownSearch" placeholder="🔍 Search leads..." style="width: 100%; padding: 8px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 4px; font-size: 14px;">
                                 </div>
                                 <div id="leadDropdownOptions" style="max-height: 250px; overflow-y: auto;">
                                     @forelse($leadsForDropdown ?? $leads as $lead)

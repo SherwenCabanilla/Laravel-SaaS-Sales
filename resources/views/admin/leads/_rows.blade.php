@@ -18,7 +18,7 @@
                     {{ $lead->tenant->company_name }}
                 </span>
             @else
-                <span style="color: #9CA3AF; font-size: 12px;">N/A</span>
+                <span style="color: #9CA3AF; font-size: 12px;">{{ $emptyDash }}</span>
             @endif
         </td>
         <td>{{ $lead->assignedAgent->name ?? 'Unassigned' }}</td>

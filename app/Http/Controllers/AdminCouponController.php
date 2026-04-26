@@ -29,6 +29,10 @@ class AdminCouponController extends Controller
         $coupons = $query->paginate(12);
         $coupons->getCollection()->transform(fn (Coupon $coupon) => $couponService->syncCouponStatus($coupon));
 
+        if ($request->ajax()) {
+            return view('admin.coupons._rows', compact('coupons'));
+        }
+
         return view('admin.coupons.index', compact('coupons'));
     }
 

@@ -10,7 +10,7 @@
 <body>
     <div class="wrap">
         <h1>Set Your Password</h1>
-        <p>Account: <strong>{{ $email ?? 'N/A' }}</strong></p>
+        <p>Account: <strong>{{ $email ?? '-' }}</strong></p>
 
         @if(session('error'))
             <div class="msg error">{{ session('error') }}</div>

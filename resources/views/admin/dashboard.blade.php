@@ -1,4 +1,4 @@
-@extends('layouts.admin')
+﻿@extends('layouts.admin')
 
 @section('title', 'Super Admin Dashboard')
 
@@ -9,8 +9,9 @@
 @section('content')
     <div class="top-header top-header--with-tools">
         <h1>Welcome, Super Admin</h1>
-        <button type="button" class="landing-video-trigger" id="landingVideoTrigger" aria-label="Open landing hero video settings">
+        <button type="button" class="landing-video-trigger" id="landingVideoTrigger" aria-label="View/Upload Promotional Video">
             <i class="fas fa-film"></i>
+            <span class="landing-video-trigger-tooltip" role="tooltip">View/Upload Promotional<br>Video</span>
         </button>
     </div>
 
@@ -90,55 +91,138 @@
         </div>
     </div>
 
-    <div class="kpi-cards">
-        <div class="card" onclick="window.location='{{ route('admin.tenants.index') }}'" style="cursor: pointer;">
-            <h3>Total Tenants</h3>
-            <p>{{ $tenantCount }}</p>
-        </div>
-        <div class="card" onclick="window.location='{{ route('admin.tenants.index') }}'" style="cursor: pointer;">
-            <h3>Active Tenants</h3>
-            <p>{{ $activeTenantCount }}</p>
-        </div>
-        <div class="card" onclick="window.location='{{ route('admin.tenants.index') }}'" style="cursor: pointer;">
-            <h3>Trial Tenants</h3>
-            <p>{{ $trialTenantCount }}</p>
-        </div>
-        <div class="card" onclick="window.location='{{ route('admin.tenants.index') }}'" style="cursor: pointer;">
-            <h3>Inactive Tenants</h3>
-            <p>{{ $inactiveTenantCount }}</p>
-        </div>
-        <div class="card" onclick="window.location='{{ route('admin.users.index') }}'" style="cursor: pointer;">
-            <h3>Total Users</h3>
-            <p>{{ $userCount }}</p>
-        </div>
-        <div class="card" onclick="window.location='{{ route('admin.leads.index') }}'" style="cursor: pointer;">
-            <h3>Total Leads</h3>
-            <p>{{ $leadCount }}</p>
-        </div>
-        <div class="card">
-            <h3>MRR (Paid This Month)</h3>
-            <p>{{ number_format($mrr, 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Previous Month MRR</h3>
-            <p>{{ number_format($previousMonthMrr, 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>MRR Growth</h3>
-            <p>{{ number_format($mrrGrowthRate, 2) }}%</p>
-        </div>
-        <div class="card">
-            <h3>Churn Rate</h3>
-            <p>{{ number_format($churnRate, 2) }}%</p>
-        </div>
-        <div class="card">
-            <h3>ARPU</h3>
-            <p>{{ number_format($arpu, 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Paying Tenants</h3>
-            <p>{{ $payingTenantCount }}</p>
-        </div>
+    @php
+        $activeTenantShare = $tenantCount > 0 ? ($activeTenantCount / $tenantCount) * 100 : 0;
+        $trialTenantShare = $tenantCount > 0 ? ($trialTenantCount / $tenantCount) * 100 : 0;
+        $inactiveTenantShare = $tenantCount > 0 ? ($inactiveTenantCount / $tenantCount) * 100 : 0;
+        $payingTenantShare = $tenantCount > 0 ? ($payingTenantCount / $tenantCount) * 100 : 0;
+        $usersPerTenant = $tenantCount > 0 ? $userCount / $tenantCount : 0;
+        $leadsPerTenant = $tenantCount > 0 ? $leadCount / $tenantCount : 0;
+        $mrrDelta = $mrr - $previousMonthMrr;
+        $mrrGrowthTone = $mrrGrowthRate >= 0 ? 'positive' : 'danger';
+        $churnTone = $churnRate >= 10 ? 'danger' : ($churnRate >= 5 ? 'warning' : 'positive');
+    @endphp
+
+    <div class="admin-kpi-board">
+        <section class="admin-kpi-group" aria-labelledby="tenantOverviewHeading">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Tenant Overview</span>
+            </div>
+            <div class="admin-kpi-grid">
+                <a href="{{ route('admin.tenants.index') }}" class="admin-kpi-card admin-kpi-card--link admin-kpi-card--featured">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Total Tenants</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-building" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($tenantCount) }}</div>
+                    <div class="admin-kpi-card__meta">Platform accounts across all statuses</div>
+                </a>
+                <a href="{{ route('admin.tenants.index') }}" class="admin-kpi-card admin-kpi-card--link admin-kpi-card--success">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Active Tenants</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-check-circle" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($activeTenantCount) }}</div>
+                    <div class="admin-kpi-card__meta">{{ number_format($activeTenantShare, 1) }}% of all tenants are live</div>
+                </a>
+                <a href="{{ route('admin.tenants.index') }}" class="admin-kpi-card admin-kpi-card--link admin-kpi-card--warning">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Trial Tenants</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($trialTenantCount) }}</div>
+                    <div class="admin-kpi-card__meta">{{ number_format($trialTenantShare, 1) }}% are still evaluating the platform</div>
+                </a>
+                <a href="{{ route('admin.tenants.index') }}" class="admin-kpi-card admin-kpi-card--link admin-kpi-card--danger">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Inactive Tenants</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($inactiveTenantCount) }}</div>
+                    <div class="admin-kpi-card__meta">{{ number_format($inactiveTenantShare, 1) }}% may need recovery or cleanup</div>
+                </a>
+            </div>
+        </section>
+
+        <section class="admin-kpi-group" aria-labelledby="revenueSnapshotHeading">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Revenue Snapshot</span>
+            </div>
+            <div class="admin-kpi-grid">
+                <article class="admin-kpi-card admin-kpi-card--featured admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Current MRR</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-coins" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format($mrr, 2) }}</div>
+                    <div class="admin-kpi-card__meta">{{ $mrrDelta >= 0 ? '+' : '-' }}PHP {{ number_format(abs($mrrDelta), 2) }} vs last month</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Last Month MRR</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-history" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format($previousMonthMrr, 2) }}</div>
+                    <div class="admin-kpi-card__meta">Previous benchmark for this month's change</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--{{ $mrrGrowthTone }}">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">MRR Growth</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-chart-line" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($mrrGrowthRate, 2) }}<span class="admin-kpi-card__suffix">%</span></div>
+                    <div class="admin-kpi-card__meta">{{ $mrrGrowthRate >= 0 ? 'Revenue is trending up month over month' : 'Revenue is down from the previous month' }}</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">ARPU</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-wallet" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format($arpu, 2) }}</div>
+                    <div class="admin-kpi-card__meta">Average recurring revenue per paying tenant</div>
+                </article>
+            </div>
+        </section>
+
+        <section class="admin-kpi-group" aria-labelledby="platformHealthHeading">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Platform Health</span>
+            </div>
+            <div class="admin-kpi-grid">
+                <article class="admin-kpi-card admin-kpi-card--featured">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Paying Tenants</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-credit-card" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($payingTenantCount) }}</div>
+                    <div class="admin-kpi-card__meta">{{ number_format($payingTenantShare, 1) }}% of all tenants are currently monetized</div>
+                </article>
+                <a href="{{ route('admin.users.index') }}" class="admin-kpi-card admin-kpi-card--link">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Total Users</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-users" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($userCount) }}</div>
+                    <div class="admin-kpi-card__meta">{{ number_format($usersPerTenant, 1) }} users per tenant on average</div>
+                </a>
+                <a href="{{ route('admin.leads.index') }}" class="admin-kpi-card admin-kpi-card--link">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Total Leads</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-bullseye" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($leadCount) }}</div>
+                    <div class="admin-kpi-card__meta">{{ number_format($leadsPerTenant, 1) }} leads captured per tenant</div>
+                </a>
+                <article class="admin-kpi-card admin-kpi-card--{{ $churnTone }}">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Churn Rate</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-user-minus" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($churnRate, 2) }}<span class="admin-kpi-card__suffix">%</span></div>
+                    <div class="admin-kpi-card__meta">{{ $churnRate >= 10 ? 'High churn signal. Review retention and failed renewals.' : ($churnRate >= 5 ? 'Moderate churn. Keep an eye on plan downgrades.' : 'Healthy churn range based on current thresholds.') }}</div>
+                </article>
+            </div>
+        </section>
     </div>
 
     <div class="charts">
@@ -465,3 +549,4 @@
         });
     </script>
 @endsection
+

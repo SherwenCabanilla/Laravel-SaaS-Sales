@@ -36,19 +36,38 @@
         </div>
     </div>
 
-    <div class="kpi-cards">
-        <div class="card">
-            <h3>My Assigned Leads</h3>
-            <p>{{ $myAssignedLeadsCount }}</p>
-        </div>
-        <div class="card">
-            <h3>Overdue Follow-ups</h3>
-            <p>{{ $overdueFollowUpsCount }}</p>
-        </div>
-        <div class="card">
-            <h3>Today Tasks</h3>
-            <p>{{ $todayTaskCount }}</p>
-        </div>
+    <div class="admin-kpi-board">
+        <section class="admin-kpi-group" aria-label="Sales Snapshot">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Sales Snapshot</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--3">
+                <article class="admin-kpi-card admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">My Assigned Leads</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-address-card" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($myAssignedLeadsCount) }}</div>
+                    <div class="admin-kpi-card__meta">Active leads currently assigned to your pipeline</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--danger">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Overdue Follow-ups</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-bell" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($overdueFollowUpsCount) }}</div>
+                    <div class="admin-kpi-card__meta">Leads that need immediate response or outreach</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--warning">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Today Tasks</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-calendar-day" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($todayTaskCount) }}</div>
+                    <div class="admin-kpi-card__meta">Follow-up actions and selling tasks due today</div>
+                </article>
+            </div>
+        </section>
     </div>
 
     <div class="charts">

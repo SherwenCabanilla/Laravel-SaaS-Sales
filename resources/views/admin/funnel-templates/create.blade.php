@@ -29,16 +29,13 @@
             </div>
 
             <div style="margin-bottom: 16px;">
-                <label for="template_type" style="display:block; margin-bottom:8px; font-weight:700;">Template Purpose</label>
-                <select id="template_type" name="template_type" required
-                    style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
-                    <option value="" disabled {{ old('template_type') ? '' : 'selected' }}>Select template purpose</option>
-                    @foreach(($templateTypeOptions ?? []) as $value => $label)
-                        <option value="{{ $value }}" {{ old('template_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
+                <label style="display:block; margin-bottom:8px; font-weight:700;">Template Style</label>
+                <input type="hidden" name="template_type" value="step_by_step">
+                <div style="padding:12px 14px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fbf9fd; font-weight:700; color:#240E35;">
+                    Step-by-Step Page
+                </div>
                 <div style="margin-top:6px; color:#64748b; font-size:12px;">
-                    Choose this first so the template is categorized correctly before you open the builder.
+                    Super Admin templates are created as reusable step-by-step funnels.
                 </div>
                 @error('template_type')
                     <span style="color:red; font-size:12px;">{{ $message }}</span>
@@ -63,7 +60,7 @@
 
             <div style="margin:18px 0; padding:14px 16px; border-radius:12px; background:#fbf9fd; border:1px solid #ece2f5; color:#475569; font-size:13px; line-height:1.55;">
                 Build setup:
-                <br><strong>Template Purpose</strong>: Single Page or Step-by-Step layout mode.
+                <br><strong>Template Style</strong>: Step-by-Step Page.
                 <br><strong>Funnel Purpose</strong>: Services or Physical Product component focus.
             </div>
 

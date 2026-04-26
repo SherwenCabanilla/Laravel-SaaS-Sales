@@ -16,7 +16,7 @@
 
         <!-- Live Search Input -->
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search team members..." 
+            <input type="text" id="searchInput" placeholder="🔍 Search team members..." 
                    style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 300px;">
         </div>
     </div>
@@ -30,7 +30,7 @@
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
             <h3 style="margin: 0;">Team Members</h3>
-            <button type="button" id="toggleTeamMembersBtn"
+            <button type="button" id="toggleTeamMembersBtn" class="ui-show-hide-toggle"
                 style="padding: 10px 16px; background: var(--theme-primary, #240E35); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; min-width: 88px;"
                 aria-expanded="false">
                 Show

@@ -1,7 +1,7 @@
 @forelse($templates as $template)
     <tr>
         <td>{{ $template->name }}</td>
-        <td>{{ $template->templateTypeLabel() }}</td>
+        <td>{{ \App\Models\FunnelTemplate::FUNNEL_PURPOSE_OPTIONS[$template->resolvedFunnelPurpose()] ?? 'Services' }}</td>
         <td>{{ ucfirst($template->status) }}</td>
         <td>{{ $template->steps_count }}</td>
         <td>{{ $template->slug }}</td>

@@ -267,8 +267,8 @@ class DashboardController extends Controller
         $user = auth()->user();
         $tenant = $user->tenant;
 
-        $subscriptionStatus = $tenant ? ucfirst($tenant->status) : 'N/A';
-        $subscriptionPlan = $tenant->subscription_plan ?? 'N/A';
+        $subscriptionStatus = $tenant ? ucfirst($tenant->status) : '-';
+        $subscriptionPlan = $tenant->subscription_plan ?? '-';
 
         $recentPayments = Payment::where('tenant_id', $user->tenant_id)
             ->latest('payment_date')

@@ -34,7 +34,7 @@
 
         <div style="display: grid; grid-template-columns: 170px 1fr; gap: 8px 16px; margin-bottom: 24px; font-size: 14px;">
             <div style="font-weight: 700; color: #1f2937;">Workflow Name</div>
-            <div>{{ $status['name'] ?? 'N/A' }}</div>
+            <div>{{ $status['name'] ?? $emptyDash }}</div>
 
             <div style="font-weight: 700; color: #1f2937;">Current State</div>
             <div>
@@ -88,7 +88,7 @@
                                 <tr>
                                     <td style="padding:8px;border-bottom:1px solid #F1F5F9;">{{ optional($log->occurred_at)->format('Y-m-d H:i:s') }}</td>
                                     <td style="padding:8px;border-bottom:1px solid #F1F5F9;">{{ $log->event_type }}</td>
-                                    <td style="padding:8px;border-bottom:1px solid #F1F5F9;">{{ $log->message ?: 'N/A' }}</td>
+                                    <td style="padding:8px;border-bottom:1px solid #F1F5F9;">{{ $log->message ?: $emptyDash }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

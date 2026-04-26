@@ -50,6 +50,9 @@
             'out_for_delivery' => 'Out for Delivery',
             'delivered' => 'Delivered',
         ];
+        $pendingOrdersExcelUrl = route('funnels.analytics.orders.export', array_merge(['funnel' => $funnel], request()->query(), ['section' => 'pending']));
+        $paidOrdersExcelUrl = route('funnels.analytics.orders.export', array_merge(['funnel' => $funnel], request()->query(), ['section' => 'paid']));
+        $orderDirectoryExcelUrl = route('funnels.analytics.orders.export', array_merge(['funnel' => $funnel], request()->query(), ['section' => 'directory']));
         $offerActivityGroups = [
             'upsell_accepted' => [
                 'title' => 'Upsell Accepted',
@@ -477,9 +480,21 @@
 
         @if($isPhysicalAnalytics)
             <div class="analytics-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                <div class="analytics-section-actions">
                     <h3 style="margin:0;">Pending Orders</h3>
-                    <button type="button" id="togglePendingOrdersBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="pendingOrdersContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                    <div class="analytics-section-actions__controls">
+                        <a
+                            href="{{ $pendingOrdersExcelUrl }}"
+                            class="analytics-btn analytics-btn--icon-only"
+                            aria-label="Download to Excel"
+                        >
+                            <span class="analytics-btn-icon" aria-hidden="true">
+                                <i class="fas fa-file-excel" aria-hidden="true"></i>
+                            </span>
+                            <span class="analytics-btn-tooltip" role="tooltip">Download to Excel</span>
+                        </a>
+                        <button type="button" id="togglePendingOrdersBtn" class="analytics-toggle-btn ui-show-hide-toggle" aria-expanded="false" aria-controls="pendingOrdersContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                    </div>
                 </div>
                 <div id="pendingOrdersContent" style="display:none;">
                     <div class="analytics-table-wrap">
@@ -498,21 +513,21 @@
                             <tbody>
                                 @forelse($physicalPendingOrders as $row)
                                     <tr>
-                                        <td><strong>{{ $row['customer'] ?? 'Anonymous visitor' }}</strong><br><span style="color:var(--theme-muted, #6B7280);font-size:12px;">{{ $row['email'] ?? 'N/A' }}</span></td>
-                                        <td>{{ $row['phone'] ?? 'N/A' }}</td>
+                                        <td><strong>{{ $row['customer'] ?? 'Anonymous visitor' }}</strong><br><span style="color:var(--theme-muted, #6B7280);font-size:12px;">{{ $row['email'] ?? $emptyDash }}</span></td>
+                                        <td>{{ $row['phone'] ?? $emptyDash }}</td>
                                         <td>
                                             @if(!empty($row['order_items']) && is_array($row['order_items']))
                                                 @foreach($row['order_items'] as $item)
                                                     <div><strong>{{ $item['name'] ?? 'Product' }}</strong> x{{ max(1, (int) ($item['quantity'] ?? 1)) }}</div>
                                                 @endforeach
                                             @else
-                                                {{ $row['order_items_label'] ?? ($row['selected_offer'] ?? 'N/A') }}
+                                                {{ $row['order_items_label'] ?? ($row['selected_offer'] ?? $emptyDash) }}
                                             @endif
                                         </td>
-                                        <td>{{ (int) ($row['order_quantity'] ?? 0) > 0 ? (int) $row['order_quantity'] : 'N/A' }}</td>
+                                        <td>{{ (int) ($row['order_quantity'] ?? 0) > 0 ? (int) $row['order_quantity'] : $emptyDash }}</td>
                                         <td>PHP {{ number_format((float) ($row['checkout_amount'] ?? 0), 2) }}</td>
-                                        <td>{{ $row['delivery_address'] ?? 'N/A' }}</td>
-                                        <td>{{ $row['last_activity'] ?? 'N/A' }}</td>
+                                        <td>{{ $row['delivery_address'] ?? $emptyDash }}</td>
+                                        <td>{{ $row['last_activity'] ?? $emptyDash }}</td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -526,9 +541,21 @@
             </div>
 
             <div class="analytics-card">
-                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+                <div class="analytics-section-actions">
                     <h3 style="margin:0;">Paid Orders</h3>
-                    <button type="button" id="togglePaidOrdersBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="paidOrdersContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                    <div class="analytics-section-actions__controls">
+                        <a
+                            href="{{ $paidOrdersExcelUrl }}"
+                            class="analytics-btn analytics-btn--icon-only"
+                            aria-label="Download to Excel"
+                        >
+                            <span class="analytics-btn-icon" aria-hidden="true">
+                                <i class="fas fa-file-excel" aria-hidden="true"></i>
+                            </span>
+                            <span class="analytics-btn-tooltip" role="tooltip">Download to Excel</span>
+                        </a>
+                        <button type="button" id="togglePaidOrdersBtn" class="analytics-toggle-btn ui-show-hide-toggle" aria-expanded="false" aria-controls="paidOrdersContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                    </div>
                 </div>
                 <div id="paidOrdersContent" style="display:none;">
                     <div class="analytics-table-wrap">
@@ -546,8 +573,8 @@
                                     <tr>
                                         <td>
                                             <strong>{{ $row['customer'] ?? 'Anonymous visitor' }}</strong><br>
-                                            <span style="color:var(--theme-muted, #6B7280);font-size:12px;">{{ $row['email'] ?? 'N/A' }}</span><br>
-                                            <span style="color:var(--theme-muted, #6B7280);font-size:12px;">{{ $row['phone'] ?? 'N/A' }}</span>
+                                            <span style="color:var(--theme-muted, #6B7280);font-size:12px;">{{ $row['email'] ?? $emptyDash }}</span><br>
+                                            <span style="color:var(--theme-muted, #6B7280);font-size:12px;">{{ $row['phone'] ?? $emptyDash }}</span>
                                         </td>
                                         <td>
                                             @if(!empty($row['order_items']) && is_array($row['order_items']))
@@ -555,10 +582,10 @@
                                                     <div><strong>{{ $item['name'] ?? 'Product' }}</strong> x{{ max(1, (int) ($item['quantity'] ?? 1)) }}</div>
                                                 @endforeach
                                             @else
-                                                {{ $row['order_items_label'] ?? ($row['selected_offer'] ?? 'N/A') }}
+                                                {{ $row['order_items_label'] ?? ($row['selected_offer'] ?? $emptyDash) }}
                                             @endif
                                             <div style="margin-top:8px;font-size:12px;color:var(--theme-muted, #6B7280);">
-                                                Qty: {{ (int) ($row['order_quantity'] ?? 0) > 0 ? (int) $row['order_quantity'] : 'N/A' }}
+                                                Qty: {{ (int) ($row['order_quantity'] ?? 0) > 0 ? (int) $row['order_quantity'] : $emptyDash }}
                                             </div>
                                             <div style="margin-top:6px;font-size:12px;color:var(--theme-muted, #6B7280);">
                                                 {{ $row['delivery_address'] ?? 'No delivery address recorded' }}
@@ -635,9 +662,23 @@
         @endif
 
         <div class="analytics-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+            <div class="analytics-section-actions">
                 <h3 style="margin:0;">{{ $summarySectionTitle }}</h3>
-                <button type="button" id="toggleOfferActivityBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="offerActivityContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                <div class="analytics-section-actions__controls">
+                    @if($isPhysicalAnalytics)
+                        <a
+                            href="{{ $orderDirectoryExcelUrl }}"
+                            class="analytics-btn analytics-btn--icon-only"
+                            aria-label="Download to Excel"
+                        >
+                            <span class="analytics-btn-icon" aria-hidden="true">
+                                <i class="fas fa-file-excel" aria-hidden="true"></i>
+                            </span>
+                            <span class="analytics-btn-tooltip" role="tooltip">Download to Excel</span>
+                        </a>
+                    @endif
+                    <button type="button" id="toggleOfferActivityBtn" class="analytics-toggle-btn ui-show-hide-toggle" aria-expanded="false" aria-controls="offerActivityContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                </div>
             </div>
             <div id="offerActivityContent" style="display:none;">
                 @unless($isPhysicalAnalytics)
@@ -691,8 +732,8 @@
                                 @if($isPhysicalAnalytics)
                                     <tr>
                                         <td><strong>{{ $row['customer'] ?? 'Anonymous visitor' }}</strong></td>
-                                        <td>{{ $row['email'] ?? 'N/A' }}</td>
-                                        <td>{{ $row['phone'] ?? 'N/A' }}</td>
+                                        <td>{{ $row['email'] ?? $emptyDash }}</td>
+                                        <td>{{ $row['phone'] ?? $emptyDash }}</td>
                                         <td>
                                             @if(!empty($row['order_items']) && is_array($row['order_items']))
                                                 @foreach($row['order_items'] as $item)
@@ -709,15 +750,15 @@
                                                     @endif
                                                 @endforeach
                                             @else
-                                                {{ $row['order_items_label'] ?? ($row['selected_offer'] ?? 'N/A') }}
+                                                {{ $row['order_items_label'] ?? ($row['selected_offer'] ?? $emptyDash) }}
                                             @endif
                                         </td>
-                                        <td>{{ (int) ($row['order_quantity'] ?? 0) > 0 ? (int) $row['order_quantity'] : 'N/A' }}</td>
+                                        <td>{{ (int) ($row['order_quantity'] ?? 0) > 0 ? (int) $row['order_quantity'] : $emptyDash }}</td>
                                         <td><span class="analytics-pill">{{ strtoupper(str_replace('_', ' ', (string) ($row['order_status'] ?? 'pending'))) }}</span></td>
                                         <td>PHP {{ number_format((float) ($row['checkout_amount'] ?? 0), 2) }}</td>
-                                        <td>{{ $row['delivery_address'] ?? 'N/A' }}</td>
-                                        <td>{{ $row['notes'] ?? 'N/A' }}</td>
-                                        <td>{{ $row['last_activity'] ?? 'N/A' }}</td>
+                                        <td>{{ $row['delivery_address'] ?? $emptyDash }}</td>
+                                        <td>{{ $row['notes'] ?? $emptyDash }}</td>
+                                        <td>{{ $row['last_activity'] ?? $emptyDash }}</td>
                                     </tr>
                                 @else
                                     @php
@@ -728,12 +769,12 @@
                                     @endphp
                                     <tr data-upsell-status="{{ $upsellFilterValue }}" data-downsell-status="{{ $downsellFilterValue }}">
                                         <td><strong>{{ $row['customer'] ?? 'Anonymous visitor' }}</strong></td>
-                                        <td>{{ $row['email'] ?? 'N/A' }}</td>
-                                        <td>{{ $row['selected_offer'] ?? 'N/A' }}</td>
+                                        <td>{{ $row['email'] ?? $emptyDash }}</td>
+                                        <td>{{ $row['selected_offer'] ?? $emptyDash }}</td>
                                         <td>PHP {{ number_format((float) ($row['checkout_amount'] ?? 0), 2) }}</td>
                                         <td>{{ $upsellStatus }}</td>
                                         <td>{{ $downsellStatus }}</td>
-                                        <td>{{ $row['last_activity'] ?? 'N/A' }}</td>
+                                        <td>{{ $row['last_activity'] ?? $emptyDash }}</td>
                                     </tr>
                                 @endif
                             @empty
@@ -762,7 +803,7 @@
             <div class="analytics-card">
                 <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
                     <h3 style="margin:0;">Step Performance</h3>
-                    <button type="button" id="toggleStepPerformanceBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="stepPerformanceContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                    <button type="button" id="toggleStepPerformanceBtn" class="analytics-toggle-btn ui-show-hide-toggle" aria-expanded="false" aria-controls="stepPerformanceContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
                 </div>
                 <div id="stepPerformanceContent" style="display:none;">
                     <div class="analytics-table-wrap">
@@ -819,7 +860,7 @@
                 <h3 style="margin:0;">Recent Funnel Events</h3>
                 <div style="display:flex;flex-wrap:wrap;gap:10px;">
                     <a href="{{ route('funnels.events', $funnel) }}" class="analytics-btn">Open Raw Events JSON</a>
-                    <button type="button" id="toggleRecentEventsBtn" class="analytics-toggle-btn" aria-expanded="false" aria-controls="recentEventsContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
+                    <button type="button" id="toggleRecentEventsBtn" class="analytics-toggle-btn ui-show-hide-toggle" aria-expanded="false" aria-controls="recentEventsContent"><i class="fas fa-eye" aria-hidden="true"></i><span>Show</span></button>
                 </div>
             </div>
 
@@ -833,12 +874,12 @@
                                     <strong>{{ optional($event->occurred_at)->format('M j, Y g:i A') }}</strong>
                                 </div>
                                 <div class="analytics-event-meta">
-                                    Step: {{ $event->step->title ?? 'N/A' }}<br>
+                                    Step: {{ $event->step->title ?? $emptyDash }}<br>
                                     Step Type: {{ ucwords(str_replace('_', ' ', data_get($event->meta, 'step_type', $event->step->type ?? 'n/a'))) }}<br>
-                                    Step Slug: {{ data_get($event->meta, 'step_slug', $event->step->slug ?? 'N/A') }}<br>
-                                    Session: {{ $event->session_identifier ?? 'N/A' }}<br>
-                                    Lead: {{ $event->lead->email ?? ($event->lead->name ?? 'N/A') }}<br>
-                                    Payment: {{ $event->payment ? ('PHP ' . number_format((float) $event->payment->amount, 2) . ' / ' . $event->payment->status) : 'N/A' }}
+                                    Step Slug: {{ data_get($event->meta, 'step_slug', $event->step->slug ?? $emptyDash) }}<br>
+                                    Session: {{ $event->session_identifier ?? $emptyDash }}<br>
+                                    Lead: {{ $event->lead->email ?? ($event->lead->name ?? $emptyDash) }}<br>
+                                    Payment: {{ $event->payment ? ('PHP ' . number_format((float) $event->payment->amount, 2) . ' / ' . $event->payment->status) : $emptyDash }}
                                 </div>
                             </div>
                         @endforeach
@@ -902,8 +943,8 @@
             </div>
             <div class="analytics-modal-body">
                 <div class="analytics-delivery-meta">
-                    <strong id="deliveryUpdateModalCustomer">Customer: N/A</strong>
-                    <span id="deliveryUpdateModalEmail" style="color:var(--theme-muted, #6B7280);">Email: N/A</span>
+                    <strong id="deliveryUpdateModalCustomer">Customer: -</strong>
+                    <span id="deliveryUpdateModalEmail" style="color:var(--theme-muted, #6B7280);">Email: -</span>
                 </div>
                 <form method="POST" action="{{ route('funnels.analytics.delivery-update', $funnel) }}" class="analytics-inline-form analytics-inline-form--compact" id="deliveryUpdateModalForm">
                     @csrf
@@ -1113,14 +1154,14 @@
             }
 
             offerActivityModalRows.innerHTML = rows.map((row) => {
-                const selectedOffer = escapeHtml(row.selected_offer || 'N/A');
+                const selectedOffer = escapeHtml(row.selected_offer || '-');
                 const paidBeforeOffer = Number(row.paid_before_offer || 0).toFixed(2);
                 const amount = Number(row.amount || 0).toFixed(2);
                 const customer = escapeHtml(row.lead_name || row.lead_label || 'Anonymous visitor');
-                const email = escapeHtml(row.lead_email || 'N/A');
-                const step = escapeHtml(row.step_title || 'N/A');
-                const payment = escapeHtml(row.payment_status || 'N/A');
-                const occurredAt = escapeHtml(row.occurred_at_label || 'N/A');
+                const email = escapeHtml(row.lead_email || '-');
+                const step = escapeHtml(row.step_title || '-');
+                const payment = escapeHtml(row.payment_status || '-');
+                const occurredAt = escapeHtml(row.occurred_at_label || '-');
 
                 return `
                     <tr>
@@ -1212,7 +1253,7 @@
                 deliveryUpdateModalCustomer.textContent = 'Customer: ' + (customer || 'Anonymous visitor');
             }
             if (deliveryUpdateModalEmail) {
-                deliveryUpdateModalEmail.textContent = 'Email: ' + (recipientEmail || 'N/A');
+                deliveryUpdateModalEmail.textContent = 'Email: ' + (recipientEmail || '-');
             }
 
             lastDeliveryUpdateTrigger = button;
@@ -1385,4 +1426,3 @@
         }
     </script>
 @endsection
-

@@ -679,7 +679,6 @@
         <form method="POST" action="{{ $builderUpdateUrl ?? route('funnels.update', $funnel) }}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
             @csrf
             @method('PUT')
-            <input type="hidden" name="name" value="{{ $funnel->name }}">
             <select
                 id="fbPurposeTopBar"
                 style="min-width:190px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;background:#fff;font-weight:700;"
@@ -692,14 +691,15 @@
             @if(($builderMode ?? 'funnel') === 'template')
                 <input
                     type="text"
-                    name="description"
-                    value="{{ old('description', $funnel->description) }}"
-                    placeholder="Template description"
-                    style="min-width:320px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
+                    name="name"
+                    value="{{ old('name', $funnel->name) }}"
+                    placeholder="Template name"
+                    style="min-width:260px;padding:6px 8px;border:1px solid #E6E1EF;border-radius:8px;font-size:12px;"
                 >
             @else
-                <input type="hidden" name="description" value="{{ $funnel->description }}">
+                <input type="hidden" name="name" value="{{ $funnel->name }}">
             @endif
+            <input type="hidden" name="description" value="{{ old('description', $funnel->description) }}">
             <input type="hidden" name="status" value="{{ $funnel->status }}">
             <input
                 type="text"
@@ -722,7 +722,7 @@
         @if($funnel->status === 'published')
             <form method="POST" action="{{ $builderUnpublishUrl ?? route('funnels.unpublish', $funnel) }}" id="builderUnpublishForm">@csrf<button class="fb-btn danger" type="submit"><i class="fas fa-ban"></i> Unpublish</button></form>
         @else
-            <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">@csrf<button class="fb-btn success" type="submit" id="builderPublishBtn"><i class="fas fa-upload"></i> {{ ($builderMode ?? 'funnel') === 'template' ? 'Save as Template' : 'Publish' }}</button></form>
+            <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">@csrf<button class="fb-btn success" type="submit" id="builderPublishBtn"><i class="fas fa-upload"></i> Publish</button></form>
         @endif
         <a href="{{ $builderExitUrl ?? route('funnels.index') }}" class="fb-btn"><i class="fas fa-door-open"></i> Exit Builder</a>
     </div>
@@ -980,6 +980,8 @@
             })->values()->all(),
         ];
     })->all();
+    $defaultStep = $funnel->steps->sortBy('position')->first();
+    $defaultStepId = $defaultStep?->id;
 @endphp
 <script>
 (function(){
@@ -1185,7 +1187,7 @@ function renderStepOptions(){
 function applyPurposeComponentVisibility(){
     var labels={
         service:"Service Funnel",
-        single_page:"Single Page Funnel",
+        single_page:"Service Funnel",
         digital_product:"Digital Product Funnel",
         physical_product:"Physical Product Funnel",
         hybrid:"Hybrid Funnel"
@@ -3851,7 +3853,7 @@ function renderTemplateLibrary(){
     });
     var purposeLabels={
         service:"Service Funnel",
-        single_page:"Single Page Funnel",
+        single_page:"Service Funnel",
         physical_product:"Physical Product Funnel"
     };
     var activePurposeLabel=purposeLabels[builderPurpose]||"Service Funnel";

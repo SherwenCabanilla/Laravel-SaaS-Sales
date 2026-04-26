@@ -36,23 +36,46 @@
         </div>
     </div>
 
-    <div class="kpi-cards">
-        <div class="card">
-            <h3>Paid Total</h3>
-            <p>{{ number_format((float) ($statusAmounts['paid'] ?? 0), 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Pending Total</h3>
-            <p>{{ number_format((float) ($statusAmounts['pending'] ?? 0), 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Failed Total</h3>
-            <p>{{ number_format((float) ($statusAmounts['failed'] ?? 0), 2) }}</p>
-        </div>
-        <div class="card">
-            <h3>Outstanding Invoices</h3>
-            <p>{{ $outstandingCount }} ({{ '' . number_format($outstandingAmount, 2) }})</p>
-        </div>
+    <div class="admin-kpi-board">
+        <section class="admin-kpi-group" aria-label="Finance Overview">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Finance Overview</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--4">
+                <article class="admin-kpi-card admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Paid Total</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-coins" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format((float) ($statusAmounts['paid'] ?? 0), 2) }}</div>
+                    <div class="admin-kpi-card__meta">Collected revenue from fully paid transactions</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--warning">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Pending Total</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format((float) ($statusAmounts['pending'] ?? 0), 2) }}</div>
+                    <div class="admin-kpi-card__meta">Payments still awaiting completion or confirmation</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--danger">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Failed Total</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-times-circle" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value"><span class="admin-kpi-card__unit">PHP</span>{{ number_format((float) ($statusAmounts['failed'] ?? 0), 2) }}</div>
+                    <div class="admin-kpi-card__meta">Payment value tied to failed collections</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--warning">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Outstanding Invoices</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($outstandingCount) }}</div>
+                    <div class="admin-kpi-card__meta">PHP {{ number_format($outstandingAmount, 2) }} still awaiting payment</div>
+                </article>
+            </div>
+        </section>
     </div>
 
     <div class="charts">
@@ -92,7 +115,7 @@
                 @forelse($pendingInvoices as $invoice)
                     <tr>
                         <td>{{ $invoice->payment_date->format('Y-m-d') }}</td>
-                        <td>{{ $invoice->lead->name ?? 'N/A' }}</td>
+                        <td>{{ $invoice->lead->name ?? $emptyDash }}</td>
                         <td>{{ number_format((float) $invoice->amount, 2) }}</td>
                     </tr>
                 @empty

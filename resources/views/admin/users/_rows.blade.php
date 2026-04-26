@@ -8,7 +8,7 @@
                     {{ $user->tenant->company_name }}
                 </span>
             @else
-                <span style="color: #9CA3AF; font-size: 12px;">N/A</span>
+                <span style="color: #9CA3AF; font-size: 12px;">{{ $emptyDash }}</span>
             @endif
         </td>
         <td>
@@ -36,7 +36,7 @@
                     {{ $user->status === 'active' ? 'Suspend' : 'Activate' }}
                 </button>
             @else
-                <span style="color: var(--theme-muted, #6B7280); font-size: 12px; font-weight: 700;">N/A</span>
+                <span style="color: var(--theme-muted, #6B7280); font-size: 12px; font-weight: 700;">{{ $emptyDash }}</span>
             @endif
         </td>
     </tr>

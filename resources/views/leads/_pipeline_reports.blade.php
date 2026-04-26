@@ -4,8 +4,8 @@
 @php($stageAging = $pipelineReports['stage_aging'] ?? [])
 
 <div class="card pipeline-report-card" style="margin-bottom: 20px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-        <div>
+    <div class="pipeline-report-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="pipeline-report-header-text">
             <h3 style="margin:0;">Pipeline Reporting</h3>
             <p style="margin:6px 0 0 0;color:var(--theme-muted, #6B7280);font-size:13px;">
                 Live stage counts, transition performance, aging, and win/loss health for the current workspace view.
@@ -14,7 +14,7 @@
         <button
             type="button"
             id="togglePipelineReportsBtn"
-            class="pipeline-report-toggle-btn"
+            class="pipeline-report-toggle-btn ui-show-hide-toggle"
             aria-expanded="false"
             aria-controls="pipelineReportsContent">
             Show

@@ -110,7 +110,7 @@
         <div class="card">
             <h3>Account Details</h3>
             <div style="margin-bottom: 12px; font-weight: 700; color: var(--theme-muted, #6B7280);">Role: {{ $roleName }}</div>
-            <div style="margin-bottom: 12px; font-weight: 700; color: var(--theme-muted, #6B7280);">Last Login: {{ optional($user->last_login_at)->format('Y-m-d H:i') ?? 'N/A' }}</div>
+            <div style="margin-bottom: 12px; font-weight: 700; color: var(--theme-muted, #6B7280);">Last Login: {{ optional($user->last_login_at)->format('Y-m-d H:i') ?? $emptyDash }}</div>
             <div style="margin-bottom: 16px; font-weight: 700; color: var(--theme-muted, #6B7280);">Account Created Date: {{ $user->created_at->format('Y-m-d H:i') }}</div>
 
             <div style="margin-bottom: 16px; padding: 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 8px;">

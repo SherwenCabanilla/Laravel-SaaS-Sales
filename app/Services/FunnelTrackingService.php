@@ -451,12 +451,12 @@ class FunnelTrackingService
                 return [
                     'event_name' => $event->event_name,
                     'occurred_at' => optional($event->occurred_at)?->toIso8601String(),
-                    'occurred_at_label' => optional($event->occurred_at)?->format('M j, Y g:i A') ?? 'N/A',
+                    'occurred_at_label' => optional($event->occurred_at)?->format('M j, Y g:i A') ?? '-',
                     'lead_name' => $leadName !== '' ? $leadName : null,
                     'lead_email' => $leadEmail !== '' ? $leadEmail : null,
                     'lead_label' => $leadLabel,
                     'selected_offer' => $selectedOffer,
-                    'step_title' => $event->step->title ?? 'N/A',
+                    'step_title' => $event->step->title ?? '-',
                     'step_slug' => $event->step->slug ?? data_get($event->meta, 'step_slug'),
                     'amount' => $event->payment ? (float) $event->payment->amount : (float) data_get($event->meta, 'amount', 0),
                     'paid_before_offer' => $paidBeforeOffer,
@@ -706,7 +706,7 @@ class FunnelTrackingService
                     'delivery_updated_label' => $deliveryUpdatedLabel ?: null,
                     'upsell_status' => $this->offerStatusLabel($upsellAccepted, $upsellDeclined),
                     'downsell_status' => $this->offerStatusLabel($downsellAccepted, $downsellDeclined),
-                    'last_activity' => optional($latest?->occurred_at)?->format('M j, Y g:i A') ?? 'N/A',
+                    'last_activity' => optional($latest?->occurred_at)?->format('M j, Y g:i A') ?? '-',
                     'last_activity_at' => optional($latest?->occurred_at)?->toIso8601String(),
                 ];
             })

@@ -18,11 +18,11 @@
     </div>
 
     <div class="actions" style="display: flex; justify-content: space-between; align-items: center;">
-        <a href="{{ route('admin.tenants.create') }}" class="btn-create"><i class="fas fa-plus"></i> Add New Tenant</a>
+        <a href="{{ route('admin.tenants.create') }}" class="btn-create btn-create--icon-expand" aria-label="Add New Tenant"><i class="fas fa-plus"></i><span class="btn-create__label">Add New Tenant</span></a>
         
         <!-- Live Search Input -->
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Search tenants..." 
+            <input type="text" id="searchInput" placeholder="🔍 Search tenants..." 
                    style="padding: 8px 12px; border: 1px solid var(--theme-border, #E6E1EF); border-radius: 6px; width: 300px;">
         </div>
     </div>

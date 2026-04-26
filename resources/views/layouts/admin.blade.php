@@ -55,8 +55,8 @@
         /* Consistent button sizing across app pages (colors remain unchanged). */
         .main-content a.btn-create,
         .main-content button.btn-create,
-        .main-content button[type="submit"]:not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
-        .main-content button[type="button"]:not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
+        .main-content button[type="submit"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
+        .main-content button[type="button"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
         .main-content input[type="submit"] {
             min-height: var(--ui-btn-min-height) !important;
             padding: var(--ui-btn-py) var(--ui-btn-px) !important;
@@ -356,11 +356,17 @@
                     </button>
 
                     <div id="accountDropdown" class="account-dropdown">
-                        <a href="{{ route('profile.show') }}" class="dropdown-link">Manage Profile</a>
+                        <a href="{{ route('profile.show') }}" class="dropdown-link">
+                            <i class="fas fa-user-cog" aria-hidden="true"></i>
+                            <span>Manage Profile</span>
+                        </a>
 
                         <form method="POST" action="{{ route('logout') }}" data-logout-form>
                             @csrf
-                            <button type="submit" class="dropdown-btn">Logout</button>
+                            <button type="submit" class="dropdown-btn">
+                                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                                <span>Logout</span>
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -483,7 +489,7 @@
                 account_owner: 'fa-building-user',
                 marketing_manager: 'fa-chart-line',
                 sales_agent: 'fa-handshake',
-                finance: 'fa-file-peso-sign',
+                finance: 'fa-file-invoice-dollar',
                 customer: 'fa-user-circle'
             };
             const roleLabels = {

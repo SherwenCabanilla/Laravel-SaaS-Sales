@@ -16,6 +16,7 @@
     $companyInitials = $companyInitials !== '' ? $companyInitials : 'NC';
     $companyHue = abs(crc32($companyName ?: 'company')) % 360;
     $companyBg = "hsl({$companyHue}, 60%, 42%)";
+    $generatedLeads = (int) $sourceBreakdownChart->sum('total');
 @endphp
 
 @section('content')
@@ -36,23 +37,46 @@
         </div>
     </div>
 
-    <div class="kpi-cards">
-        <div class="card">
-            <h3>Leads Generated</h3>
-            <p>{{ (int) $sourceBreakdownChart->sum('total') }}</p>
-        </div>
-        <div class="card">
-            <h3>MQL Volume</h3>
-            <p>{{ $mqlCount }}</p>
-        </div>
-        <div class="card">
-            <h3>Quality Proxy</h3>
-            <p>{{ number_format($avgLeadScore, 1) }}</p>
-        </div>
-        <div class="card">
-            <h3>Cost Proxy</h3>
-            <p style="font-size: 18px;">Ad Spend Data N/A</p>
-        </div>
+    <div class="admin-kpi-board">
+        <section class="admin-kpi-group" aria-label="Marketing Overview">
+            <div class="admin-kpi-group__header">
+                <span class="admin-kpi-group__eyebrow">Marketing Overview</span>
+            </div>
+            <div class="admin-kpi-grid admin-kpi-grid--4">
+                <article class="admin-kpi-card admin-kpi-card--primary">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Leads Generated</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-bullhorn" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($generatedLeads) }}</div>
+                    <div class="admin-kpi-card__meta">Total leads attributed to tracked sources and campaigns</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--success">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">MQL Volume</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-user-check" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($mqlCount) }}</div>
+                    <div class="admin-kpi-card__meta">Leads meeting the marketing-qualified score threshold</div>
+                </article>
+                <article class="admin-kpi-card">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Quality Proxy</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-star" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value">{{ number_format($avgLeadScore, 1) }}</div>
+                    <div class="admin-kpi-card__meta">Average lead score across recent captured leads</div>
+                </article>
+                <article class="admin-kpi-card admin-kpi-card--warning">
+                    <div class="admin-kpi-card__topline">
+                        <span class="admin-kpi-card__label">Cost Proxy</span>
+                        <span class="admin-kpi-card__icon"><i class="fas fa-wallet" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="admin-kpi-card__value admin-kpi-card__value--text">{{ $emptyDash }}</div>
+                    <div class="admin-kpi-card__meta">Connect spend sources to compare campaign cost against lead volume</div>
+                </article>
+            </div>
+        </section>
     </div>
 
     <div class="charts">

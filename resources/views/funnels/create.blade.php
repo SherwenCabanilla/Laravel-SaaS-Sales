@@ -30,16 +30,10 @@
             </div>
 
             <div style="margin-bottom: 16px;">
-                <label for="template_type" style="display:block; margin-bottom:8px; font-weight:700;">Template Purpose</label>
-                <select id="template_type" name="template_type" required
-                    style="width:100%; padding:10px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fff;">
-                    <option value="" disabled {{ old('template_type') ? '' : 'selected' }}>Select template purpose</option>
-                    @foreach(($templateTypeOptions ?? []) as $value => $label)
-                        <option value="{{ $value }}" {{ old('template_type') === $value ? 'selected' : '' }}>{{ $label }}</option>
-                    @endforeach
-                </select>
-                <div style="margin-top:6px; color:#64748b; font-size:12px;">
-                    Single Page builds everything on one scrollable page. Step-by-Step uses multiple pages.
+                <label style="display:block; margin-bottom:8px; font-weight:700;">Funnel Style</label>
+                <input type="hidden" name="template_type" value="step_by_step">
+                <div style="padding:12px 14px; border:1px solid var(--theme-border, #E6E1EF); border-radius:6px; background:#fbf9fd; font-weight:700; color:#240E35;">
+                    Step-by-Step Page
                 </div>
                 @error('template_type')
                     <span style="color:red; font-size:12px;">{{ $message }}</span>
@@ -62,11 +56,41 @@
                 @enderror
             </div>
 
+            <div style="margin-bottom: 16px;">
+                <label style="display:block; margin-bottom:8px; font-weight:700;">Start From</label>
+                <div style="display:grid; gap:10px;" id="templateChoiceList">
+                    <label data-template-card data-purpose="manual" style="display:block; border:1px solid var(--theme-border, #E6E1EF); border-radius:8px; padding:14px; cursor:pointer; background:#fff;">
+                        <input type="radio" name="template_id" value="" {{ old('template_id') ? '' : 'checked' }} style="margin-right:8px;">
+                        <strong>Manual build</strong>
+                        <span style="display:block; margin-top:4px; color:#64748b; font-size:12px;">Create the standard step-by-step pages, then design them in the drag-and-drop builder.</span>
+                    </label>
+
+                    @foreach(($availableTemplates ?? []) as $template)
+                        <label data-template-card data-purpose="{{ $template['funnel_purpose'] }}" style="display:block; border:1px solid var(--theme-border, #E6E1EF); border-radius:8px; padding:14px; cursor:pointer; background:#fff;">
+                            <input type="radio" name="template_id" value="{{ $template['id'] }}" {{ (string) old('template_id') === (string) $template['id'] ? 'checked' : '' }} style="margin-right:8px;">
+                            <strong>{{ $template['name'] }}</strong>
+                            <span style="display:block; margin-top:4px; color:#64748b; font-size:12px;">
+                                {{ $template['description'] ?: 'Super Admin step-by-step template.' }}
+                            </span>
+                            <span style="display:block; margin-top:8px; color:#475569; font-size:12px;">
+                                {{ $template['steps_count'] }} pages
+                                @if(!empty($template['tags']))
+                                    - {{ implode(' - ', $template['tags']) }}
+                                @endif
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+                @error('template_id')
+                    <span style="color:red; font-size:12px;">{{ $message }}</span>
+                @enderror
+            </div>
+
             <div style="margin:18px 0; padding:14px 16px; border-radius:12px; background:#fbf9fd; border:1px solid #ece2f5; color:#475569; font-size:13px; line-height:1.55;">
                 Build setup:
-                <br><strong>Template Purpose</strong>: Single Page or Step-by-Step layout mode.
-                <br><strong>Funnel Purpose</strong>: Services or Physical Product component focus.
-                <br><br>You can apply shared templates inside the funnel builder after creation.
+                <br><strong>Funnel Style</strong>: Step-by-Step Page.
+                <br><strong>Funnel Purpose</strong>: Services or Physical Product.
+                <br><br>Template availability follows your subscribed plan.
             </div>
 
             <div style="display:flex; gap:10px; margin-top:18px;">
@@ -75,4 +99,33 @@
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const purposeSelect = document.getElementById('funnel_purpose');
+            const cards = Array.from(document.querySelectorAll('[data-template-card]'));
+
+            function syncTemplateCards() {
+                const purpose = purposeSelect ? purposeSelect.value : 'service';
+                cards.forEach(function (card) {
+                    const cardPurpose = card.getAttribute('data-purpose') || '';
+                    const visible = cardPurpose === 'manual' || cardPurpose === purpose;
+                    card.style.display = visible ? 'block' : 'none';
+
+                    const input = card.querySelector('input[type="radio"]');
+                    if (!visible && input && input.checked) {
+                        const manualInput = document.querySelector('[data-purpose="manual"] input[type="radio"]');
+                        if (manualInput) {
+                            manualInput.checked = true;
+                        }
+                    }
+                });
+            }
+
+            if (purposeSelect) {
+                purposeSelect.addEventListener('change', syncTemplateCards);
+            }
+            syncTemplateCards();
+        });
+    </script>
 @endsection

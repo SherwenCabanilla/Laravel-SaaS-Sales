@@ -13,6 +13,7 @@ use App\Models\FunnelTemplate;
 use Illuminate\Support\Facades\DB;
 use App\Services\FunnelTrackingService;
 use App\Support\TenantPlanEnforcer;
+use App\Support\XlsxWorkbookBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -23,7 +24,6 @@ class FunnelController extends Controller
 {
     private const MAX_STEP_REVISIONS = 40;
     private const MAX_MANUAL_VERSIONS = 25;
-    private const CREATE_PURPOSE_KEYS = ['service', 'single_page', 'digital_product', 'physical_product', 'hybrid'];
 
     public function index(Request $request)
     {
@@ -83,26 +83,50 @@ class FunnelController extends Controller
         return view('funnels.create', [
             'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
             'funnelPurposeOptions' => FunnelTemplate::FUNNEL_PURPOSE_OPTIONS,
+            'availableTemplates' => $this->createTemplateCardsPayload(auth()->user()),
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request, FunnelTemplateService $templateService)
     {
         $validated = $request->validate([
             'name' => 'required|string|max:120',
             'description' => 'nullable|string|max:2000',
-            'template_type' => ['required', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
+            'template_type' => ['nullable', Rule::in(array_keys(FunnelTemplate::selectableTemplateTypes()))],
             'funnel_purpose' => ['required', Rule::in(array_keys(FunnelTemplate::FUNNEL_PURPOSE_OPTIONS))],
+            'template_id' => ['nullable', 'integer'],
         ]);
 
-        $purpose = $validated['template_type'] === 'single_page'
-            ? 'single_page'
-            : FunnelTemplate::normalizeFunnelPurpose($validated['funnel_purpose']);
+        $purpose = FunnelTemplate::normalizeFunnelPurpose($validated['funnel_purpose']);
 
         $user = auth()->user();
 
         try {
             app(TenantPlanEnforcer::class)->ensureCanCreateFunnel($user->tenant);
+
+            $templateId = (int) ($validated['template_id'] ?? 0);
+            if ($templateId > 0) {
+                $template = $this->findAccessiblePublishedTemplateForUser($user, $templateId);
+                if (! $template) {
+                    return redirect()->back()->withInput()->with('error', 'Selected template is not available on your current plan.');
+                }
+                if ($template->resolvedFunnelPurpose() !== $purpose) {
+                    return redirect()->back()->withInput()->with('error', 'Selected template does not match the chosen funnel category.');
+                }
+
+                $funnel = $templateService->createFunnelFromTemplate($template, $user, [
+                    'name' => $validated['name'],
+                    'description' => $validated['description'] ?? null,
+                    'purpose' => $purpose,
+                ]);
+
+                $funnel->load('steps.revisions');
+                foreach ($funnel->steps as $step) {
+                    $this->ensureStepHasInitialRevision($step);
+                }
+
+                return redirect()->route('funnels.edit', $funnel)->with('success', 'Added Successfully');
+            }
 
             $funnel = Funnel::create([
                 'tenant_id' => $user->tenant_id,
@@ -533,17 +557,36 @@ class FunnelController extends Controller
             ->all();
     }
 
+    private function createTemplateCardsPayload($user): array
+    {
+        return $this->publishedTemplatesQueryForUser($user)
+            ->withCount('steps')
+            ->get()
+            ->map(function (FunnelTemplate $template) {
+                return [
+                    'id' => $template->id,
+                    'name' => $template->name,
+                    'description' => $template->description,
+                    'funnel_purpose' => $template->resolvedFunnelPurpose(),
+                    'steps_count' => (int) ($template->steps_count ?? 0),
+                    'tags' => collect($template->template_tags ?? [])
+                        ->map(fn ($tag) => trim((string) $tag))
+                        ->filter(fn ($tag) => $tag !== '' && ! str_starts_with(mb_strtolower($tag), FunnelTemplate::PURPOSE_TAG_PREFIX))
+                        ->take(4)
+                        ->values()
+                        ->all(),
+                ];
+            })
+            ->all();
+    }
+
     private function publishedTemplatesQueryForUser($user)
     {
         $query = FunnelTemplate::query()
             ->where('status', 'published')
-            ->where('template_type', '!=', FunnelTemplate::TEMPLATE_TYPE_UNCATEGORIZED)
+            ->where('template_type', FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP)
             ->latest('published_at')
             ->latest('id');
-
-        if ($this->restrictToSinglePageTemplates($user)) {
-            $query->where('template_type', 'single_page');
-        }
 
         $limit = $this->templateLibraryLimitForUser($user);
         if ($limit !== null) {
@@ -551,17 +594,6 @@ class FunnelController extends Controller
         }
 
         return $query;
-    }
-
-    private function restrictToSinglePageTemplates($user): bool
-    {
-        if (! $user) {
-            return true;
-        }
-
-        // Allow funnel builders (AO/marketing) to access step-by-step templates too.
-        // Only restrict viewers without builder roles to single-page templates.
-        return ! (bool) $user->hasAnyRole(['super-admin', 'account-owner', 'marketing-manager']);
     }
 
     private function templateLibraryLimitForUser($user): ?int
@@ -727,6 +759,195 @@ class FunnelController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    public function exportPhysicalOrdersExcel(Request $request, Funnel $funnel, FunnelTrackingService $tracking)
+    {
+        $this->ensureTenantFunnelAccess($funnel);
+
+        $filters = $tracking->normalizeDateFilters($request->only(['from', 'to', 'step_id', 'event_name']));
+        $analytics = $tracking->analyticsForFunnel($funnel, $filters);
+        $purpose = Funnel::normalizePurpose($funnel->purpose ?? ($funnel->template_type ?? 'service'));
+
+        abort_unless(in_array($purpose, ['physical_product', 'hybrid'], true), 404);
+
+        $section = Str::lower(trim((string) $request->query('section', 'directory')));
+        $config = $this->physicalOrderExcelExportConfig($section, $analytics);
+
+        abort_if($config === null, 404);
+
+        $filename = Str::slug($config['title'])
+            . '-'
+            . $funnel->slug
+            . '-'
+            . now()->format('Ymd_His')
+            . '.xlsx';
+
+        return response(
+            (new XlsxWorkbookBuilder(
+                $config['worksheet'],
+                $config['title'],
+                $this->physicalOrderExcelSummaryLine($funnel, $config['title'], $request, count($config['rows'])),
+                $config['headings'],
+                $config['widths'],
+                $config['rows']
+            ))->build(),
+            200,
+            [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'max-age=0, no-cache, no-store, must-revalidate',
+            ]
+        );
+    }
+
+    private function physicalOrderExcelExportConfig(string $section, array $analytics): ?array
+    {
+        $section = Str::lower(trim($section));
+
+        return match ($section) {
+            'pending' => [
+                'worksheet' => 'Pending Orders',
+                'title' => 'Pending Orders',
+                'headings' => ['Customer', 'Email', 'Phone', 'Order Items', 'Qty', 'Amount (PHP)', 'Delivery Address', 'Last Activity'],
+                'widths' => [160, 220, 105, 250, 55, 95, 240, 145],
+                'rows' => collect($analytics['physical_pending_orders'] ?? [])
+                    ->map(fn (array $row) => [
+                        $this->excelTextCell($row['customer'] ?? 'Anonymous visitor'),
+                        $this->excelTextCell($row['email'] ?? '-'),
+                        $this->excelTextCell($row['phone'] ?? '-'),
+                        $this->excelTextCell($this->physicalOrderItemsForExcel($row), 'wrap'),
+                        $this->excelNumberCell((int) ($row['order_quantity'] ?? 0), 'center'),
+                        $this->excelNumberCell((float) ($row['checkout_amount'] ?? 0), 'currency'),
+                        $this->excelTextCell($row['delivery_address'] ?? '-', 'wrap'),
+                        $this->excelTextCell($row['last_activity'] ?? '-'),
+                    ])
+                    ->all(),
+            ],
+            'paid' => [
+                'worksheet' => 'Paid Orders',
+                'title' => 'Paid Orders',
+                'headings' => ['Customer', 'Email', 'Phone', 'Paid Order', 'Qty', 'Amount (PHP)', 'Delivery Status', 'Last Delivery Email', 'Tracking URL', 'Delivery Address'],
+                'widths' => [160, 220, 105, 250, 55, 95, 125, 155, 220, 240],
+                'rows' => collect($analytics['physical_paid_orders'] ?? [])
+                    ->map(fn (array $row) => [
+                        $this->excelTextCell($row['customer'] ?? 'Anonymous visitor'),
+                        $this->excelTextCell($row['email'] ?? '-'),
+                        $this->excelTextCell($row['phone'] ?? '-'),
+                        $this->excelTextCell($this->physicalOrderItemsForExcel($row), 'wrap'),
+                        $this->excelNumberCell((int) ($row['order_quantity'] ?? 0), 'center'),
+                        $this->excelNumberCell((float) ($row['checkout_amount'] ?? 0), 'currency'),
+                        $this->excelTextCell($this->formatDeliveryStatusForExcel($row['delivery_status'] ?? 'paid'), 'status'),
+                        $this->excelTextCell($row['delivery_updated_label'] ?? '-'),
+                        $this->excelTextCell($row['tracking_url'] ?? '-', 'wrap'),
+                        $this->excelTextCell($row['delivery_address'] ?? '-', 'wrap'),
+                    ])
+                    ->all(),
+            ],
+            'directory' => [
+                'worksheet' => 'Order Directory',
+                'title' => 'Order Directory',
+                'headings' => ['Customer', 'Email', 'Phone', 'Order Items', 'Qty', 'Status', 'Checkout Paid (PHP)', 'Delivery Address', 'Order Notes', 'Last Activity'],
+                'widths' => [160, 220, 105, 250, 55, 115, 110, 240, 180, 145],
+                'rows' => collect($analytics['physical_orders'] ?? [])
+                    ->map(fn (array $row) => [
+                        $this->excelTextCell($row['customer'] ?? 'Anonymous visitor'),
+                        $this->excelTextCell($row['email'] ?? '-'),
+                        $this->excelTextCell($row['phone'] ?? '-'),
+                        $this->excelTextCell($this->physicalOrderItemsForExcel($row), 'wrap'),
+                        $this->excelNumberCell((int) ($row['order_quantity'] ?? 0), 'center'),
+                        $this->excelTextCell(Str::upper(str_replace('_', ' ', (string) ($row['order_status'] ?? 'pending'))), 'status'),
+                        $this->excelNumberCell((float) ($row['checkout_amount'] ?? 0), 'currency'),
+                        $this->excelTextCell($row['delivery_address'] ?? '-', 'wrap'),
+                        $this->excelTextCell($row['notes'] ?? '-', 'wrap'),
+                        $this->excelTextCell($row['last_activity'] ?? '-'),
+                    ])
+                    ->all(),
+            ],
+            default => null,
+        };
+    }
+
+    private function physicalOrderExcelSummaryLine(Funnel $funnel, string $title, Request $request, int $rowCount): string
+    {
+        $from = trim((string) $request->query('from', ''));
+        $to = trim((string) $request->query('to', ''));
+        $range = $from !== '' || $to !== ''
+            ? trim(($from !== '' ? $from : 'Start') . ' to ' . ($to !== '' ? $to : 'Today'))
+            : 'All dates';
+
+        return 'Funnel: '
+            . $funnel->name
+            . ' | Export: '
+            . $title
+            . ' | Date Range: '
+            . $range
+            . ' | Rows: '
+            . number_format($rowCount)
+            . ' | Generated: '
+            . now()->format('Y-m-d h:i A');
+    }
+
+    private function physicalOrderItemsForExcel(array $row): string
+    {
+        $items = $row['order_items'] ?? null;
+        if (is_array($items) && $items !== []) {
+            $lines = [];
+            foreach ($items as $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $name = trim((string) ($item['name'] ?? 'Product'));
+                $quantity = max(1, (int) ($item['quantity'] ?? 1));
+                $price = trim((string) ($item['price'] ?? ''));
+                $badge = trim((string) ($item['badge'] ?? ''));
+
+                $line = $name !== '' ? $name : 'Product';
+                $line .= ' x' . $quantity;
+
+                $details = array_values(array_filter([$badge, $price]));
+                if ($details !== []) {
+                    $line .= ' (' . implode(' | ', $details) . ')';
+                }
+
+                $lines[] = $line;
+            }
+
+            if ($lines !== []) {
+                return implode("\n", $lines);
+            }
+        }
+
+        return trim((string) ($row['order_items_label'] ?? ($row['selected_offer'] ?? '-'))) ?: '-';
+    }
+
+    private function formatDeliveryStatusForExcel(?string $value): string
+    {
+        $normalized = trim((string) $value);
+        if ($normalized === '') {
+            return '-';
+        }
+
+        return Str::title(str_replace('_', ' ', $normalized));
+    }
+
+    private function excelTextCell(mixed $value, string $style = 'text'): array
+    {
+        return [
+            'type' => 'String',
+            'style' => $style,
+            'value' => trim((string) $value) !== '' ? (string) $value : '-',
+        ];
+    }
+
+    private function excelNumberCell(int|float $value, string $style = 'number'): array
+    {
+        return [
+            'type' => 'Number',
+            'style' => $style,
+            'value' => $value,
+        ];
     }
 
     public function sendDeliveryUpdate(Request $request, Funnel $funnel, FunnelTrackingService $tracking)

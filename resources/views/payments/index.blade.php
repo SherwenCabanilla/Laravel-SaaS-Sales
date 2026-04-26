@@ -2,6 +2,10 @@
 
 @section('title', 'Payment Tracking')
 
+@section('styles')
+    <link rel="stylesheet" href="{{ asset('css/extracted/payments-index-style1.css') }}">
+@endsection
+
 @php
     $companyName = optional(auth()->user()->tenant)->company_name ?? 'No Company';
     $companyInitials = collect(preg_split('/\s+/', trim($companyName)))
@@ -15,61 +19,60 @@
 @endphp
 
 @section('content')
-    <div class="top-header">
-        <h1>Payment Tracking</h1>
-        <div class="company-chip">
-            <div class="company-chip-avatar" style="background: {{ $companyBg }};">
-                @if(optional(auth()->user()->tenant)->logo_path)
-                    <img src="{{ asset('storage/' . auth()->user()->tenant->logo_path) }}" alt="Company Logo">
-                @else
-                    {{ $companyInitials }}
-                @endif
+    <div class="payment-page">
+        <div class="top-header">
+            <h1>Payment Tracking</h1>
+            <div class="company-chip">
+                <div class="company-chip-avatar" style="background: {{ $companyBg }};">
+                    @if(optional(auth()->user()->tenant)->logo_path)
+                        <img src="{{ asset('storage/' . auth()->user()->tenant->logo_path) }}" alt="Company Logo">
+                    @else
+                        {{ $companyInitials }}
+                    @endif
+                </div>
+                <div class="company-chip-content">
+                    <span class="company-chip-label">Company</span>
+                    <span class="company-chip-name">{{ $companyName }}</span>
+                </div>
             </div>
-            <div class="company-chip-content">
-                <span class="company-chip-label">Company</span>
-                <span class="company-chip-name">{{ $companyName }}</span>
+        </div>
+
+        <div class="payment-overview">
+            <div class="card payment-stat-card">
+                <h3>Workspace Status</h3>
+                <p class="payment-stat-card__value">{{ ucfirst($tenant->status ?? 'active') }}</p>
+            </div>
+            <div class="card payment-stat-card">
+                <h3>Billing State</h3>
+                <p class="payment-stat-card__value">{{ $billingStateLabel }}</p>
+            </div>
+            <div class="card payment-stat-card">
+                <h3>Current Plan</h3>
+                <p class="payment-stat-card__value">{{ $tenant->subscription_plan ?? $emptyDash }}</p>
+            </div>
+            <div class="card payment-stat-card">
+                <h3>Grace Ends</h3>
+                <p class="payment-stat-card__value payment-stat-card__value--compact">{{ optional($tenant->billing_grace_ends_at)->format('Y-m-d H:i') ?? $emptyDash }}</p>
             </div>
         </div>
-    </div>
 
-    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:20px;">
-        <div class="card" style="margin:0;">
-            <h3 style="margin-bottom:8px;">Workspace Status</h3>
-            <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">{{ ucfirst($tenant->status ?? 'active') }}</p>
+        <div class="payment-toolbar">
+            <button type="button" data-record-payment-open class="payment-primary-btn">
+                Record Payment
+            </button>
         </div>
-        <div class="card" style="margin:0;">
-            <h3 style="margin-bottom:8px;">Billing State</h3>
-            <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">{{ $billingStateLabel }}</p>
-        </div>
-        <div class="card" style="margin:0;">
-            <h3 style="margin-bottom:8px;">Current Plan</h3>
-            <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">{{ $tenant->subscription_plan ?? 'N/A' }}</p>
-        </div>
-        <div class="card" style="margin:0;">
-            <h3 style="margin-bottom:8px;">Grace Ends</h3>
-            <p style="margin:0;font-size:18px;font-weight:700;color:var(--theme-primary,#240E35);">{{ optional($tenant->billing_grace_ends_at)->format('Y-m-d H:i') ?? 'N/A' }}</p>
-        </div>
-    </div>
-
-    <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
-        <button
-            type="button"
-            data-record-payment-open
-            style="padding:12px 18px;background:var(--theme-primary,#240E35);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
-            Record Payment
-        </button>
-    </div>
 
     <div
         data-record-payment-modal
+        class="payment-modal-shell"
         aria-hidden="{{ $errors->any() ? 'false' : 'true' }}"
-        style="position:fixed;inset:0;background:rgba(15,23,42,.55);display:{{ $errors->any() ? 'flex' : 'none' }};align-items:center;justify-content:center;padding:24px;z-index:9999;">
+        style="display:{{ $errors->any() ? 'flex' : 'none' }};">
         <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="recordPaymentTitle"
-            style="width:min(100%,720px);max-height:90vh;overflow:auto;background:#fff;border-radius:20px;box-shadow:0 24px 80px rgba(15,23,42,.2);padding:24px;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;">
+            class="payment-modal-card">
+            <div class="payment-modal-header">
                 <div>
                     <h3 id="recordPaymentTitle" style="margin:0 0 6px;">Record Payment</h3>
                     <p style="margin:0;color:var(--theme-muted,#6B7280);">Save either a workspace subscription payment or a funnel sale.</p>
@@ -78,7 +81,7 @@
                     type="button"
                     data-record-payment-close
                     aria-label="Close payment form"
-                    style="width:40px;height:40px;border:none;border-radius:999px;background:#F3F4F6;color:#111827;font-size:20px;cursor:pointer;">
+                    class="payment-modal-close">
                     &times;
                 </button>
             </div>
@@ -182,7 +185,7 @@
                         placeholder="Invoice or provider reference">
                 </div>
 
-                <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;">
+                <div class="payment-form-actions">
                     <button
                         type="button"
                         data-record-payment-close
@@ -198,50 +201,46 @@
         </div>
     </div>
 
-    <div style="display:grid;gap:20px;">
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
-                <h3 style="margin:0;">Platform Subscriptions</h3>
-                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <div style="padding:10px 14px;border-radius:12px;background:#F7F4FB;">
-                        <div style="font-size:12px;color:var(--theme-muted,#6B7280);font-weight:700;">Workspace Plan</div>
-                        <div style="font-size:16px;color:var(--theme-primary,#240E35);font-weight:800;">{{ $tenant->subscription_plan ?? 'N/A' }}</div>
-                    </div>
-                    <button
-                        type="button"
-                        data-section-toggle
-                        data-target="platform-subscriptions-content"
-                        aria-expanded="false"
-                        style="padding:10px 16px;background:var(--theme-primary,#240E35);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
-                        Show
-                    </button>
-                </div>
-            </div>
-
-            <div id="platform-subscriptions-content" hidden style="margin-top:14px;">
-                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px;">
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Paid Total</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">PHP {{ number_format((float) $platformStats['paid_total'], 2) }}</p>
-                    </div>
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Pending Total</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">PHP {{ number_format((float) $platformStats['pending_total'], 2) }}</p>
-                    </div>
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Failed Total</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">PHP {{ number_format((float) $platformStats['failed_total'], 2) }}</p>
-                    </div>
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Outstanding Invoices</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">
-                            {{ (int) $platformStats['outstanding_count'] }} (PHP {{ number_format((float) $platformStats['outstanding_amount'], 2) }})
-                        </p>
+        <div class="payment-sections">
+            <div class="card">
+                <div class="payment-section-header">
+                    <h3 class="payment-section-title">Platform Subscriptions</h3>
+                    <div class="payment-section-actions">
+                        <button
+                            type="button"
+                            data-section-toggle
+                            data-target="platform-subscriptions-content"
+                            aria-expanded="false"
+                            class="payment-toggle-btn ui-show-hide-toggle">
+                            Show
+                        </button>
                     </div>
                 </div>
 
-                <div class="sa-table-scroll">
-                    <table class="sa-table">
+                <div id="platform-subscriptions-content" hidden class="payment-section-content">
+                    <div class="payment-summary-grid">
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Paid Total</h3>
+                            <p class="payment-summary-card__value">PHP {{ number_format((float) $platformStats['paid_total'], 2) }}</p>
+                        </div>
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Pending Total</h3>
+                            <p class="payment-summary-card__value">PHP {{ number_format((float) $platformStats['pending_total'], 2) }}</p>
+                        </div>
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Failed Total</h3>
+                            <p class="payment-summary-card__value">PHP {{ number_format((float) $platformStats['failed_total'], 2) }}</p>
+                        </div>
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Outstanding Invoices</h3>
+                            <p class="payment-summary-card__value">
+                                {{ (int) $platformStats['outstanding_count'] }} (PHP {{ number_format((float) $platformStats['outstanding_amount'], 2) }})
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="team-table-scroll">
+                        <table class="sa-table team-table">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -255,12 +254,12 @@
                         <tbody>
                             @forelse($platformSubscriptions as $payment)
                                 <tr>
-                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? 'N/A' }}</td>
+                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? $emptyDash }}</td>
                                     <td>PHP {{ number_format((float) $payment->amount, 2) }}</td>
                                     <td>{{ \App\Models\Payment::STATUSES[$payment->status] ?? ucfirst($payment->status) }}</td>
-                                    <td>{{ $payment->provider ?? 'N/A' }}</td>
-                                    <td>{{ $payment->payment_method ?? 'N/A' }}</td>
-                                    <td>{{ $payment->provider_reference ?? 'N/A' }}</td>
+                                    <td>{{ $payment->provider ?? $emptyDash }}</td>
+                                    <td>{{ $payment->payment_method ?? $emptyDash }}</td>
+                                    <td>{{ $payment->provider_reference ?? $emptyDash }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -268,51 +267,51 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 14px;">
-                    {{ $platformSubscriptions->appends(['sales_page' => request('sales_page')])->links('pagination::bootstrap-4') }}
+                        </table>
+                    </div>
+                    <div style="margin-top: 14px;">
+                        {{ $platformSubscriptions->appends(['sales_page' => request('sales_page')])->links('pagination::bootstrap-4') }}
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
-                <h3 style="margin:0;">Funnel Sales</h3>
-                <button
-                    type="button"
-                    data-section-toggle
-                    data-target="funnel-sales-content"
-                    aria-expanded="false"
-                    style="padding:10px 16px;background:var(--theme-primary,#240E35);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;">
-                    Show
-                </button>
-            </div>
-
-            <div id="funnel-sales-content" hidden style="margin-top:14px;">
-                <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:18px;">
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Paid Total</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">PHP {{ number_format((float) $funnelStats['paid_total'], 2) }}</p>
-                    </div>
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Pending Total</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">PHP {{ number_format((float) $funnelStats['pending_total'], 2) }}</p>
-                    </div>
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Failed Total</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">PHP {{ number_format((float) $funnelStats['failed_total'], 2) }}</p>
-                    </div>
-                    <div class="card" style="margin:0;background:#fff;">
-                        <h3 style="margin-bottom:8px;">Outstanding Invoices</h3>
-                        <p style="margin:0;font-size:28px;font-weight:800;color:var(--theme-primary,#240E35);">
-                            {{ (int) $funnelStats['outstanding_count'] }} (PHP {{ number_format((float) $funnelStats['outstanding_amount'], 2) }})
-                        </p>
-                    </div>
+            <div class="card">
+                <div class="payment-section-header">
+                    <h3 class="payment-section-title">Funnel Sales</h3>
+                    <button
+                        type="button"
+                        data-section-toggle
+                        data-target="funnel-sales-content"
+                        aria-expanded="false"
+                        class="payment-toggle-btn ui-show-hide-toggle">
+                        Show
+                    </button>
                 </div>
 
-                <div class="sa-table-scroll">
-                    <table class="sa-table">
+                <div id="funnel-sales-content" hidden class="payment-section-content">
+                    <div class="payment-summary-grid">
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Paid Total</h3>
+                            <p class="payment-summary-card__value">PHP {{ number_format((float) $funnelStats['paid_total'], 2) }}</p>
+                        </div>
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Pending Total</h3>
+                            <p class="payment-summary-card__value">PHP {{ number_format((float) $funnelStats['pending_total'], 2) }}</p>
+                        </div>
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Failed Total</h3>
+                            <p class="payment-summary-card__value">PHP {{ number_format((float) $funnelStats['failed_total'], 2) }}</p>
+                        </div>
+                        <div class="card payment-summary-card" style="background:#fff;">
+                            <h3>Outstanding Invoices</h3>
+                            <p class="payment-summary-card__value">
+                                {{ (int) $funnelStats['outstanding_count'] }} (PHP {{ number_format((float) $funnelStats['outstanding_amount'], 2) }})
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="team-table-scroll">
+                        <table class="sa-table team-table">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -328,14 +327,14 @@
                         <tbody>
                             @forelse($funnelSales as $payment)
                                 <tr>
-                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? 'N/A' }}</td>
-                                    <td>{{ $payment->funnel->name ?? 'N/A' }}</td>
-                                    <td>{{ $payment->step->title ?? 'N/A' }}</td>
-                                    <td>{{ $payment->lead->name ?? 'N/A' }}</td>
+                                    <td>{{ $payment->payment_date?->format('Y-m-d') ?? $emptyDash }}</td>
+                                    <td>{{ $payment->funnel->name ?? $emptyDash }}</td>
+                                    <td>{{ $payment->step->title ?? $emptyDash }}</td>
+                                    <td>{{ $payment->lead->name ?? $emptyDash }}</td>
                                     <td>PHP {{ number_format((float) $payment->amount, 2) }}</td>
                                     <td>{{ \App\Models\Payment::STATUSES[$payment->status] ?? ucfirst($payment->status) }}</td>
-                                    <td>{{ $payment->provider ?? 'N/A' }}</td>
-                                    <td>{{ $payment->provider_reference ?? 'N/A' }}</td>
+                                    <td>{{ $payment->provider ?? $emptyDash }}</td>
+                                    <td>{{ $payment->provider_reference ?? $emptyDash }}</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -343,10 +342,11 @@
                                 </tr>
                             @endforelse
                         </tbody>
-                    </table>
-                </div>
-                <div style="margin-top: 14px;">
-                    {{ $funnelSales->appends(['subscriptions_page' => request('subscriptions_page')])->links('pagination::bootstrap-4') }}
+                        </table>
+                    </div>
+                    <div style="margin-top: 14px;">
+                        {{ $funnelSales->appends(['subscriptions_page' => request('subscriptions_page')])->links('pagination::bootstrap-4') }}
+                    </div>
                 </div>
             </div>
         </div>
