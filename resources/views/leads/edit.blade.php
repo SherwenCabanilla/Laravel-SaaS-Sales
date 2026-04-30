@@ -7,7 +7,7 @@
         <h1>Edit Lead: {{ $lead->name }}</h1>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="app-grid app-grid--2" style="gap:20px;">
         <div class="card">
             <h3>Lead Details</h3>
             <form action="{{ route('leads.update', $lead->id) }}" method="POST">

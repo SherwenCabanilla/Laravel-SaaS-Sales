@@ -55,6 +55,10 @@ return [
         'send_payment_success_event' => (bool) env('N8N_SEND_PAYMENT_SUCCESS_EVENT', false),
     ],
 
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY'),
+    ],
+
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),

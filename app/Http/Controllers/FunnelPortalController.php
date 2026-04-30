@@ -9,8 +9,10 @@ use App\Models\FunnelStep;
 use App\Models\Lead;
 use App\Models\Payment;
 use App\Services\CouponService;
+use App\Services\CommissionService;
 use App\Services\PayMongoCheckoutService;
 use App\Services\FunnelTrackingService;
+use App\Support\TenantPayoutReadiness;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
@@ -239,6 +241,13 @@ class FunnelPortalController extends Controller
     )
     {
         [$funnel, $steps, $step] = $this->resolveStepContext($funnelSlug, $stepSlug, 'checkout');
+        $monetizationDecision = app(TenantPayoutReadiness::class)->monetizationDecisionForTenant($funnel->tenant);
+        if (! $monetizationDecision['allowed']) {
+            return redirect()
+                ->route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug])
+                ->with('error', $monetizationDecision['message']);
+        }
+
         $sessionIdentifier = $tracking->sessionIdentifier($request);
 
         $validated = $request->validate([
@@ -456,6 +465,7 @@ class FunnelPortalController extends Controller
             array_merge($checkoutTrackingMeta, ['source' => 'direct_checkout'])
         );
         $tracking->trackPaymentPaid($payment, ['source' => 'direct_checkout']);
+        app(CommissionService::class)->syncPayment($payment);
         if ($coupon) {
             $coupons->redeem(
                 $coupon,
@@ -978,6 +988,13 @@ class FunnelPortalController extends Controller
         [$funnel, $steps, $step] = $this->resolveStepContext($funnelSlug, $stepSlug, null);
         abort_unless(in_array($step->type, ['upsell', 'downsell'], true), 422, 'Invalid offer step.');
 
+        $monetizationDecision = app(TenantPayoutReadiness::class)->monetizationDecisionForTenant($funnel->tenant);
+        if (! $monetizationDecision['allowed']) {
+            return redirect()
+                ->route('funnels.portal.step', ['funnelSlug' => $funnel->slug, 'stepSlug' => $step->slug])
+                ->with('error', $monetizationDecision['message']);
+        }
+
         $validated = $request->validate([
             'decision' => ['required', Rule::in(['accept', 'decline'])],
             'website' => 'nullable|string|size:0',
@@ -1089,6 +1106,7 @@ class FunnelPortalController extends Controller
                 'session_identifier' => $sessionIdentifier,
             ]);
             $tracking->trackPaymentPaid($payment, ['source' => 'offer_accept_direct']);
+            app(CommissionService::class)->syncPayment($payment);
         }
 
         if (! $recentDecision) {
@@ -1134,6 +1152,7 @@ class FunnelPortalController extends Controller
         }
 
         $tracking->trackPaymentPaid($payment, ['source' => $source]);
+        app(CommissionService::class)->syncPayment($payment);
 
         if (in_array($step->type, ['upsell', 'downsell'], true)) {
             $this->trackAcceptedOfferIfMissing($tracking, $funnel, $step, $payment);

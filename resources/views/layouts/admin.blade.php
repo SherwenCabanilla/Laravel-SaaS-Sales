@@ -8,20 +8,21 @@
     @php
         $authUser = auth()->user();
         $tenant = $authUser?->tenant;
-        $themePrimary = $tenant->theme_primary_color ?? '#240E35';
-        $themeAccent = $tenant->theme_accent_color ?? '#6B4A7A';
-        $themeSidebarBg = $tenant->theme_sidebar_bg ?? '#240E35';
-        $themeSidebarText = $tenant->theme_sidebar_text ?? '#F8F4FB';
-        $themeSidebarIcon = '#E7D8F0';
-        $themeBodyBg = '#F7F7FB';
+        $isPayoutAdmin = $authUser?->hasRole('payout-admin');
+        $themePrimary = $isPayoutAdmin ? '#0F172A' : ($tenant->theme_primary_color ?? '#240E35');
+        $themeAccent = $isPayoutAdmin ? '#0EA5E9' : ($tenant->theme_accent_color ?? '#6B4A7A');
+        $themeSidebarBg = $isPayoutAdmin ? '#020617' : ($tenant->theme_sidebar_bg ?? '#240E35');
+        $themeSidebarText = $isPayoutAdmin ? '#E2E8F0' : ($tenant->theme_sidebar_text ?? '#F8F4FB');
+        $themeSidebarIcon = $isPayoutAdmin ? '#7DD3FC' : '#E7D8F0';
+        $themeBodyBg = $isPayoutAdmin ? '#F8FAFC' : '#F7F7FB';
         $themeBodyText = '#111827';
-        $themePrimaryDark = '#2E1244';
+        $themePrimaryDark = $isPayoutAdmin ? '#1E293B' : '#2E1244';
         $themeSurface = '#FFFFFF';
-        $themeSurfaceSoft = '#F3EEF7';
-        $themeSurfaceSofter = '#F7F7FB';
-        $themeBorder = '#E6E1EF';
-        $themeAccentStrong = '#9E7BB5';
-        $themeMuted = '#6B7280';
+        $themeSurfaceSoft = $isPayoutAdmin ? '#E0F2FE' : '#F3EEF7';
+        $themeSurfaceSofter = $isPayoutAdmin ? '#F8FAFC' : '#F7F7FB';
+        $themeBorder = $isPayoutAdmin ? '#DBEAFE' : '#E6E1EF';
+        $themeAccentStrong = $isPayoutAdmin ? '#38BDF8' : '#9E7BB5';
+        $themeMuted = $isPayoutAdmin ? '#475569' : '#6B7280';
     @endphp
     <style>
         :root {
@@ -55,8 +56,8 @@
         /* Consistent button sizing across app pages (colors remain unchanged). */
         .main-content a.btn-create,
         .main-content button.btn-create,
-        .main-content button[type="submit"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
-        .main-content button[type="button"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
+        .main-content button[type="submit"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not(.notification-dropdown__action):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
+        .main-content button[type="button"]:not(.ui-show-hide-toggle):not(.modal-close-btn):not(.status-toast-close):not(.toggle-btn):not(.dots-btn):not(.toggle-eye):not(.landing-video-close):not(.notification-bell-btn):not([style*="background:none"]):not([style*="background: none"]):not([style*="padding:0"]):not([style*="padding: 0"]),
         .main-content input[type="submit"] {
             min-height: var(--ui-btn-min-height) !important;
             padding: var(--ui-btn-py) var(--ui-btn-px) !important;
@@ -201,7 +202,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @yield('styles')
 </head>
-<body class="@if(request()->routeIs('funnels.edit') || request()->routeIs('admin.funnel-templates.edit')) builder-full-width @endif" data-auth-role="{{ match (true) { auth()->user()->hasRole('super-admin') => 'super_admin', auth()->user()->hasRole('account-owner') => 'account_owner', auth()->user()->hasRole('marketing-manager') => 'marketing_manager', auth()->user()->hasRole('sales-agent') => 'sales_agent', auth()->user()->hasRole('finance') => 'finance', default => 'customer' } }}" data-auth-email="{{ strtolower((string) auth()->user()->email) }}">
+<body class="@if(request()->routeIs('funnels.edit') || request()->routeIs('admin.funnel-templates.edit')) builder-full-width @endif" data-auth-role="{{ match (true) { auth()->user()->hasRole('super-admin') => 'super_admin', auth()->user()->hasRole('payout-admin') => 'payout_admin', auth()->user()->hasRole('account-owner') => 'account_owner', auth()->user()->hasRole('marketing-manager') => 'marketing_manager', auth()->user()->hasRole('sales-agent') => 'sales_agent', auth()->user()->hasRole('finance') => 'finance', default => 'customer' } }}" data-auth-email="{{ strtolower((string) auth()->user()->email) }}">
     @php
         $primaryRole = auth()->user()->roles->first();
         $roleLabel = $primaryRole ? $primaryRole->name : ucwords(str_replace('-', ' ', auth()->user()->role ?? 'User'));
@@ -250,8 +251,17 @@
                 <a href="{{ route('admin.automation.index') }}" class="{{ request()->routeIs('admin.automation.*') ? 'active' : '' }}">
                     <i class="fas fa-clipboard-list"></i> <span>Automation</span>
                 </a>
+                <a href="{{ route('admin.receipts.index') }}" class="{{ request()->routeIs('admin.receipts.*') ? 'active' : '' }}">
+                    <i class="fas fa-file-invoice-dollar"></i> <span>Receipts</span>
+                </a>
                 <a href="{{ route('admin.funnel-templates.index') }}" class="{{ request()->routeIs('admin.funnel-templates.*') ? 'active' : '' }}">
                     <i class="fas fa-layer-group"></i> <span>Templates</span>
+                </a>
+            @endif
+
+            @if(auth()->user()->hasRole('payout-admin'))
+                <a href="{{ route('platform.payouts.index') }}" class="{{ request()->routeIs('platform.payouts.*') ? 'active' : '' }}">
+                    <i class="fas fa-scale-balanced"></i> <span>Payout Reviews</span>
                 </a>
             @endif
 
@@ -329,9 +339,15 @@
             @endif
             
             {{-- Analytics (Owner, Marketing, Finance) --}}
-            @if(auth()->user()->hasRole('account-owner') || auth()->user()->hasRole('marketing-manager') || auth()->user()->hasRole('finance'))
-                <a href="#"><i class="fas fa-chart-line"></i> <span>Reports</span></a>
+            @if(auth()->user()->hasRole('account-owner'))
+                <a href="{{ route('reports.owner') }}" class="{{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                    <i class="fas fa-chart-line"></i> <span>Reports</span>
+                </a>
             @endif
+
+            <a href="{{ route('notifications.index') }}" class="{{ request()->routeIs('notifications.*') ? 'active' : '' }}">
+                <i class="fas fa-bell"></i> <span>Notifications</span>
+            </a>
         </div>
 
         <div class="account-info-wrapper">
@@ -374,12 +390,61 @@
         </div>
 
     </div>
+    <button type="button" id="sidebarMobileOpen" class="sidebar-mobile-open-btn" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">
+        <i class="fas fa-bars" aria-hidden="true"></i>
+    </button>
+    <div id="sidebarBackdrop" class="sidebar-backdrop" aria-hidden="true"></div>
     @endunless
 
     <!-- Main Content -->
     <div class="main-content">
+        <div class="global-utility-bar">
+            <div class="notification-shell" data-notification-feed-url="{{ route('notifications.feed') }}" data-notification-index-url="{{ route('notifications.index') }}" data-initial-unread="{{ (int) ($layoutNotificationUnreadCount ?? 0) }}" data-initial-latest-id="{{ (int) ($layoutLatestNotificationId ?? 0) }}">
+                <button type="button" id="notificationBellButton" class="notification-bell-btn {{ ($layoutNotificationUnreadCount ?? 0) > 0 ? 'has-unread' : '' }}" aria-label="Open notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-bell-badge" {{ ($layoutNotificationUnreadCount ?? 0) > 0 ? '' : 'hidden' }}>{{ min((int) ($layoutNotificationUnreadCount ?? 0), 99) }}</span>
+                </button>
+
+                <div id="notificationDropdown" class="notification-dropdown">
+                    <div class="notification-dropdown__header">
+                        <div>
+                            <strong>Notifications</strong>
+                            <p><span id="notificationUnreadText">{{ (int) ($layoutNotificationUnreadCount ?? 0) }}</span> unread</p>
+                        </div>
+                        <form method="POST" action="{{ route('notifications.mark-all-read') }}">
+                            @csrf
+                            <button type="submit" class="notification-dropdown__action">Mark all read</button>
+                        </form>
+                    </div>
+
+                    <div id="notificationDropdownList" class="notification-dropdown__list">
+                        @forelse(($layoutRecentNotifications ?? collect()) as $notification)
+                            <a href="{{ $notification->action_url ?: route('notifications.index') }}"
+                                class="notification-dropdown__item {{ $notification->read_at ? '' : 'is-unread' }}" data-notification-id="{{ $notification->id }}">
+                                <div class="notification-dropdown__item-top">
+                                    <span class="notification-dropdown__title">{{ $notification->title }}</span>
+                                    <span class="notification-dropdown__time">{{ optional($notification->occurred_at)->diffForHumans() }}</span>
+                                </div>
+                                <div class="notification-dropdown__message">{{ $notification->message }}</div>
+                            </a>
+                        @empty
+                            <div class="notification-dropdown__empty">
+                                No notifications yet.
+                            </div>
+                        @endforelse
+                    </div>
+
+                    <a href="{{ route('notifications.index') }}" class="notification-dropdown__footer">
+                        View full notification log
+                    </a>
+                </div>
+            </div>
+        </div>
+
         @yield('content')
     </div>
+
+    <div id="notificationToastStack" class="notification-toast-stack" aria-live="polite" aria-atomic="false"></div>
 
     <div id="loginSplash" class="login-splash" aria-hidden="true">
         <div class="login-splash__panel">
@@ -445,16 +510,92 @@
         // Sidebar Toggle
         const sidebar = document.getElementById('sidebar');
         const toggleBtn = document.getElementById('sidebarToggle');
+        const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+        const sidebarMobileOpenButton = document.getElementById('sidebarMobileOpen');
+        const notificationBellButton = document.getElementById('notificationBellButton');
+        const notificationDropdown = document.getElementById('notificationDropdown');
+        const notificationShell = document.querySelector('.notification-shell');
+        const notificationDropdownList = document.getElementById('notificationDropdownList');
+        const notificationUnreadText = document.getElementById('notificationUnreadText');
+        const notificationToastStack = document.getElementById('notificationToastStack');
+
+        (function () {
+            const header = document.querySelector('.main-content .top-header');
+            const utilityBar = document.querySelector('.global-utility-bar');
+
+            if (!header || !utilityBar) {
+                return;
+            }
+
+            const companyChip = header.querySelector('.company-chip');
+            const landingVideoTrigger = header.querySelector('.landing-video-trigger');
+            const existingActionGroup = header.querySelector('.top-header-inline-actions');
+            const actionGroup = existingActionGroup || document.createElement('div');
+
+            if (!existingActionGroup) {
+                actionGroup.className = 'top-header-inline-actions';
+            }
+
+            if (companyChip) {
+                const companyChipName = companyChip.querySelector('.company-chip-name');
+                const companyTooltip = companyChipName ? companyChipName.textContent.trim() : '';
+
+                if (companyTooltip) {
+                    companyChip.setAttribute('data-company-tooltip', companyTooltip);
+                    companyChip.setAttribute('aria-label', companyTooltip);
+                    companyChip.setAttribute('tabindex', '0');
+                }
+
+                header.classList.add('top-header--has-company-actions');
+                header.classList.remove('top-header--has-compact-actions');
+                if (!actionGroup.parentNode) {
+                    header.appendChild(actionGroup);
+                }
+                actionGroup.appendChild(companyChip);
+                actionGroup.appendChild(utilityBar);
+                return;
+            }
+
+            if (landingVideoTrigger) {
+                header.classList.add('top-header--has-compact-actions');
+                header.classList.remove('top-header--has-company-actions');
+                if (!actionGroup.parentNode) {
+                    header.appendChild(actionGroup);
+                }
+                actionGroup.appendChild(landingVideoTrigger);
+                actionGroup.appendChild(utilityBar);
+                return;
+            }
+
+            header.classList.add('top-header--has-compact-actions');
+            header.classList.remove('top-header--has-company-actions');
+            if (!actionGroup.parentNode) {
+                header.appendChild(actionGroup);
+            }
+            actionGroup.appendChild(utilityBar);
+        })();
         
         if (sidebar && toggleBtn) {
             const mobileSidebarMedia = window.matchMedia('(max-width: 768px)');
+            const setMobileSidebarOpen = (isOpen) => {
+                document.body.classList.toggle('sidebar-mobile-open', isOpen);
+
+                if (sidebarMobileOpenButton) {
+                    sidebarMobileOpenButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                }
+
+                if (sidebarBackdrop) {
+                    sidebarBackdrop.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+                }
+            };
+
             const syncSidebarResponsiveState = () => {
                 if (mobileSidebarMedia.matches) {
-                    if (!sidebar.dataset.mobileInit) {
-                        sidebar.classList.add('collapsed');
-                        sidebar.dataset.mobileInit = '1';
-                    }
+                    sidebar.classList.remove('collapsed');
+                    setMobileSidebarOpen(false);
+                    sidebar.dataset.mobileInit = '1';
                 } else {
+                    setMobileSidebarOpen(false);
                     sidebar.classList.remove('collapsed');
                     delete sidebar.dataset.mobileInit;
                 }
@@ -468,12 +609,270 @@
             }
 
             toggleBtn.addEventListener('click', () => {
-                sidebar.classList.toggle('collapsed');
                 if (mobileSidebarMedia.matches) {
+                    const nextOpen = !document.body.classList.contains('sidebar-mobile-open');
+                    setMobileSidebarOpen(nextOpen);
                     sidebar.dataset.mobileInit = '1';
+                    return;
+                }
+
+                sidebar.classList.toggle('collapsed');
+            });
+
+            if (sidebarMobileOpenButton) {
+                sidebarMobileOpenButton.addEventListener('click', () => {
+                    if (mobileSidebarMedia.matches) {
+                        setMobileSidebarOpen(true);
+                    }
+                });
+            }
+
+            if (sidebarBackdrop) {
+                sidebarBackdrop.addEventListener('click', () => {
+                    if (mobileSidebarMedia.matches) {
+                        setMobileSidebarOpen(false);
+                    }
+                });
+            }
+
+            Array.from(sidebar.querySelectorAll('a') || []).forEach((link) => {
+                link.addEventListener('click', () => {
+                    if (mobileSidebarMedia.matches) {
+                        setMobileSidebarOpen(false);
+                    }
+                });
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && mobileSidebarMedia.matches) {
+                    setMobileSidebarOpen(false);
                 }
             });
         }
+
+        if (notificationBellButton && notificationDropdown) {
+            notificationBellButton.addEventListener('click', function (event) {
+                event.stopPropagation();
+                notificationDropdown.classList.toggle('is-open');
+            });
+
+            document.addEventListener('click', function (event) {
+                if (!notificationDropdown.contains(event.target) && !notificationBellButton.contains(event.target)) {
+                    notificationDropdown.classList.remove('is-open');
+                }
+            });
+        }
+
+        (function () {
+            if (!notificationShell || !notificationBellButton || !notificationDropdownList || !notificationUnreadText || !notificationToastStack) {
+                return;
+            }
+
+            const feedUrl = notificationShell.getAttribute('data-notification-feed-url');
+            const notificationsIndexUrl = notificationShell.getAttribute('data-notification-index-url');
+            const initialUnread = parseInt(notificationShell.getAttribute('data-initial-unread') || '0', 10) || 0;
+            const initialLatestId = parseInt(notificationShell.getAttribute('data-initial-latest-id') || '0', 10) || 0;
+            const storageKey = 'notifications.lastSeen.' + (document.body.getAttribute('data-auth-email') || 'user');
+            const originalTitle = document.title;
+            let pollTimer = null;
+            let isFetching = false;
+
+            const readLastSeen = () => {
+                try {
+                    const stored = parseInt(localStorage.getItem(storageKey) || '0', 10);
+                    return Number.isFinite(stored) ? stored : 0;
+                } catch (_e) {
+                    return 0;
+                }
+            };
+
+            const writeLastSeen = (value) => {
+                try {
+                    localStorage.setItem(storageKey, String(value));
+                } catch (_e) {}
+            };
+
+            if (!readLastSeen()) {
+                writeLastSeen(initialLatestId);
+            }
+
+            const escapeHtml = (value) => String(value || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+
+            const levelLabel = (value) => {
+                const map = {
+                    info: 'Info',
+                    success: 'Success',
+                    warning: 'Warning',
+                    error: 'Urgent'
+                };
+
+                return map[value] || 'Notice';
+            };
+
+            const updateDocumentTitle = (unreadCount) => {
+                document.title = unreadCount > 0 ? '(' + unreadCount + ') ' + originalTitle : originalTitle;
+            };
+
+            const updateBellState = (unreadCount, shouldPulse = false) => {
+                const badge = notificationBellButton.querySelector('.notification-bell-badge');
+                if (badge) {
+                    badge.textContent = String(Math.min(unreadCount, 99));
+                    badge.hidden = unreadCount <= 0;
+                }
+
+                notificationBellButton.classList.toggle('has-unread', unreadCount > 0);
+                if (shouldPulse) {
+                    notificationBellButton.classList.remove('is-alerting');
+                    void notificationBellButton.offsetWidth;
+                    notificationBellButton.classList.add('is-alerting');
+                    window.setTimeout(function () {
+                        notificationBellButton.classList.remove('is-alerting');
+                    }, 1200);
+                }
+
+                notificationUnreadText.textContent = String(unreadCount);
+                updateDocumentTitle(unreadCount);
+            };
+
+            const renderDropdown = (notifications) => {
+                if (!notifications.length) {
+                    notificationDropdownList.innerHTML = '<div class="notification-dropdown__empty">No notifications yet.</div>';
+                    return;
+                }
+
+                const markup = notifications.slice().reverse().map(function (notification) {
+                    const unreadClass = notification.read_at ? '' : ' is-unread';
+                    return '' +
+                        '<a href="' + escapeHtml(notification.action_url || notificationsIndexUrl) + '" class="notification-dropdown__item' + unreadClass + '" data-notification-id="' + notification.id + '">' +
+                            '<div class="notification-dropdown__item-top">' +
+                                '<span class="notification-dropdown__title">' + escapeHtml(notification.title) + '</span>' +
+                                '<span class="notification-dropdown__time">' + escapeHtml(notification.occurred_at_human || 'Just now') + '</span>' +
+                            '</div>' +
+                            '<div class="notification-dropdown__message">' + escapeHtml(notification.message) + '</div>' +
+                        '</a>';
+                }).join('');
+
+                notificationDropdownList.innerHTML = markup;
+            };
+
+            const removeToast = (toast) => {
+                if (!toast || !toast.parentNode) {
+                    return;
+                }
+
+                toast.classList.add('is-leaving');
+                window.setTimeout(function () {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 220);
+            };
+
+            const pushToast = (notification) => {
+                const toast = document.createElement('div');
+                toast.className = 'notification-toast notification-toast--' + (notification.level || 'info');
+                toast.setAttribute('role', notification.level === 'error' ? 'alert' : 'status');
+                toast.innerHTML = '' +
+                    '<div class="notification-toast__eyebrow">' + escapeHtml(levelLabel(notification.level)) + '</div>' +
+                    '<div class="notification-toast__title">' + escapeHtml(notification.title) + '</div>' +
+                    '<div class="notification-toast__message">' + escapeHtml(notification.message) + '</div>' +
+                    '<div class="notification-toast__actions">' +
+                        '<a class="notification-toast__open" href="' + escapeHtml(notification.action_url || notificationsIndexUrl) + '">Open</a>' +
+                        '<button type="button" class="notification-toast__dismiss" aria-label="Dismiss notification">Dismiss</button>' +
+                    '</div>';
+
+                const dismissButton = toast.querySelector('.notification-toast__dismiss');
+                if (dismissButton) {
+                    dismissButton.addEventListener('click', function () {
+                        removeToast(toast);
+                    });
+                }
+
+                notificationToastStack.prepend(toast);
+
+                const timeoutMs = notification.level === 'error'
+                    ? 0
+                    : (notification.level === 'warning' ? 12000 : 7000);
+
+                if (timeoutMs > 0) {
+                    window.setTimeout(function () {
+                        removeToast(toast);
+                    }, timeoutMs);
+                }
+            };
+
+            const syncFeed = (data, shouldToastNew) => {
+                const unreadCount = parseInt(data.unread_count || 0, 10) || 0;
+                const latestId = parseInt(data.latest_id || 0, 10) || 0;
+                const notifications = Array.isArray(data.notifications) ? data.notifications : [];
+                const lastSeenId = readLastSeen();
+                const freshNotifications = notifications.filter(function (notification) {
+                    return Number(notification.id) > lastSeenId;
+                });
+
+                renderDropdown(notifications);
+                updateBellState(unreadCount, shouldToastNew && freshNotifications.length > 0);
+
+                if (shouldToastNew && freshNotifications.length > 0) {
+                    freshNotifications.forEach(pushToast);
+                }
+
+                if (latestId > lastSeenId) {
+                    writeLastSeen(latestId);
+                }
+            };
+
+            const fetchFeed = (shouldToastNew) => {
+                if (isFetching || !feedUrl) {
+                    return;
+                }
+
+                isFetching = true;
+                fetch(feedUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Notification feed request failed.');
+                        }
+
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        syncFeed(data, shouldToastNew);
+                    })
+                    .catch(function () {
+                        // Keep notification polling silent if the app is temporarily unreachable.
+                    })
+                    .finally(function () {
+                        isFetching = false;
+                    });
+            };
+
+            updateBellState(initialUnread, false);
+            pollTimer = window.setInterval(function () {
+                fetchFeed(true);
+            }, 15000);
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    fetchFeed(true);
+                }
+            });
+
+            window.addEventListener('focus', function () {
+                fetchFeed(true);
+            });
+        })();
 
         (function () {
             const logoutForms = Array.from(document.querySelectorAll('form[data-logout-form]') || []);
@@ -486,6 +885,7 @@
             let slowTimer = null;
             const roleIcons = {
                 super_admin: 'fa-user-shield',
+                payout_admin: 'fa-scale-balanced',
                 account_owner: 'fa-building-user',
                 marketing_manager: 'fa-chart-line',
                 sales_agent: 'fa-handshake',
@@ -494,6 +894,7 @@
             };
             const roleLabels = {
                 super_admin: 'Super Admin',
+                payout_admin: 'Platform Finance Admin',
                 account_owner: 'Account Owner',
                 marketing_manager: 'Marketing Manager',
                 sales_agent: 'Sales Agent',

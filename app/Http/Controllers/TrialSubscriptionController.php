@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Services\PayMongoCheckoutService;
 use App\Services\SignupOnboardingService;
+use App\Services\SubscriptionLifecycleService;
+use App\Support\TenantPlanEnforcer;
 use Illuminate\Http\Request;
 
 class TrialSubscriptionController extends Controller
@@ -17,6 +19,8 @@ class TrialSubscriptionController extends Controller
             'plans' => $onboarding->plans(),
             'tenant' => $tenant,
             'paymentCancelled' => $request->query('payment') === 'cancelled',
+            'billingStateLabel' => $tenant ? app(SubscriptionLifecycleService::class)->billingStateLabel($tenant) : 'Current',
+            'planUsage' => $tenant ? app(TenantPlanEnforcer::class)->usageSummary($tenant) : [],
         ]);
     }
 

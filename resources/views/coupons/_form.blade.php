@@ -1,4 +1,4 @@
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+<div class="app-form-grid app-form-grid--2" style="gap:16px;">
     <div style="margin-bottom:20px;">
         <label for="code" style="display:block;margin-bottom:8px;font-weight:bold;">Coupon Code</label>
         @php $selectedCodeMode = old('code_mode', $codeMode ?? 'manual'); @endphp
@@ -39,7 +39,7 @@
     @error('description')<span style="color:red;font-size:12px;">{{ $message }}</span>@enderror
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;">
+<div class="app-form-grid app-form-grid--3" style="gap:16px;">
     <div style="margin-bottom:20px;">
         <label for="discount_type" style="display:block;margin-bottom:8px;font-weight:bold;">Discount Type</label>
         <select name="discount_type" id="discount_type" required style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">
@@ -70,7 +70,7 @@
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+<div class="app-form-grid app-form-grid--2" style="gap:16px;">
     <div style="margin-bottom:20px;">
         <label for="max_total_uses" style="display:block;margin-bottom:8px;font-weight:bold;">Total redemptions (all customers)</label>
         <input type="number" min="1" name="max_total_uses" id="max_total_uses"
@@ -90,7 +90,7 @@
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+<div class="app-form-grid app-form-grid--2" style="gap:16px;">
     <div style="margin-bottom:20px;">
         <label for="starts_at" style="display:block;margin-bottom:8px;font-weight:bold;">Starts At</label>
         <input type="datetime-local" name="starts_at" id="starts_at"
@@ -122,7 +122,7 @@
 
 <div style="margin-bottom:24px;">
     <label style="display:block;margin-bottom:10px;font-weight:bold;">Visible In Funnels</label>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-height:280px;overflow:auto;padding:14px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
+    <div class="app-grid app-grid--2" style="gap:10px;max-height:280px;overflow:auto;padding:14px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
         @forelse($funnels as $funnel)
             <label style="display:flex;align-items:center;gap:8px;">
                 <input type="checkbox" name="funnel_ids[]" value="{{ $funnel->id }}"

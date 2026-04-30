@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\InAppNotification;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -25,6 +26,24 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         View::share('emptyDash', new HtmlString('<strong class="empty-value-dash">&mdash;</strong>'));
+
+        View::composer('layouts.admin', function ($view) {
+            if (! auth()->check()) {
+                return;
+            }
+
+            $user = auth()->user();
+            $baseQuery = InAppNotification::query()->where('user_id', $user->id);
+            $recentNotifications = (clone $baseQuery)
+                ->orderByDesc('occurred_at')
+                ->orderByDesc('id')
+                ->limit(5)
+                ->get();
+
+            $view->with('layoutNotificationUnreadCount', (clone $baseQuery)->whereNull('read_at')->count());
+            $view->with('layoutRecentNotifications', $recentNotifications);
+            $view->with('layoutLatestNotificationId', (int) ($recentNotifications->max('id') ?? 0));
+        });
 
         RateLimiter::for('funnel-public-view', function (Request $request) {
             return [

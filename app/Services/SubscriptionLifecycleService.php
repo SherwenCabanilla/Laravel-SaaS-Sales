@@ -38,11 +38,32 @@ class SubscriptionLifecycleService
                 'billing_status' => self::BILLING_CURRENT,
                 'billing_grace_ends_at' => null,
                 'last_payment_failed_at' => null,
-                'subscription_activated_at' => $tenant->subscription_activated_at ?? now(),
+                'subscription_activated_at' => now(),
+                'subscription_renews_at' => now()->addMonthNoOverflow(),
                 'trial_ends_at' => null,
             ]);
 
-            return $tenant->fresh();
+            $tenant = $tenant->fresh();
+            $this->dispatchAutomationEvent('subscription_paid', $this->subscriptionPayload($tenant, $payment, [
+                'plan_code' => (string) ($plan['code'] ?? ''),
+                'plan_name' => (string) ($plan['name'] ?? $tenant->subscription_plan),
+                'payment_method' => $paymentMethod ?? $payment->payment_method,
+            ]));
+            app(FinanceAuditService::class)->record(
+                'subscription_paid',
+                'Platform subscription payment activated the tenant workspace.',
+                null,
+                $tenant,
+                $payment,
+                null,
+                [
+                    'plan_code' => (string) ($plan['code'] ?? ''),
+                    'plan_name' => (string) ($plan['name'] ?? $tenant->subscription_plan),
+                    'payment_method' => $paymentMethod ?? $payment->payment_method,
+                ]
+            );
+
+            return $tenant;
         });
     }
 
@@ -74,11 +95,26 @@ class SubscriptionLifecycleService
                     'last_payment_failed_at' => now(),
                 ]);
 
+                $tenant = $tenant->fresh();
                 $this->dispatchAutomationEvent('payment_failed', [
                     'tenant_id' => $tenant->id,
                     'invoice_id' => (string) ($payment->provider_reference ?: $payment->id),
                     'payment_id' => $payment->id,
                 ]);
+                $this->dispatchAutomationEvent('subscription_overdue', $this->subscriptionPayload($tenant, $payment, [
+                    'invoice_id' => (string) ($payment->provider_reference ?: $payment->id),
+                ]));
+                app(FinanceAuditService::class)->record(
+                    'subscription_overdue',
+                    'Platform subscription entered overdue state after a failed payment.',
+                    null,
+                    $tenant,
+                    $payment,
+                    null,
+                    [
+                        'invoice_id' => (string) ($payment->provider_reference ?: $payment->id),
+                    ]
+                );
             }
 
             return $tenant->fresh();
@@ -102,21 +138,45 @@ class SubscriptionLifecycleService
         return $tenant->fresh();
     }
 
-    public function restoreTenantBilling(Tenant $tenant): Tenant
+    public function restoreTenantBilling(Tenant $tenant, ?Payment $payment = null): Tenant
     {
         $tenant->update([
             'status' => 'active',
             'billing_status' => self::BILLING_CURRENT,
             'billing_grace_ends_at' => null,
             'last_payment_failed_at' => null,
-            'subscription_activated_at' => $tenant->subscription_activated_at ?? now(),
+            'subscription_activated_at' => now(),
+            'subscription_renews_at' => now()->addMonthNoOverflow(),
         ]);
 
+        $tenant = $tenant->fresh();
+        $payload = $this->subscriptionPayload($tenant, null, []);
+        if ($payment) {
+            $payload = $this->subscriptionPayload($tenant, $payment, []);
+            $this->dispatchAutomationEvent('subscription_paid', $payload);
+        }
         $this->dispatchAutomationEvent('payment_recovered', [
             'tenant_id' => $tenant->id,
+            'billing_status' => $tenant->billing_status,
+            'subscription_plan' => $tenant->subscription_plan,
         ]);
+        $this->dispatchAutomationEvent('subscription_recovered', $payload);
+        app(FinanceAuditService::class)->record(
+            $payment ? 'subscription_paid' : 'subscription_recovered',
+            $payment
+                ? 'Platform subscription payment restored tenant billing.'
+                : 'Tenant billing was restored.',
+            null,
+            $tenant,
+            $payment,
+            null,
+            [
+                'billing_status' => $tenant->billing_status,
+                'subscription_plan' => $tenant->subscription_plan,
+            ]
+        );
 
-        return $tenant->fresh();
+        return $tenant;
     }
 
     public function billingStateLabel(Tenant $tenant): string
@@ -139,5 +199,37 @@ class SubscriptionLifecycleService
         } catch (\Throwable) {
             // Best-effort dispatch only.
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    private function subscriptionPayload(Tenant $tenant, ?Payment $payment, array $extra): array
+    {
+        $owner = $tenant->users()
+            ->whereHas('roles', fn ($query) => $query->where('slug', 'account-owner'))
+            ->orderBy('id')
+            ->first(['users.id', 'users.name', 'users.email']);
+
+        return array_merge([
+            'tenant_id' => $tenant->id,
+            'company_name' => $tenant->company_name,
+            'account_owner_id' => $owner?->id,
+            'account_owner_name' => $owner?->name,
+            'account_owner_email' => $owner?->email,
+            'payment_id' => $payment?->id,
+            'amount' => $payment?->amount,
+            'provider' => $payment?->provider,
+            'provider_reference' => $payment?->provider_reference,
+            'payment_method' => $payment?->payment_method,
+            'subscription_plan' => $tenant->subscription_plan,
+            'status' => $tenant->status,
+            'billing_status' => $tenant->billing_status,
+            'trial_ends_at' => optional($tenant->trial_ends_at)->toIso8601String(),
+            'billing_grace_ends_at' => optional($tenant->billing_grace_ends_at)->toIso8601String(),
+            'subscription_activated_at' => optional($tenant->subscription_activated_at)->toIso8601String(),
+            'subscription_renews_at' => optional($tenant->subscription_renews_at)->toIso8601String(),
+        ], $extra);
     }
 }

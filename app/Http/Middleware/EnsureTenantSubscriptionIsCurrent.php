@@ -54,7 +54,7 @@ class EnsureTenantSubscriptionIsCurrent
                 ->with('error', 'Your workspace is inactive. Complete payment to restore access.');
         }
 
-        if ($tenant->isOverdue() && $user->hasRole('account-owner') && ! $request->routeIs('payments.*', 'trial.billing.*', 'profile.*')) {
+        if ($tenant->isOverdue() && $user->hasRole('account-owner') && ! $request->routeIs('payments.*', 'trial.billing.*', 'profile.*', 'reports.*')) {
             return redirect()
                 ->route('payments.index')
                 ->with('error', 'A recent payment failed. Your workspace is in a grace period until ' . optional($tenant->billing_grace_ends_at)->format('F j, Y g:i A') . '. Complete payment to avoid deactivation.');

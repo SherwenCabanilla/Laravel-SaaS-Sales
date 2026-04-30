@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class Tenant extends Model
@@ -29,6 +31,7 @@ class Tenant extends Model
         'billing_grace_ends_at',
         'last_payment_failed_at',
         'subscription_activated_at',
+        'subscription_renews_at',
         'theme_primary_color',
         'theme_accent_color',
         'theme_sidebar_bg',
@@ -43,6 +46,7 @@ class Tenant extends Model
         'billing_grace_ends_at' => 'datetime',
         'last_payment_failed_at' => 'datetime',
         'subscription_activated_at' => 'datetime',
+        'subscription_renews_at' => 'datetime',
     ];
 
     public function setStatusAttribute($value): void
@@ -74,6 +78,16 @@ class Tenant extends Model
         return $this->hasMany(User::class);
     }
 
+    public function payoutAccounts(): HasMany
+    {
+        return $this->hasMany(TenantPayoutAccount::class);
+    }
+
+    public function defaultPayoutAccount(): HasOne
+    {
+        return $this->hasOne(TenantPayoutAccount::class)->where('is_default', true);
+    }
+
     public function leads()
     {
         return $this->hasMany(Lead::class);
@@ -87,6 +101,21 @@ class Tenant extends Model
     public function coupons()
     {
         return $this->hasMany(Coupon::class);
+    }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(PaymentReceipt::class);
+    }
+
+    public function commissionPlans(): HasMany
+    {
+        return $this->hasMany(CommissionPlan::class);
+    }
+
+    public function commissionEntries(): HasMany
+    {
+        return $this->hasMany(CommissionEntry::class);
     }
 
     public function customFields()
@@ -140,5 +169,18 @@ class Tenant extends Model
         }
 
         return now()->startOfDay()->diffInDays($this->billing_grace_ends_at->copy()->startOfDay()) + 1;
+    }
+
+    public function subscriptionRenewalDaysRemaining(): int
+    {
+        if (! $this->subscription_renews_at instanceof Carbon) {
+            return 0;
+        }
+
+        if (now()->greaterThan($this->subscription_renews_at)) {
+            return 0;
+        }
+
+        return now()->startOfDay()->diffInDays($this->subscription_renews_at->copy()->startOfDay()) + 1;
     }
 }

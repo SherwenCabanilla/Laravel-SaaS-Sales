@@ -104,6 +104,7 @@
 
     <div class="card">
         <h3>Needs Action Now</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
         <table>
             <thead>
                 <tr>
@@ -124,8 +125,33 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div style="margin-top: 16px;">
             {{ $sourceBreakdown->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>Commission Snapshot</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
+        <table>
+            <thead>
+                <tr>
+                    <th>Attributed Revenue</th>
+                    <th>Held</th>
+                    <th>Payable</th>
+                    <th>Paid</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PHP {{ number_format((float) ($attributedRevenue ?? 0), 2) }}</td>
+                    <td>PHP {{ number_format((float) data_get($commissionSummary, 'held_total', 0), 2) }}</td>
+                    <td>PHP {{ number_format((float) data_get($commissionSummary, 'payable_total', 0), 2) }}</td>
+                    <td>PHP {{ number_format((float) data_get($commissionSummary, 'paid_total', 0), 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
         </div>
     </div>
 @endsection

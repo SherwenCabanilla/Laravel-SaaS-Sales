@@ -154,7 +154,7 @@ class FunnelTrackingService
             'order_key' => 'payment:'.$payment->id,
         ], $derivedMeta, $meta);
 
-        return FunnelEvent::query()->updateOrCreate(
+        $event = FunnelEvent::query()->updateOrCreate(
             [
                 'payment_id' => $payment->id,
                 'event_name' => self::EVENT_PAYMENT_PAID,
@@ -169,6 +169,12 @@ class FunnelTrackingService
                 'occurred_at' => now(),
             ]
         );
+
+        if ($event->wasRecentlyCreated) {
+            $this->dispatchAutomationEvent($event);
+        }
+
+        return $event;
     }
 
     public function trackOfferDecision(
@@ -973,13 +979,18 @@ class FunnelTrackingService
         ];
 
         if ($payload['payment_id'] && $payload['event_name'] === self::EVENT_PAYMENT_PAID) {
-            return FunnelEvent::query()->firstOrCreate(
+            $event = FunnelEvent::query()->firstOrCreate(
                 [
                     'payment_id' => $payload['payment_id'],
                     'event_name' => $payload['event_name'],
                 ],
                 $payload
             );
+            if ($event->wasRecentlyCreated) {
+                $this->dispatchAutomationEvent($event);
+            }
+
+            return $event;
         }
 
         if (
@@ -987,7 +998,7 @@ class FunnelTrackingService
             && $payload['funnel_id']
             && $payload['session_identifier']
         ) {
-            return FunnelEvent::query()->firstOrCreate(
+            $event = FunnelEvent::query()->firstOrCreate(
                 [
                     'funnel_id' => $payload['funnel_id'],
                     'event_name' => $payload['event_name'],
@@ -995,9 +1006,90 @@ class FunnelTrackingService
                 ],
                 $payload
             );
+            if ($event->wasRecentlyCreated) {
+                $this->dispatchAutomationEvent($event);
+            }
+
+            return $event;
         }
 
-        return FunnelEvent::query()->create($payload);
+        $event = FunnelEvent::query()->create($payload);
+        $this->dispatchAutomationEvent($event);
+
+        return $event;
+    }
+
+    private function shouldDispatchAutomationEvent(FunnelEvent $event): bool
+    {
+        return in_array($event->event_name, [
+            self::EVENT_OPT_IN_SUBMITTED,
+            self::EVENT_CHECKOUT_STARTED,
+            self::EVENT_PAYMENT_PAID,
+            self::EVENT_CHECKOUT_ABANDONED,
+            self::EVENT_ORDER_DELIVERY_UPDATED,
+            self::EVENT_UPSELL_ACCEPTED,
+            self::EVENT_UPSELL_DECLINED,
+            self::EVENT_DOWNSELL_ACCEPTED,
+            self::EVENT_DOWNSELL_DECLINED,
+        ], true);
+    }
+
+    private function dispatchAutomationEvent(FunnelEvent $event): void
+    {
+        if (! $this->shouldDispatchAutomationEvent($event)) {
+            return;
+        }
+
+        try {
+            $event->loadMissing(['funnel:id,tenant_id,name,slug', 'step:id,title,slug,type', 'lead:id,name,email,phone', 'payment:id,tenant_id,amount,status,payment_method,provider,provider_reference']);
+            $meta = is_array($event->meta) ? $event->meta : [];
+
+            $recipientEmail = trim((string) (
+                data_get($meta, 'customer.email')
+                ?: data_get($meta, 'recipient_email')
+                ?: data_get($meta, 'lead_email')
+                ?: $event->lead?->email
+            ));
+
+            $payload = [
+                'event_id' => 'funnel_event:' . $event->id,
+                'idempotency_key' => 'funnel_event:' . $event->id,
+                'tenant_id' => $event->tenant_id,
+                'funnel_event_id' => $event->id,
+                'funnel_id' => $event->funnel_id,
+                'funnel_name' => $event->funnel->name ?? null,
+                'funnel_slug' => $event->funnel->slug ?? null,
+                'funnel_step_id' => $event->funnel_step_id,
+                'step_slug' => $event->step->slug ?? data_get($meta, 'step_slug'),
+                'step_title' => $event->step->title ?? null,
+                'step_type' => $event->step->type ?? data_get($meta, 'step_type'),
+                'lead_id' => $event->lead_id,
+                'lead_name' => $event->lead?->name ?? null,
+                'lead_email' => $event->lead?->email ?? data_get($meta, 'lead_email'),
+                'lead_phone' => $event->lead?->phone ?? null,
+                'payment_id' => $event->payment_id,
+                'payment_type' => Payment::TYPE_FUNNEL_CHECKOUT,
+                'payment_status' => $event->payment?->status ?? data_get($meta, 'payment_status'),
+                'amount' => $event->payment?->amount ?? data_get($meta, 'amount'),
+                'provider' => $event->payment?->provider ?? data_get($meta, 'provider'),
+                'provider_reference' => $event->payment?->provider_reference ?? data_get($meta, 'provider_reference'),
+                'payment_method' => $event->payment?->payment_method ?? data_get($meta, 'payment_method'),
+                'recipient_email' => $recipientEmail !== '' ? $recipientEmail : null,
+                'customer' => is_array(data_get($meta, 'customer')) ? data_get($meta, 'customer') : null,
+                'shipping' => is_array(data_get($meta, 'shipping')) ? data_get($meta, 'shipping') : null,
+                'order_items' => is_array(data_get($meta, 'order_items')) ? data_get($meta, 'order_items') : null,
+                'order_key' => data_get($meta, 'order_key'),
+                'meta' => $meta,
+                'occurred_at' => optional($event->occurred_at)->toIso8601String(),
+            ];
+
+            app(N8nEmailOrchestrator::class)->dispatch($event->event_name, array_filter(
+                $payload,
+                fn ($value) => $value !== null && $value !== ''
+            ));
+        } catch (\Throwable) {
+            // Best-effort automation dispatch only.
+        }
     }
 
     private function baseFunnelQuery(Funnel $funnel, array $filters = []): Builder

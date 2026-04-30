@@ -45,8 +45,8 @@ class GoogleAuthController extends Controller
             return redirect()->route('login')->with('error', 'No existing account found for this Google email. Please use your registered account.');
         }
 
-        if ($user->hasRole('super-admin')) {
-            return redirect()->route('login')->with('error', 'Super Admin accounts cannot use Google sign-in.');
+        if ($user->hasRole('super-admin') || $user->hasRole('payout-admin')) {
+            return redirect()->route('login')->with('error', 'This platform admin account cannot use Google sign-in.');
         }
 
         if ($user->status !== 'active') {
@@ -232,6 +232,16 @@ class GoogleAuthController extends Controller
             return redirect()->intended('/admin/dashboard')->with('success', 'Login Successfully');
         }
 
+        if ($user->hasRole('payout-admin')) {
+            if ($useGoogleSplash) {
+                session(['google_login_redirect_to' => route('platform.payouts.index')]);
+
+                return redirect()->route('auth.google.processing');
+            }
+
+            return redirect()->intended(route('platform.payouts.index'))->with('success', 'Login Successfully');
+        }
+
         if ($response = $this->tenantAccessRedirect($user)) {
             return $response;
         }
@@ -258,6 +268,10 @@ class GoogleAuthController extends Controller
     {
         if ($user->hasRole('account-owner')) {
             return route('dashboard.owner');
+        }
+
+        if ($user->hasRole('payout-admin')) {
+            return route('platform.payouts.index');
         }
 
         if ($user->hasRole('marketing-manager')) {
@@ -334,6 +348,10 @@ class GoogleAuthController extends Controller
     {
         if ($user->hasRole('super-admin')) {
             return 'super_admin';
+        }
+
+        if ($user->hasRole('payout-admin')) {
+            return 'payout_admin';
         }
 
         if ($user->hasRole('account-owner')) {

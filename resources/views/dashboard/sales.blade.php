@@ -83,6 +83,7 @@
         </div>
         <div class="chart">
             <h3>Needs Action Now</h3>
+            <div class="app-table-scroll app-table-scroll--wide">
             <table>
                 <thead>
                     <tr>
@@ -105,6 +106,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
             <div style="margin-top: 12px;">
                 {{ $overdueLeads->links('pagination::bootstrap-4') }}
             </div>
@@ -113,6 +115,7 @@
 
     <div class="card">
         <h3>My Recent Assigned Leads</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
         <table>
             <thead>
                 <tr>
@@ -135,8 +138,33 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div style="margin-top: 16px;">
             {{ $myRecentLeads->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>Commission Snapshot</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
+        <table>
+            <thead>
+                <tr>
+                    <th>Held</th>
+                    <th>Payable</th>
+                    <th>Paid</th>
+                    <th>Active Entries</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>PHP {{ number_format((float) data_get($commissionSummary, 'held_total', 0), 2) }}</td>
+                    <td>PHP {{ number_format((float) data_get($commissionSummary, 'payable_total', 0), 2) }}</td>
+                    <td>PHP {{ number_format((float) data_get($commissionSummary, 'paid_total', 0), 2) }}</td>
+                    <td>{{ number_format((int) data_get($commissionSummary, 'active_count', 0)) }}</td>
+                </tr>
+            </tbody>
+        </table>
         </div>
     </div>
 @endsection

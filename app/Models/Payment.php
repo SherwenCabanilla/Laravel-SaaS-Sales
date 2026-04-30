@@ -128,4 +128,14 @@ class Payment extends Model
     {
         return $this->hasMany(FunnelReview::class);
     }
+
+    public function receipts(): HasMany
+    {
+        return $this->hasMany(PaymentReceipt::class);
+    }
+
+    public function commissionEntries(): HasMany
+    {
+        return $this->hasMany(CommissionEntry::class);
+    }
 }

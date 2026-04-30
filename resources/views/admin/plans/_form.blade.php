@@ -18,7 +18,7 @@
     @error('name')<span style="color:red;font-size:12px;">{{ $message }}</span>@enderror
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+<div class="app-form-grid app-form-grid--2" style="gap:16px;">
     <div style="margin-bottom: 20px;">
         <label for="price" style="display:block;margin-bottom:8px;font-weight:bold;">Price</label>
         <input type="number" step="0.01" min="0" name="price" id="price" required
@@ -51,7 +51,7 @@
     @error('features')<span style="color:red;font-size:12px;">{{ $message }}</span>@enderror
 </div>
 
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+<div class="app-form-grid app-form-grid--2" style="gap:16px;">
     <div style="margin-bottom: 20px;">
         <label for="spotlight" style="display:block;margin-bottom:8px;font-weight:bold;">Spotlight Badge</label>
         <input type="text" name="spotlight" id="spotlight"
@@ -71,7 +71,7 @@
 
 <div style="margin-bottom: 20px;">
     <h4 style="margin:0 0 12px 0;color:var(--theme-primary, #240E35);">Plan Limits</h4>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+    <div class="app-form-grid app-form-grid--2" style="gap:16px;">
         <div>
             <label for="max_users" style="display:block;margin-bottom:8px;font-weight:bold;">Max Users</label>
             <input type="number" min="1" name="max_users" id="max_users"

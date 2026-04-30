@@ -256,6 +256,10 @@ class PublicOnboardingController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        if ($user->hasRole('payout-admin')) {
+            return redirect()->route('platform.payouts.index');
+        }
+
         if ($user->hasRole('account-owner')) {
             $tenant = $user->tenant;
             if ($tenant && $tenant->isTrialExpired()) {

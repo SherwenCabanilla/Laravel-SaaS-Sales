@@ -56,10 +56,131 @@
             </div>
         </div>
 
+        <div class="payment-summary-grid" style="margin: 20px 0;">
+            <div class="card payment-summary-card">
+                <h3>Trial Days Remaining</h3>
+                <p class="payment-summary-card__value">{{ number_format((int) $tenant->trialDaysRemaining()) }}</p>
+            </div>
+            <div class="card payment-summary-card">
+                <h3>Grace Days Remaining</h3>
+                <p class="payment-summary-card__value">{{ number_format((int) $tenant->billingGraceDaysRemaining()) }}</p>
+            </div>
+            <div class="card payment-summary-card">
+                <h3>Active Since</h3>
+                <p class="payment-summary-card__value payment-summary-card__value--compact">{{ optional($tenant->subscription_activated_at)->format('Y-m-d H:i') ?? $emptyDash }}</p>
+            </div>
+            <div class="card payment-summary-card">
+                <h3>Shared Automation Access</h3>
+                <p class="payment-summary-card__value">{{ data_get($planUsage, 'automation_enabled') ? 'Included' : 'Not Included' }}</p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Plan Limits</h3>
+            <div class="app-grid app-grid--4" style="gap:12px;">
+                @foreach(['users' => 'Users', 'funnels' => 'Funnels', 'leads' => 'Leads', 'messages' => 'Messages'] as $key => $label)
+                    <div style="padding:14px;border:1px solid var(--theme-border, #E6E1EF);border-radius:12px;background:var(--theme-surface-softer, #F7F7FB);">
+                        <div style="font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--theme-muted, #6B7280);">{{ $label }}</div>
+                        <div style="margin-top:8px;font-size:22px;font-weight:800;color:var(--theme-primary, #240E35);">
+                            {{ number_format((int) data_get($planUsage, $key . '.used', 0)) }}
+                            /
+                            {{ data_get($planUsage, $key . '.is_unlimited') ? 'Unlimited' : number_format((int) data_get($planUsage, $key . '.limit', 0)) }}
+                        </div>
+                        <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">
+                            Remaining:
+                            {{ data_get($planUsage, $key . '.is_unlimited') ? 'Unlimited' : number_format((int) data_get($planUsage, $key . '.remaining', 0)) }}
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
         <div class="payment-toolbar">
             <button type="button" data-record-payment-open class="payment-primary-btn">
                 Record Payment
             </button>
+        </div>
+
+        <div class="payment-summary-grid" style="margin-bottom: 20px;">
+            <div class="card payment-summary-card">
+                <h3>Receipt Review Queue</h3>
+                <p class="payment-summary-card__value">{{ number_format((int) ($receiptStats['pending'] ?? 0)) }}</p>
+            </div>
+            <div class="card payment-summary-card">
+                <h3>Auto Approved Receipts</h3>
+                <p class="payment-summary-card__value">{{ number_format((int) ($receiptStats['auto_approved'] ?? 0)) }}</p>
+            </div>
+            <div class="card payment-summary-card">
+                <h3>Approved Receipts</h3>
+                <p class="payment-summary-card__value">{{ number_format((int) ($receiptStats['approved'] ?? 0)) }}</p>
+            </div>
+            <div class="card payment-summary-card">
+                <h3>Payable Commissions</h3>
+                <p class="payment-summary-card__value">PHP {{ number_format((float) ($commissionSummary['payable_total'] ?? 0), 2) }}</p>
+            </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h3>Upload Payment Receipt</h3>
+            <p style="margin: 0 0 14px; color: var(--theme-muted, #6B7280);">
+                Upload e-receipts or proof of payment. Matching amount, provider, reference, tenant, and payment type can auto-approve the receipt.
+            </p>
+            <form action="{{ route('payments.receipts.store') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="app-form-grid app-form-grid--3" style="gap:12px;">
+                    <div>
+                        <label for="receipt_payment_id" style="display:block;margin-bottom:6px;">Payment</label>
+                        <select id="receipt_payment_id" name="payment_id" required style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">
+                            <option value="">Select payment</option>
+                            @foreach($receiptOptions as $option)
+                                <option value="{{ $option->id }}">
+                                    #{{ $option->id }} | {{ ucfirst(str_replace('_', ' ', $option->payment_type)) }} | PHP {{ number_format((float) $option->amount, 2) }} | {{ optional($option->payment_date)->format('Y-m-d') ?? $emptyDash }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="receipt_amount" style="display:block;margin-bottom:6px;">Receipt Amount</label>
+                        <input type="number" step="0.01" min="0.01" name="receipt_amount" id="receipt_amount"
+                            value="{{ old('receipt_amount') }}"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">
+                    </div>
+                    <div>
+                        <label for="receipt_date" style="display:block;margin-bottom:6px;">Receipt Date</label>
+                        <input type="date" name="receipt_date" id="receipt_date"
+                            value="{{ old('receipt_date', now()->toDateString()) }}"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">
+                    </div>
+                    <div>
+                        <label for="receipt_provider" style="display:block;margin-bottom:6px;">Provider</label>
+                        <input type="text" name="provider" id="receipt_provider" value="{{ old('provider') }}"
+                            placeholder="e.g. paymongo / gcash"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">
+                    </div>
+                    <div>
+                        <label for="reference_number" style="display:block;margin-bottom:6px;">Reference Number</label>
+                        <input type="text" name="reference_number" id="reference_number" value="{{ old('reference_number') }}"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">
+                    </div>
+                    <div>
+                        <label for="receipt_file" style="display:block;margin-bottom:6px;">Receipt File</label>
+                        <input type="file" name="receipt_file" id="receipt_file" required
+                            accept=".jpg,.jpeg,.png,.pdf"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;background:#fff;">
+                    </div>
+                </div>
+                <div style="margin-top:12px;">
+                    <label for="receipt_notes" style="display:block;margin-bottom:6px;">Notes</label>
+                    <textarea name="notes" id="receipt_notes" rows="3"
+                        style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:6px;">{{ old('notes') }}</textarea>
+                </div>
+                <div style="margin-top: 14px;">
+                    <button type="submit"
+                        style="padding: 10px 18px; background-color: var(--theme-primary, #240E35); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight:700;">
+                        Upload Receipt
+                    </button>
+                </div>
+            </form>
         </div>
 
     <div
@@ -348,6 +469,108 @@
                         {{ $funnelSales->appends(['subscriptions_page' => request('subscriptions_page')])->links('pagination::bootstrap-4') }}
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <div class="payment-section-header">
+                <h3 class="payment-section-title">Receipt Review</h3>
+            </div>
+            <div class="team-table-scroll">
+                <table class="sa-table team-table">
+                    <thead>
+                        <tr>
+                            <th>Receipt</th>
+                            <th>Payment</th>
+                            <th>Amount</th>
+                            <th>Provider</th>
+                            <th>Reference</th>
+                            <th>Status</th>
+                            <th>Automation</th>
+                            <th>File</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($receipts as $receipt)
+                            <tr>
+                                <td>#{{ $receipt->id }}</td>
+                                <td>#{{ $receipt->payment_id }} / {{ ucfirst(str_replace('_', ' ', $receipt->payment->payment_type ?? 'payment')) }}</td>
+                                <td>PHP {{ number_format((float) ($receipt->receipt_amount ?? 0), 2) }}</td>
+                                <td>{{ $receipt->provider ?? $emptyDash }}</td>
+                                <td>{{ $receipt->reference_number ?? $emptyDash }}</td>
+                                <td>{{ ucwords(str_replace('_', ' ', $receipt->status)) }}</td>
+                                <td>{{ ucwords(str_replace('_', ' ', $receipt->automation_status)) }}</td>
+                                <td>
+                                    <a href="{{ asset('storage/' . $receipt->receipt_path) }}" target="_blank" rel="noopener">
+                                        View
+                                    </a>
+                                </td>
+                                <td>
+                                    @if(auth()->user()->hasRole('finance') || auth()->user()->hasRole('account-owner'))
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                            <form action="{{ route('payments.receipts.review', $receipt) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="decision" value="approve">
+                                                <button type="submit" style="padding:8px 10px;border:none;border-radius:8px;background:#166534;color:#fff;cursor:pointer;font-weight:700;">
+                                                    Approve
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('payments.receipts.review', $receipt) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="decision" value="reject">
+                                                <button type="submit" style="padding:8px 10px;border:none;border-radius:8px;background:#B91C1C;color:#fff;cursor:pointer;font-weight:700;">
+                                                    Reject
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @else
+                                        {{ $emptyDash }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9">No receipts uploaded yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 14px;">
+                {{ $receipts->appends(['subscriptions_page' => request('subscriptions_page'), 'sales_page' => request('sales_page')])->links('pagination::bootstrap-4') }}
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <h3>Recent Finance Audit Events</h3>
+            <div class="team-table-scroll">
+                <table class="sa-table team-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Actor</th>
+                            <th>Event</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($recentAuditLogs as $log)
+                            <tr>
+                                <td>{{ optional($log->occurred_at)->format('Y-m-d H:i') ?? $emptyDash }}</td>
+                                <td>{{ $log->actor->name ?? $emptyDash }}</td>
+                                <td>{{ ucwords(str_replace('_', ' ', $log->event_type)) }}</td>
+                                <td>{{ $log->message ?? $emptyDash }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4">No finance audit events yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

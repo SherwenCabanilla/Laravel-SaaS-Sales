@@ -13,6 +13,7 @@ use App\Models\FunnelTemplate;
 use Illuminate\Support\Facades\DB;
 use App\Services\FunnelTrackingService;
 use App\Support\TenantPlanEnforcer;
+use App\Support\TenantPayoutReadiness;
 use App\Support\XlsxWorkbookBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
@@ -27,7 +28,8 @@ class FunnelController extends Controller
 
     public function index(Request $request)
     {
-        $tenantId = auth()->user()->tenant_id;
+        $user = auth()->user();
+        $tenantId = $user->tenant_id;
         $search = trim((string) $request->query('search', ''));
         $normalizedSearch = mb_strtolower($search);
         $purposeMatches = collect(Funnel::PURPOSES)
@@ -63,13 +65,16 @@ class FunnelController extends Controller
             ->latest()
             ->paginate(10)
             ->withQueryString();
-        $planUsage = app(TenantPlanEnforcer::class)->usageSummary(auth()->user()->tenant);
+        $planUsage = app(TenantPlanEnforcer::class)->usageSummary($user->tenant);
+        $payoutReadiness = app(TenantPayoutReadiness::class)->summaryForTenant($user->tenant);
 
         if ($request->ajax()) {
             return view('funnels._rows', compact('funnels'))->render();
         }
 
-        return view('funnels.index', compact('funnels', 'search', 'planUsage'));
+        $templateAccessSummary = $this->templateAccessSummaryForUser($user);
+
+        return view('funnels.index', compact('funnels', 'search', 'planUsage', 'payoutReadiness', 'templateAccessSummary'));
     }
 
     public function create()
@@ -84,6 +89,7 @@ class FunnelController extends Controller
             'templateTypeOptions' => FunnelTemplate::selectableTemplateTypes(),
             'funnelPurposeOptions' => FunnelTemplate::FUNNEL_PURPOSE_OPTIONS,
             'availableTemplates' => $this->createTemplateCardsPayload(auth()->user()),
+            'templateAccessSummary' => $this->templateAccessSummaryForUser(auth()->user()),
         ]);
     }
 
@@ -325,6 +331,7 @@ class FunnelController extends Controller
             'builderSingleScrollMode' => $this->singleScrollModeEnabledForFunnel(auth()->user(), $funnel),
             'builderPurpose' => $funnel->purpose ?? 'service',
             'builderProductInventory' => $builderProductInventory,
+            'builderPublishDecision' => app(TenantPayoutReadiness::class)->publishDecision($funnel),
         ]);
     }
 
@@ -613,6 +620,29 @@ class FunnelController extends Controller
         }
 
         return $limit === null ? null : max(0, (int) $limit);
+    }
+
+    private function templateAccessSummaryForUser($user): array
+    {
+        $resolvedUser = $user ?: auth()->user();
+        $tenant = $resolvedUser?->tenant;
+        $plan = $tenant ? app(TenantPlanEnforcer::class)->resolvePlan($tenant) : null;
+        $totalPublished = FunnelTemplate::query()
+            ->where('status', 'published')
+            ->where('template_type', FunnelTemplate::TEMPLATE_TYPE_STEP_BY_STEP)
+            ->count();
+        $planLimit = $this->templateLibraryLimitForUser($resolvedUser);
+        $availableCount = $this->publishedTemplatesQueryForUser($resolvedUser)->count();
+
+        return [
+            'plan_name' => $plan?->name ?? 'Current Plan',
+            'plan_code' => $plan?->code,
+            'limit' => $planLimit,
+            'available_count' => $availableCount,
+            'total_published' => $totalPublished,
+            'is_unlimited' => $planLimit === null,
+            'restricted' => $planLimit !== null,
+        ];
     }
 
     private function findAccessiblePublishedTemplateForUser($user, int $templateId): ?FunnelTemplate
@@ -1429,6 +1459,11 @@ class FunnelController extends Controller
         $this->ensureTenantFunnelAccess($funnel);
         $this->ensureTenantCanPublishFunnel($funnel);
 
+        $publishDecision = app(TenantPayoutReadiness::class)->publishDecision($funnel);
+        if (! $publishDecision['allowed']) {
+            return redirect()->back()->with('error', $publishDecision['message']);
+        }
+
         $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
         if ($steps->isEmpty()) {
             return redirect()->back()->with('error', 'Publishing failed: add at least one active step.');
@@ -1466,6 +1501,47 @@ class FunnelController extends Controller
         ]);
 
         try {
+            $publishingFromDraft = array_key_exists('status', $validated)
+                && (string) $validated['status'] === 'published'
+                && (string) $funnel->status !== 'published';
+
+            if ($publishingFromDraft) {
+                $this->ensureTenantCanPublishFunnel($funnel);
+
+                $publishDecision = app(TenantPayoutReadiness::class)->publishDecision($funnel);
+                if (! $publishDecision['allowed']) {
+                    if ($jsonRequest) {
+                        return response()->json([
+                            'message' => $publishDecision['message'],
+                        ], 422);
+                    }
+
+                    return redirect()->back()->withInput()->with('error', $publishDecision['message']);
+                }
+
+                $steps = $funnel->steps()->where('is_active', true)->orderBy('position')->get()->values();
+                if ($steps->isEmpty()) {
+                    $message = 'Publishing failed: add at least one active step.';
+
+                    if ($jsonRequest) {
+                        return response()->json(['message' => $message], 422);
+                    }
+
+                    return redirect()->back()->withInput()->with('error', $message);
+                }
+
+                $issues = $this->validatePublishReadiness($steps, (string) $funnel->purpose);
+                if (count($issues) > 0) {
+                    $message = 'Publishing failed: ' . implode(' ', $issues);
+
+                    if ($jsonRequest) {
+                        return response()->json(['message' => $message], 422);
+                    }
+
+                    return redirect()->back()->withInput()->with('error', $message);
+                }
+            }
+
             if (array_key_exists('default_tags', $validated)) {
                 $validated['default_tags'] = $this->normalizeTagsString($validated['default_tags'] ?? null);
             }

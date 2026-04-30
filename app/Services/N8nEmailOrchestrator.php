@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class N8nEmailOrchestrator
 {
@@ -26,6 +27,17 @@ class N8nEmailOrchestrator
         }
 
         try {
+            $eventId = trim((string) ($payload['event_id'] ?? ''));
+            if ($eventId === '') {
+                $eventId = (string) Str::uuid();
+            }
+
+            $occurredAt = $payload['occurred_at'] ?? now()->toIso8601String();
+            $idempotencyKey = trim((string) ($payload['idempotency_key'] ?? ''));
+            if ($idempotencyKey === '') {
+                $idempotencyKey = $eventName . ':' . $eventId;
+            }
+
             $retryTimes = max(1, (int) config('services.n8n.webhook_retry_times', 1));
             $retryDelayMs = max(0, (int) config('services.n8n.webhook_retry_delay_ms', 200));
             $connectTimeoutSeconds = max(1, (int) config('services.n8n.webhook_connect_timeout_seconds', 2));
@@ -37,7 +49,10 @@ class N8nEmailOrchestrator
                 ->acceptJson()
                 ->withHeaders($headers)
                 ->post($url, array_merge($payload, [
+                    'event_id' => $eventId,
                     'event_name' => $eventName,
+                    'occurred_at' => $occurredAt,
+                    'idempotency_key' => $idempotencyKey,
                 ]));
 
             if ($response->successful()) {

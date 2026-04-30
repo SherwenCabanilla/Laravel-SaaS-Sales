@@ -61,6 +61,242 @@
         .fb-reviews-body .review-btn{padding:9px 12px;border-radius:10px;border:1px solid #E6E1EF;background:#fff;color:#240E35;font-weight:700;cursor:pointer}
         .fb-reviews-body .review-btn.approve{background:#047857;color:#fff;border-color:#047857}
         .fb-reviews-body .review-btn.reject{background:#b91c1c;color:#fff;border-color:#b91c1c}
+        .funnel-payout-notice {
+            margin: 16px 0 18px;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid #E6E1EF;
+            background: linear-gradient(135deg, #FFF8ED 0%, #FFFFFF 100%);
+            box-shadow: 0 10px 28px rgba(36, 14, 53, 0.06);
+        }
+        .funnel-payout-notice__title {
+            margin: 0 0 6px;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #9A3412;
+        }
+        .funnel-payout-notice__copy {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.55;
+            color: #475569;
+        }
+        .plan-usage-card {
+            margin-bottom: 20px;
+            overflow: visible;
+            border: 1px solid #ece2f5;
+            background:
+                radial-gradient(circle at top left, rgba(124, 58, 237, 0.08), transparent 34%),
+                linear-gradient(135deg, #fff 0%, #fbf9fd 100%);
+            box-shadow: 0 16px 34px rgba(36, 14, 53, 0.08);
+        }
+        .plan-usage-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(280px, auto);
+            gap: 18px;
+            align-items: start;
+        }
+        .plan-usage-copy {
+            min-width: 0;
+        }
+        .plan-usage-eyebrow,
+        .funnel-summary-eyebrow {
+            display: inline-block;
+            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: #2E1244;
+        }
+        .plan-usage-description,
+        .funnel-summary-description {
+            margin: 0;
+            font-size: clamp(19px, 3vw, 34px);
+            line-height: 1.25;
+            font-weight: 900;
+            color: #61748f;
+        }
+        .plan-usage-stat-grid,
+        .funnel-summary-stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(118px, 1fr));
+            gap: 12px;
+        }
+        .plan-usage-stat-card,
+        .funnel-summary-stat-card {
+            min-width: 0;
+            padding: 18px 18px 16px;
+            border: 1px solid #ddd3ea;
+            border-radius: 16px;
+            background: rgba(247, 247, 251, 0.88);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+        .plan-usage-stat-label,
+        .funnel-summary-stat-label {
+            display: block;
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+        .plan-usage-stat-value,
+        .funnel-summary-stat-value {
+            display: block;
+            margin-top: 10px;
+            font-size: clamp(26px, 3vw, 38px);
+            line-height: 1;
+            color: #2E1244;
+        }
+        .plan-usage-callout {
+            margin-top: 2px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            border: 1px solid transparent;
+            max-width: 760px;
+        }
+        .plan-usage-callout.is-positive {
+            background: linear-gradient(135deg, rgba(22, 163, 74, 0.08) 0%, rgba(240, 253, 244, 0.86) 100%);
+            color: #166534;
+            border-color: rgba(22, 163, 74, 0.18);
+        }
+        .plan-usage-callout.is-warning {
+            background: linear-gradient(135deg, rgba(217, 119, 6, 0.1) 0%, rgba(255, 247, 237, 0.92) 100%);
+            color: #92400E;
+            border-color: rgba(217, 119, 6, 0.18);
+        }
+        .plan-usage-callout-title {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .plan-usage-callout-copy {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .funnel-summary-card {
+            margin-bottom: 20px;
+            border: 1px solid #ece2f5;
+            background:
+                linear-gradient(135deg, rgba(36, 14, 53, 0.04) 0%, rgba(255,255,255,0.98) 26%),
+                linear-gradient(180deg, #fff 0%, #fcfbfe 100%);
+            box-shadow: 0 16px 34px rgba(36, 14, 53, 0.08);
+        }
+        .funnel-summary-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(280px, 390px);
+            gap: 18px;
+            align-items: center;
+        }
+        .funnel-summary-copy {
+            min-width: 0;
+            display: grid;
+            gap: 10px;
+            align-content: center;
+        }
+        .funnel-summary-description {
+            max-width: 680px;
+        }
+        .funnel-summary-note {
+            margin: 0;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(36, 14, 53, 0.05) 0%, rgba(247, 247, 251, 0.96) 100%);
+            border: 1px solid #e6e1ef;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #64748b;
+        }
+        .funnel-summary-note strong {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 8px;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: rgba(36, 14, 53, 0.08);
+            color: #240E35;
+            font-size: 11px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+        .funnel-summary-card.card {
+            padding: 16px 18px;
+        }
+        .funnel-summary-card .funnel-summary-eyebrow {
+            margin-bottom: 8px;
+        }
+        .funnel-summary-card .funnel-summary-description {
+            font-size: clamp(15px, 1.8vw, 22px);
+            line-height: 1.32;
+        }
+        .funnel-summary-card .funnel-summary-stat-grid {
+            grid-template-columns: repeat(2, minmax(120px, 1fr));
+            gap: 10px;
+            align-self: center;
+        }
+        .funnel-summary-card .funnel-summary-stat-card {
+            padding: 14px 16px;
+            border-radius: 14px;
+        }
+        .funnel-summary-card .funnel-summary-stat-value {
+            font-size: clamp(24px, 2.4vw, 34px);
+            margin-top: 8px;
+        }
+        @media (max-width: 980px) {
+            .plan-usage-shell,
+            .funnel-summary-shell {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .plan-usage-card,
+            .funnel-summary-card {
+                border-radius: 18px;
+            }
+            .plan-usage-description,
+            .funnel-summary-description {
+                font-size: 24px;
+            }
+            .funnel-summary-note {
+                padding: 10px 12px;
+            }
+            .plan-usage-stat-grid,
+            .funnel-summary-stat-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .plan-usage-stat-card:last-child:nth-child(odd),
+            .funnel-summary-stat-card:last-child:nth-child(odd) {
+                grid-column: 1 / -1;
+            }
+        }
+        @media (max-width: 520px) {
+            .plan-usage-description,
+            .funnel-summary-description {
+                font-size: 18px;
+            }
+            .plan-usage-stat-grid,
+            .funnel-summary-stat-grid {
+                grid-template-columns: 1fr;
+            }
+            .plan-usage-stat-card:last-child:nth-child(odd),
+            .funnel-summary-stat-card:last-child:nth-child(odd) {
+                grid-column: auto;
+            }
+            .plan-usage-stat-card,
+            .funnel-summary-stat-card {
+                padding: 14px;
+            }
+            .plan-usage-stat-value,
+            .funnel-summary-stat-value {
+                font-size: 26px;
+            }
+            .funnel-summary-note strong {
+                margin-bottom: 6px;
+            }
+        }
     </style>
 @endsection
 
@@ -86,7 +322,46 @@
         'planUsage' => $planUsage ?? [],
         'resourceKey' => 'funnels',
         'title' => 'Funnel Limit',
+        'compact' => true,
     ])
+
+    @if(!empty($templateAccessSummary))
+        <div class="card funnel-summary-card">
+            <div class="funnel-summary-shell">
+                <div class="funnel-summary-copy">
+                    <span class="funnel-summary-eyebrow">Shared Funnel Templates</span>
+                    <p class="funnel-summary-description">
+                        @if(($templateAccessSummary['available_count'] ?? 0) > 0)
+                            Your workspace can start from curated Super Admin templates right now.
+                        @else
+                            No published shared templates available yet.
+                        @endif
+                    </p>
+                    <div class="funnel-summary-note">
+                        <strong>Note</strong>
+                        Published Super Admin templates will appear here and on the Create Funnel screen as they become available for your plan.
+                    </div>
+                </div>
+                <div class="funnel-summary-stat-grid">
+                    <div class="funnel-summary-stat-card">
+                        <span class="funnel-summary-stat-label">Available Now</span>
+                        <strong class="funnel-summary-stat-value">{{ $templateAccessSummary['available_count'] ?? 0 }}</strong>
+                    </div>
+                    <div class="funnel-summary-stat-card">
+                        <span class="funnel-summary-stat-label">Library Access</span>
+                        <strong class="funnel-summary-stat-value">{{ !empty($templateAccessSummary['is_unlimited']) ? 'All' : ($templateAccessSummary['limit'] ?? 0) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if(!empty($payoutReadiness['workspace_notice']))
+        <div class="funnel-payout-notice">
+            <p class="funnel-payout-notice__title">{{ $payoutReadiness['label'] ?? 'Payout status update' }}</p>
+            <p class="funnel-payout-notice__copy">{{ $payoutReadiness['workspace_notice'] }}</p>
+        </div>
+    @endif
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
