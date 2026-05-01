@@ -191,11 +191,12 @@ class ProfileController extends Controller
         }
 
         $validated = $request->validate([
-            'destination_type' => 'required|in:gcash,provider_managed,bank_transfer',
+            'destination_type' => 'required|in:gcash,bank_transfer',
             'account_name' => 'required|string|max:160',
             'destination_value' => 'nullable|string|max:160',
             'provider_destination_reference' => 'nullable|string|max:160',
             'notes' => 'nullable|string|max:500',
+            'gcash_qr' => 'nullable|file|mimes:jpg,jpeg,png|max:4096',
         ]);
 
         $existing = $user->tenant->defaultPayoutAccount;
@@ -208,13 +209,24 @@ class ProfileController extends Controller
         $meta['notes'] = trim((string) ($validated['notes'] ?? ''));
 
         if ($validated['destination_type'] === 'gcash') {
-            $meta['gcash'] = [
+            $gcashMeta = is_array($meta['gcash'] ?? null) ? $meta['gcash'] : [];
+            $gcashMeta = array_merge($gcashMeta, [
                 'account_name' => trim((string) $validated['account_name']),
                 'masked_destination' => $maskedDestination,
                 'reference' => $resolvedProviderReference !== '' ? $resolvedProviderReference : null,
-            ];
+            ]);
+
+            if ($request->hasFile('gcash_qr')) {
+                $existingQr = trim((string) ($gcashMeta['qr_path'] ?? ''));
+                if ($existingQr !== '') {
+                    Storage::disk('public')->delete($existingQr);
+                }
+                $gcashMeta['qr_path'] = $request->file('gcash_qr')->store('payout-qr', 'public');
+            }
+
+            $meta['gcash'] = $gcashMeta;
         } else {
-            $meta['card'] = [
+            $meta['bank'] = [
                 'account_name' => trim((string) $validated['account_name']),
                 'masked_destination' => $maskedDestination,
                 'reference' => $resolvedProviderReference !== '' ? $resolvedProviderReference : null,

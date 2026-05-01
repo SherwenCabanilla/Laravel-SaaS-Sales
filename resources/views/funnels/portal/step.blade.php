@@ -4782,6 +4782,7 @@
                                                                     @csrf
                                                                     <input type="hidden" name="amount" value="{{ $summaryAmount > 0 ? $summaryAmount : (($resolvedCheckoutAmount ?? 0) > 0 ? $resolvedCheckoutAmount : (float) ($step->price ?? 0)) }}">
                                                                     <input type="hidden" name="website" value="">
+                                                                    <input type="hidden" name="checkout_payment_mode" value="paymongo" data-checkout-payment-mode>
                                                                     <input type="hidden" name="checkout_pricing_id" value="{{ $summaryPricingId }}">
                                                                     <input type="hidden" name="checkout_pricing_source_step" value="{{ $summarySourceStep }}">
                                                                     <input type="hidden" name="checkout_pricing_plan" value="{{ $plan }}">
@@ -4933,12 +4934,16 @@
                                                                                 <div class="coupon-prompt-actions">
                                                                                     <button type="button" class="coupon-prompt-skip" data-coupon-skip>Skip for now</button>
                                                                                     <button type="button" class="builder-pricing-cta" data-coupon-apply style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};" data-coupon-options='@json($checkoutCouponOptions)'>Apply coupon & continue</button>
+                                                                                    <button type="button" class="builder-pricing-cta" data-checkout-manual style="{{ $ctaStyle }}background: #0F172A; color: #ffffff;">Pay manually</button>
                                                                                 </div>
                                                                             </div>
                                                                         </div>
                                                                         <button type="submit" data-checkout-native-submit formnovalidate tabindex="-1" aria-hidden="true" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0;overflow:hidden;">Continue to payment</button>
                                                                     @else
-                                                                        <button type="submit" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
+                                                                        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                                                            <button type="submit" class="builder-pricing-cta" style="{{ $ctaStyle }}background: {{ $ctaBg }}; color: {{ $ctaText }};">{{ $ctaLabel }}</button>
+                                                                            <button type="button" class="builder-pricing-cta" data-checkout-manual style="{{ $ctaStyle }}background: #0F172A; color: #ffffff;">Pay manually</button>
+                                                                        </div>
                                                                     @endif
                                                                 </form>
                                                             @endif
@@ -7761,6 +7766,41 @@
             if(typeof portalShowLoading==="function")portalShowLoading();
             window.__submitCheckoutSummaryForm(form);
         },true);
+
+        // Manual payment fallback: sets checkout_payment_mode then submits the checkout form.
+        document.addEventListener("click", function (e) {
+            var btn = e.target && e.target.closest ? e.target.closest("[data-checkout-manual]") : null;
+            if (!btn) return;
+            var form = btn.closest("form[data-checkout-summary-form]");
+            if (!form) {
+                // Coupon prompt is portaled to <body> while open, so the button is no longer inside the form.
+                // Recover the original form from the portal metadata saved on the prompt backdrop.
+                var prompt = btn.closest("[data-coupon-prompt]");
+                var portalParent = prompt && prompt.__fbPortal ? prompt.__fbPortal.parent : null;
+                form = portalParent && portalParent.closest ? portalParent.closest("form[data-checkout-summary-form]") : null;
+            }
+            if (!form) return;
+            e.preventDefault();
+            var mode = form.querySelector("[data-checkout-payment-mode]") || form.querySelector('input[name="checkout_payment_mode"]');
+            if (!mode) {
+                mode = document.createElement("input");
+                mode.type = "hidden";
+                mode.name = "checkout_payment_mode";
+                mode.setAttribute("data-checkout-payment-mode", "1");
+                form.appendChild(mode);
+            }
+            mode.value = "manual";
+            try {
+                if (typeof window.syncCheckoutPricingForm === "function") {
+                    window.syncCheckoutPricingForm(form);
+                }
+                if (typeof window.syncCheckoutCustomerForm === "function") {
+                    window.syncCheckoutCustomerForm(form);
+                }
+            } catch (_e) {}
+            if (typeof portalShowLoading === "function") portalShowLoading();
+            window.__submitCheckoutSummaryForm(form);
+        }, true);
 
         document.querySelectorAll("[data-checkout-summary-form]").forEach(function(form){
             setCouponCodeOnForm(form,"");

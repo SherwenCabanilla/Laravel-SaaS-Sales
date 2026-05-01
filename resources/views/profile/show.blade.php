@@ -1,4 +1,4 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
 @section('title', 'Manage Profile')
 
@@ -167,7 +167,7 @@
         @php
             $payoutAccount = $user->tenant->defaultPayoutAccount;
             $payoutMeta = is_array($payoutAccount?->meta) ? $payoutAccount->meta : [];
-            $payoutCardTypes = ['bank_transfer', 'provider_managed'];
+            $payoutCardTypes = ['bank_transfer'];
 
             $maskPreviewName = function (?string $value): string {
                 $value = trim((string) $value);
@@ -242,17 +242,17 @@
             $cardSource = [
                 'account_name' => trim((string) data_get(
                     $payoutMeta,
-                    'card.account_name',
+                    'bank.account_name',
                     in_array($payoutAccount?->destination_type, $payoutCardTypes, true) ? ($payoutAccount?->account_name ?? '') : ''
                 )),
                 'identifier' => trim((string) data_get(
                     $payoutMeta,
-                    'card.masked_destination',
+                    'bank.masked_destination',
                     in_array($payoutAccount?->destination_type, $payoutCardTypes, true) ? ($payoutAccount?->masked_destination ?? '') : ''
                 )),
                 'reference' => trim((string) data_get(
                     $payoutMeta,
-                    'card.reference',
+                    'bank.reference',
                     in_array($payoutAccount?->destination_type, $payoutCardTypes, true) ? ($payoutAccount?->provider_destination_reference ?? '') : ''
                 )),
             ];
@@ -284,7 +284,7 @@
                 Funnel earnings settle to this verified destination. We only store masked or provider-managed payout details for display and operations.
             </p>
 
-            <form action="{{ route('profile.payout.update') }}" method="POST" style="margin-top: 14px;">
+            <form action="{{ route('profile.payout.update') }}" method="POST" enctype="multipart/form-data" style="margin-top: 14px;">
                 @csrf
                 @method('PUT')
 
@@ -293,7 +293,7 @@
                         <label for="destination_type" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Destination type</label>
                         <select id="destination_type" name="destination_type"
                             style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
-                            @foreach(['gcash' => 'GCash', 'provider_managed' => 'Provider Managed', 'bank_transfer' => 'Bank Transfer'] as $value => $label)
+                            @foreach(['gcash' => 'GCash', 'bank_transfer' => 'Card / Bank'] as $value => $label)
                                 <option value="{{ $value }}" {{ old('destination_type', $payoutAccount?->destination_type ?? 'gcash') === $value ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
@@ -309,7 +309,7 @@
                     </div>
 
                     <div>
-                        <label for="destination_value" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">GCash / bank identifier</label>
+                        <label for="destination_value" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">GCash number / bank identifier</label>
                         <input type="text" id="destination_value" name="destination_value"
                             value="{{ old('destination_value', '') }}"
                             placeholder="Enter a new destination only when updating"
@@ -320,12 +320,27 @@
                     </div>
 
                     <div>
-                        <label for="provider_destination_reference" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Provider-managed reference</label>
+                        <label for="provider_destination_reference" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Optional reference</label>
                         <input type="text" id="provider_destination_reference" name="provider_destination_reference"
                             value="{{ old('provider_destination_reference', $payoutAccount?->provider_destination_reference ?? '') }}"
                             placeholder="Optional external payout destination reference"
                             style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
                     </div>
+                </div>
+
+                <div style="margin-top:12px;">
+                    <label for="gcash_qr_profile" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">GCash QR (optional)</label>
+                    <input type="file" id="gcash_qr_profile" name="gcash_qr" accept=".jpg,.jpeg,.png"
+                        style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;background:#fff;">
+                    @if(data_get($payoutAccount, 'meta.gcash.qr_path'))
+                        <div style="margin-top:10px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                            <img src="{{ asset('storage/' . data_get($payoutAccount, 'meta.gcash.qr_path')) }}" alt="GCash QR"
+                                style="width:120px;height:120px;object-fit:contain;border-radius:12px;border:1px solid var(--theme-border, #E6E1EF);background:#fff;padding:8px;">
+                            <div style="color:var(--theme-muted, #6B7280);font-size:12px;font-weight:700;line-height:1.5;max-width:520px;">
+                                Current QR will be shown to customers when they choose manual payment.
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div style="margin-top:12px;">
