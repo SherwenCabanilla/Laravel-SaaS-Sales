@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\Payment;
+use App\Models\PaymentReceipt;
+use App\Models\CommissionEntry;
 use App\Services\CouponService;
 use App\Services\AnalyticsDashboardService;
+use App\Services\CommissionService;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -21,7 +24,9 @@ class DashboardController extends Controller
     public function owner(AnalyticsDashboardService $analytics, CouponService $coupons)
     {
         $tenant = auth()->user()->tenant;
+        $tenant?->loadMissing('defaultPayoutAccount');
         $tenantId = auth()->user()->tenant_id;
+        $payoutAccount = $tenant?->defaultPayoutAccount;
 
         $leadsThisMonth = Lead::where('tenant_id', $tenantId)
             ->whereYear('created_at', now()->year)
@@ -104,6 +109,7 @@ class DashboardController extends Controller
 
         return view('dashboard.account-owner', compact(
             'tenant',
+            'payoutAccount',
             'leadsThisMonth',
             'wonCount',
             'lostCount',
@@ -124,9 +130,16 @@ class DashboardController extends Controller
         ));
     }
 
-    public function marketing()
+    public function marketing(CommissionService $commissions)
     {
-        $tenantId = auth()->user()->tenant_id;
+        $user = auth()->user();
+        $tenantId = $user->tenant_id;
+        $commissionSummary = $commissions->summaryForUser($user);
+        $attributedRevenue = (float) CommissionEntry::query()
+            ->where('tenant_id', $tenantId)
+            ->where('user_id', $user->id)
+            ->where('commission_type', 'marketing_manager')
+            ->sum('basis_amount');
 
         $sourceBreakdownChart = Lead::selectRaw("COALESCE(NULLIF(source_campaign, ''), 'Unspecified') as source_label, COUNT(*) as total")
             ->where('tenant_id', $tenantId)
@@ -167,14 +180,17 @@ class DashboardController extends Controller
             'avgLeadScore',
             'trendLabels',
             'trendValues',
-            'mqlThreshold'
+            'mqlThreshold',
+            'commissionSummary',
+            'attributedRevenue'
         ));
     }
 
-    public function sales()
+    public function sales(CommissionService $commissions)
     {
         $user = auth()->user();
         $assignedLeadsQuery = Lead::where('tenant_id', $user->tenant_id)->where('assigned_to', $user->id);
+        $commissionSummary = $commissions->summaryForUser($user);
 
         $myAssignedLeadsCount = (clone $assignedLeadsQuery)->count();
         $pipelineStageCounts = (clone $assignedLeadsQuery)
@@ -208,7 +224,8 @@ class DashboardController extends Controller
             'overdueFollowUpsCount',
             'todayTaskCount',
             'overdueLeads',
-            'myRecentLeads'
+            'myRecentLeads',
+            'commissionSummary'
         ));
     }
 
@@ -250,6 +267,14 @@ class DashboardController extends Controller
             ->where('status', 'pending')
             ->orderBy('payment_date')
             ->paginate(10, ['id', 'lead_id', 'amount', 'payment_date'], 'pending_page');
+        $receiptReviewCount = PaymentReceipt::query()
+            ->where('tenant_id', $tenantId)
+            ->where('status', PaymentReceipt::STATUS_PENDING)
+            ->count();
+        $payableCommissionTotal = (float) CommissionEntry::query()
+            ->where('tenant_id', $tenantId)
+            ->where('status', CommissionEntry::STATUS_PAYABLE)
+            ->sum('commission_amount');
 
         return view('dashboard.finance', compact(
             'statusAmounts',
@@ -258,7 +283,9 @@ class DashboardController extends Controller
             'outstandingCount',
             'trendLabels',
             'trendValues',
-            'pendingInvoices'
+            'pendingInvoices',
+            'receiptReviewCount',
+            'payableCommissionTotal'
         ));
     }
 

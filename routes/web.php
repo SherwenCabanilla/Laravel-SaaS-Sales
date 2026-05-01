@@ -14,8 +14,11 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\LeadCustomFieldController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlatformPayoutAdminController;
 use App\Http\Controllers\N8nWebhookController;
 use App\Http\Controllers\N8nAutomationController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OwnerReportController;
 use App\Http\Controllers\PayMongoWebhookController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
@@ -68,8 +71,16 @@ HTML;
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::middleware(['auth'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/feed', [NotificationController::class, 'feed'])->name('notifications.feed');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
+});
+
+Route::middleware(['auth', 'owner.payout.setup'])->group(function () {
     Route::get('/auth/google/processing', [GoogleAuthController::class, 'processing'])->name('auth.google.processing');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/onboarding/payout-account', [ProfileController::class, 'showPayoutSetup'])->name('owner.payout-setup.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar.update');
@@ -77,9 +88,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/profile/company-logo', [ProfileController::class, 'updateCompanyLogo'])->name('profile.company-logo.update');
     Route::delete('/profile/company-logo', [ProfileController::class, 'deleteCompanyLogo'])->name('profile.company-logo.delete');
     Route::put('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme.update');
+    Route::put('/profile/payout-account', [ProfileController::class, 'updatePayoutAccount'])->name('profile.payout.update');
 });
 
-Route::middleware(['auth', 'role:account-owner'])->group(function () {
+Route::middleware(['auth', 'role:payout-admin'])->group(function () {
+    Route::get('/platform/payouts', [PlatformPayoutAdminController::class, 'index'])->name('platform.payouts.index');
+    Route::patch('/platform/payouts/{payoutAccount}', [PlatformPayoutAdminController::class, 'review'])->name('platform.payouts.review');
+});
+
+Route::middleware(['auth', 'owner.payout.setup', 'role:account-owner'])->group(function () {
     Route::get('/billing/trial-upgrade', [TrialSubscriptionController::class, 'show'])->name('trial.billing.show');
     Route::post('/billing/trial-upgrade', [TrialSubscriptionController::class, 'startCheckout'])->name('trial.billing.checkout');
     Route::get('/billing/trial-upgrade/return/{payment}', [TrialSubscriptionController::class, 'paymongoReturn'])
@@ -87,7 +104,7 @@ Route::middleware(['auth', 'role:account-owner'])->group(function () {
         ->name('trial.billing.return');
 });
 
-Route::middleware(['auth', 'tenant.subscription', 'role:super-admin'])->group(function () {
+Route::middleware(['auth', 'owner.payout.setup', 'tenant.subscription', 'role:super-admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'index'])->name('admin.dashboard');
     Route::post('/admin/landing-hero-video', [AdminController::class, 'updateLandingHeroVideo'])->name('admin.landing-video.update');
     Route::delete('/admin/landing-hero-video', [AdminController::class, 'deleteLandingHeroVideo'])->name('admin.landing-video.delete');
@@ -143,9 +160,12 @@ Route::middleware(['auth', 'tenant.subscription', 'role:super-admin'])->group(fu
     Route::get('/admin/leads', [LeadController::class, 'adminIndex'])->name('admin.leads.index');
     Route::get('/admin/automation', [AutomationController::class, 'index'])->name('admin.automation.index');
     Route::post('/admin/automation/toggle', [AutomationController::class, 'toggle'])->name('admin.automation.toggle');
+    Route::get('/admin/receipts', [PaymentController::class, 'adminReceiptsIndex'])->name('admin.receipts.index');
+    Route::post('/admin/receipts', [PaymentController::class, 'adminStoreReceipt'])->name('admin.receipts.store');
+    Route::patch('/admin/receipts/{receipt}', [PaymentController::class, 'adminReviewReceipt'])->name('admin.receipts.review');
 });
 
-Route::middleware(['auth', 'tenant.subscription', 'role:sales-agent,marketing-manager,account-owner,finance'])->group(function () {
+Route::middleware(['auth', 'owner.payout.setup', 'tenant.subscription', 'role:sales-agent,marketing-manager,account-owner,finance'])->group(function () {
     Route::get('/dashboard/owner', [DashboardController::class, 'owner'])->middleware('role:account-owner')->name('dashboard.owner');
     Route::get('/dashboard/marketing', [DashboardController::class, 'marketing'])->middleware('role:marketing-manager')->name('dashboard.marketing');
     Route::get('/dashboard/sales', [DashboardController::class, 'sales'])->middleware('role:sales-agent')->name('dashboard.sales');
@@ -215,11 +235,15 @@ Route::middleware(['auth', 'tenant.subscription', 'role:sales-agent,marketing-ma
     Route::middleware(['role:account-owner'])->group(function () {
         Route::get('/automation', [AutomationController::class, 'index'])->name('automation.index');
         Route::post('/automation/toggle', [AutomationController::class, 'toggle'])->name('automation.toggle');
+        Route::get('/reports', [OwnerReportController::class, 'index'])->name('reports.owner');
+        Route::get('/reports/export', [OwnerReportController::class, 'export'])->name('reports.owner.export');
     });
 
     Route::middleware(['role:account-owner,finance'])->group(function () {
         Route::get('/payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::post('/payments/receipts', [PaymentController::class, 'storeReceipt'])->name('payments.receipts.store');
+        Route::patch('/payments/receipts/{receipt}', [PaymentController::class, 'reviewReceipt'])->name('payments.receipts.review');
     });
 });
 
@@ -256,3 +280,4 @@ Route::post('/api/n8n/analytics-store', [N8nAutomationController::class, 'analyt
 Route::post('/api/n8n/send-owner-digest', [N8nAutomationController::class, 'sendOwnerDigest'])->name('api.n8n.send-owner-digest');
 Route::post('/api/n8n/trial-inactive-recovery', [N8nAutomationController::class, 'trialInactiveRecovery'])->name('api.n8n.trial-inactive-recovery');
 Route::post('/api/n8n/run-inactive-trial-recovery', [N8nAutomationController::class, 'runInactiveTrialRecovery'])->name('api.n8n.run-inactive-trial-recovery');
+Route::post('/api/n8n/run-subscription-deadline-reminders', [N8nAutomationController::class, 'runSubscriptionDeadlineReminders'])->name('api.n8n.run-subscription-deadline-reminders');

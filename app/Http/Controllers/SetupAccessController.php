@@ -201,6 +201,10 @@ class SetupAccessController extends Controller
             return redirect()->route('admin.dashboard');
         }
 
+        if ($user->hasRole('payout-admin')) {
+            return redirect()->route('platform.payouts.index');
+        }
+
         if ($user->hasRole('account-owner')) {
             return redirect()->route('dashboard.owner');
         }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Payment;
 use App\Models\SignupIntent;
+use App\Services\CommissionService;
 use App\Services\FunnelTrackingService;
 use App\Services\SignupOnboardingService;
 use App\Services\SubscriptionLifecycleService;
@@ -71,6 +72,7 @@ class PayMongoWebhookController extends Controller
                 'payment_date' => now()->toDateString(),
             ]);
             app(FunnelTrackingService::class)->trackPaymentPaid($payment->fresh(), ['source' => 'paymongo_webhook.checkout_session_paid']);
+            app(CommissionService::class)->syncPayment($payment->fresh());
         }
 
         $metadata = data_get($session, 'attributes.metadata');
@@ -112,6 +114,7 @@ class PayMongoWebhookController extends Controller
                 'payment_date' => now()->toDateString(),
             ]);
             app(FunnelTrackingService::class)->trackPaymentPaid($payment->fresh(), ['source' => 'paymongo_webhook.payment_paid']);
+            app(CommissionService::class)->syncPayment($payment->fresh());
         }
 
         if (($meta['flow'] ?? null) === 'trial_upgrade' && $payment) {
@@ -167,6 +170,7 @@ class PayMongoWebhookController extends Controller
             'status' => 'failed',
             'payment_date' => $payment->payment_date ?: now()->toDateString(),
         ]);
+        app(CommissionService::class)->reverseForPayment($payment, 'paymongo_payment_failed');
     }
 
     private function completeSignupIntent(

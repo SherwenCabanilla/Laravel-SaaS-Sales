@@ -722,7 +722,23 @@
         @if($funnel->status === 'published')
             <form method="POST" action="{{ $builderUnpublishUrl ?? route('funnels.unpublish', $funnel) }}" id="builderUnpublishForm">@csrf<button class="fb-btn danger" type="submit"><i class="fas fa-ban"></i> Unpublish</button></form>
         @else
-            <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">@csrf<button class="fb-btn success" type="submit" id="builderPublishBtn"><i class="fas fa-upload"></i> Publish</button></form>
+            <form method="POST" action="{{ $builderPublishUrl ?? route('funnels.publish', $funnel) }}" id="builderPublishForm">
+                @csrf
+                <button
+                    class="fb-btn success"
+                    type="submit"
+                    id="builderPublishBtn"
+                    @if(!($builderPublishDecision['allowed'] ?? true)) disabled @endif
+                    title="{{ $builderPublishDecision['message'] ?? 'Publish this funnel' }}"
+                >
+                    <i class="fas fa-upload"></i> Publish
+                </button>
+            </form>
+            @if(!($builderPublishDecision['allowed'] ?? true))
+                <div style="max-width:320px;padding:10px 12px;border:1px solid #FCD7AA;border-radius:12px;background:#FFF7ED;color:#9A3412;font-size:12px;font-weight:700;line-height:1.45;">
+                    {{ $builderPublishDecision['message'] ?? 'Publishing is temporarily unavailable.' }}
+                </div>
+            @endif
         @endif
         <a href="{{ $builderExitUrl ?? route('funnels.index') }}" class="fb-btn"><i class="fas fa-door-open"></i> Exit Builder</a>
     </div>

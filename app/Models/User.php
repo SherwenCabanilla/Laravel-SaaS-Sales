@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\InAppNotification;
 
 class User extends Authenticatable
 {
@@ -55,6 +56,26 @@ class User extends Authenticatable
     public function createdCoupons(): HasMany
     {
         return $this->hasMany(Coupon::class, 'created_by');
+    }
+
+    public function uploadedReceipts(): HasMany
+    {
+        return $this->hasMany(PaymentReceipt::class, 'uploaded_by');
+    }
+
+    public function reviewedReceipts(): HasMany
+    {
+        return $this->hasMany(PaymentReceipt::class, 'reviewed_by');
+    }
+
+    public function commissionEntries(): HasMany
+    {
+        return $this->hasMany(CommissionEntry::class);
+    }
+
+    public function inAppNotifications(): HasMany
+    {
+        return $this->hasMany(InAppNotification::class);
     }
 
     /**

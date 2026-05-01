@@ -30,7 +30,7 @@
         <h1>Manage Profile</h1>
     </div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+    <div class="app-grid app-grid--2" style="gap:18px;">
         <div class="card">
             <h3>Profile Picture</h3>
             <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
@@ -163,6 +163,198 @@
         </div>
     @endif
 
+    @if($user->tenant && $user->hasRole('account-owner'))
+        @php
+            $payoutAccount = $user->tenant->defaultPayoutAccount;
+            $payoutMeta = is_array($payoutAccount?->meta) ? $payoutAccount->meta : [];
+            $payoutCardTypes = ['bank_transfer', 'provider_managed'];
+
+            $maskPreviewName = function (?string $value): string {
+                $value = trim((string) $value);
+                if ($value === '') {
+                    return '';
+                }
+
+                if (preg_match('/[*xX]/u', $value)) {
+                    return $value;
+                }
+
+                return collect(preg_split('/\s+/', $value))
+                    ->filter()
+                    ->map(function ($part) {
+                        $length = mb_strlen($part);
+
+                        if ($length <= 1) {
+                            return '*';
+                        }
+
+                        if ($length === 2) {
+                            return mb_substr($part, 0, 1) . '*';
+                        }
+
+                        return mb_substr($part, 0, 1) . str_repeat('*', $length - 2) . mb_substr($part, -1);
+                    })
+                    ->implode(' ');
+            };
+
+            $maskPreviewValue = function (?string $value): string {
+                $value = trim((string) $value);
+                if ($value === '') {
+                    return '';
+                }
+
+                if (preg_match('/[*xX]/u', $value)) {
+                    return $value;
+                }
+
+                $compact = preg_replace('/\s+/', '', $value);
+                $length = mb_strlen($compact);
+
+                if ($length <= 1) {
+                    return '*';
+                }
+
+                if ($length <= 4) {
+                    return str_repeat('*', $length - 1) . mb_substr($compact, -1);
+                }
+
+                return str_repeat('*', $length - 4) . mb_substr($compact, -4);
+            };
+
+            $gcashSource = [
+                'account_name' => trim((string) data_get(
+                    $payoutMeta,
+                    'gcash.account_name',
+                    $payoutAccount?->destination_type === 'gcash' ? ($payoutAccount?->account_name ?? '') : ''
+                )),
+                'identifier' => trim((string) data_get(
+                    $payoutMeta,
+                    'gcash.masked_destination',
+                    $payoutAccount?->destination_type === 'gcash' ? ($payoutAccount?->masked_destination ?? '') : ''
+                )),
+                'reference' => trim((string) data_get(
+                    $payoutMeta,
+                    'gcash.reference',
+                    $payoutAccount?->destination_type === 'gcash' ? ($payoutAccount?->provider_destination_reference ?? '') : ''
+                )),
+            ];
+
+            $cardSource = [
+                'account_name' => trim((string) data_get(
+                    $payoutMeta,
+                    'card.account_name',
+                    in_array($payoutAccount?->destination_type, $payoutCardTypes, true) ? ($payoutAccount?->account_name ?? '') : ''
+                )),
+                'identifier' => trim((string) data_get(
+                    $payoutMeta,
+                    'card.masked_destination',
+                    in_array($payoutAccount?->destination_type, $payoutCardTypes, true) ? ($payoutAccount?->masked_destination ?? '') : ''
+                )),
+                'reference' => trim((string) data_get(
+                    $payoutMeta,
+                    'card.reference',
+                    in_array($payoutAccount?->destination_type, $payoutCardTypes, true) ? ($payoutAccount?->provider_destination_reference ?? '') : ''
+                )),
+            ];
+
+            $gcashPreview = [
+                'account_name' => $maskPreviewName($gcashSource['account_name']),
+                'identifier' => $maskPreviewValue($gcashSource['identifier']),
+                'reference' => $gcashSource['reference'],
+            ];
+
+            $cardPreview = [
+                'account_name' => $maskPreviewName($cardSource['account_name']),
+                'identifier' => $maskPreviewValue($cardSource['identifier']),
+                'reference' => $cardSource['reference'],
+            ];
+
+            $hasGcashPreview = collect($gcashPreview)->contains(fn ($value) => trim((string) $value) !== '');
+            $hasCardPreview = collect($cardPreview)->contains(fn ($value) => trim((string) $value) !== '');
+        @endphp
+        <div class="card" style="margin-top: 18px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                <h3 style="margin:0;">Payout Account</h3>
+                <button type="button" id="openPayoutPreviewModal"
+                    style="padding:10px 16px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;background:#fff;color:var(--theme-primary, #240E35);cursor:pointer;font-weight:700;">
+                    View
+                </button>
+            </div>
+            <p style="margin-top: 10px; color:var(--theme-muted, #6B7280); font-size: 13px; font-weight: 600; line-height: 1.5;">
+                Funnel earnings settle to this verified destination. We only store masked or provider-managed payout details for display and operations.
+            </p>
+
+            <form action="{{ route('profile.payout.update') }}" method="POST" style="margin-top: 14px;">
+                @csrf
+                @method('PUT')
+
+                <div class="app-form-grid app-form-grid--2" style="gap:12px;">
+                    <div>
+                        <label for="destination_type" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Destination type</label>
+                        <select id="destination_type" name="destination_type"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
+                            @foreach(['gcash' => 'GCash', 'provider_managed' => 'Provider Managed', 'bank_transfer' => 'Bank Transfer'] as $value => $label)
+                                <option value="{{ $value }}" {{ old('destination_type', $payoutAccount?->destination_type ?? 'gcash') === $value ? 'selected' : '' }}>
+                                    {{ $label }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="account_name" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Account name</label>
+                        <input type="text" id="account_name" name="account_name"
+                            value="{{ old('account_name', $payoutAccount?->account_name ?? '') }}"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
+                    </div>
+
+                    <div>
+                        <label for="destination_value" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">GCash / bank identifier</label>
+                        <input type="text" id="destination_value" name="destination_value"
+                            value="{{ old('destination_value', '') }}"
+                            placeholder="Enter a new destination only when updating"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
+                        <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">
+                            Current masked destination: {{ $payoutAccount?->masked_destination ?? $emptyDash }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="provider_destination_reference" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Provider-managed reference</label>
+                        <input type="text" id="provider_destination_reference" name="provider_destination_reference"
+                            value="{{ old('provider_destination_reference', $payoutAccount?->provider_destination_reference ?? '') }}"
+                            placeholder="Optional external payout destination reference"
+                            style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">
+                    </div>
+                </div>
+
+                <div style="margin-top:12px;">
+                    <label for="payout_notes" style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Operations notes</label>
+                    <textarea id="payout_notes" name="notes" rows="3"
+                        style="width:100%;padding:10px;border:1px solid var(--theme-border, #E6E1EF);border-radius:8px;">{{ old('notes', data_get($payoutAccount, 'meta.notes', '')) }}</textarea>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;">
+                    <div style="font-size:13px;font-weight:700;color:{{
+                        $payoutAccount?->isApproved() ? '#166534' : ($payoutAccount?->isRejected() ? '#B91C1C' : '#92400E')
+                    }};">
+                        Status: {{ $payoutAccount?->reviewStatusLabel() ?? 'Missing setup' }}
+                    </div>
+                    <button type="submit"
+                        style="padding:10px 16px;border:none;border-radius:6px;background:var(--theme-primary, #240E35);color:#fff;cursor:pointer;font-weight:600;">
+                        Save Payout Account
+                    </button>
+                </div>
+
+                @if($payoutAccount?->review_notes)
+                    <div style="margin-top:10px;padding:12px;border-radius:10px;background:#F8FAFC;color:#334155;font-size:13px;font-weight:600;line-height:1.6;">
+                        Review notes: {{ $payoutAccount->review_notes }}
+                    </div>
+                @endif
+            </form>
+        </div>
+    @endif
+
     @if($user->tenant)
         <div class="card" style="margin-top: 18px;">
             <h3>Company Theme</h3>
@@ -231,7 +423,7 @@
                 @endphp
 
                 <p style="margin-top: 10px; color:var(--theme-muted, #6B7280); font-size: 13px; font-weight: 600; line-height: 1.35;">
-                    Customize your companyâ€™s colors. These settings apply to <strong>all users in your company</strong> automatically.
+                    Customize your company's colors. These settings apply to <strong>all users in your company</strong> automatically.
                     Team members cannot change the theme.
                 </p>
 
@@ -244,7 +436,7 @@
                         </button>
                     </div>
 
-                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px;">
+                    <div class="app-grid app-grid--3" style="gap:10px;margin-top:10px;">
                         @foreach($recommendedThemes as $preset)
                             <button type="button" class="theme-preset-card"
                                 data-primary="{{ $preset['primary'] }}"
@@ -272,7 +464,7 @@
                 <hr style="border:0;border-top:1px solid var(--theme-border, #E6E1EF);margin:16px 0;">
 
                 <h4 style="margin:0 0 8px;color:var(--theme-body-text, #111827);">Custom colors</h4>
-                <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">
+                <div class="app-form-grid app-form-grid--2" style="gap:12px;">
                     <div class="theme-field">
                         <label style="display:block;margin-bottom:6px;font-weight:800;color:#0F172A;">Primary color</label>
                         <div style="display:flex;gap:10px;align-items:center;">
@@ -327,6 +519,91 @@
                     Save Theme
                 </button>
             </form>
+        </div>
+    @endif
+
+    @if($user->tenant && $user->hasRole('account-owner'))
+        <div id="payoutPreviewModal" class="modal-overlay" style="display: none;">
+            <div class="modal-box payout-preview-modal-box">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;">
+                    <div>
+                        <h3 style="margin:0;">Payout Account Preview</h3>
+                        <p style="margin:8px 0 0;color:var(--theme-muted, #6B7280);font-size:13px;font-weight:600;line-height:1.5;">
+                            Review the masked payout cards saved for this account.
+                        </p>
+                    </div>
+                    <button type="button" id="closePayoutPreviewModal" class="modal-close-btn">&times;</button>
+                </div>
+
+                <div class="payout-preview-tabs">
+                    <button type="button" class="payout-preview-tab is-active" data-preview-target="payoutPreviewGcash">
+                        GCash
+                    </button>
+                    <button type="button" class="payout-preview-tab" data-preview-target="payoutPreviewCard">
+                        Card
+                    </button>
+                </div>
+
+                <div id="payoutPreviewGcash" class="payout-preview-panel">
+                    @if($hasGcashPreview)
+                        <div class="payout-virtual-card payout-virtual-card--gcash">
+                            <div class="payout-virtual-card__topline">
+                                <span class="payout-virtual-card__chip"></span>
+                                <span class="payout-virtual-card__brand">GCash</span>
+                            </div>
+                            <div class="payout-virtual-card__title">Payout destination</div>
+                            <div class="payout-virtual-card__number">{{ $gcashPreview['identifier'] ?: $emptyDash }}</div>
+                            <div class="payout-virtual-card__footer">
+                                <div>
+                                    <span class="payout-virtual-card__meta-label">Account name</span>
+                                    <strong>{{ $gcashPreview['account_name'] ?: $emptyDash }}</strong>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span class="payout-virtual-card__meta-label">Status</span>
+                                    <strong>{{ $payoutAccount?->reviewStatusLabel() ?? 'Pending' }}</strong>
+                                </div>
+                            </div>
+                            @if($gcashPreview['reference'] !== '')
+                                <div class="payout-virtual-card__reference">Ref: {{ $gcashPreview['reference'] }}</div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="payout-preview-empty">
+                            No saved GCash payout card to display.
+                        </div>
+                    @endif
+                </div>
+
+                <div id="payoutPreviewCard" class="payout-preview-panel" hidden>
+                    @if($hasCardPreview)
+                        <div class="payout-virtual-card payout-virtual-card--card">
+                            <div class="payout-virtual-card__topline">
+                                <span class="payout-virtual-card__chip"></span>
+                                <span class="payout-virtual-card__brand">Card</span>
+                            </div>
+                            <div class="payout-virtual-card__title">Payout destination</div>
+                            <div class="payout-virtual-card__number">{{ $cardPreview['identifier'] ?: $emptyDash }}</div>
+                            <div class="payout-virtual-card__footer">
+                                <div>
+                                    <span class="payout-virtual-card__meta-label">Account name</span>
+                                    <strong>{{ $cardPreview['account_name'] ?: $emptyDash }}</strong>
+                                </div>
+                                <div style="text-align:right;">
+                                    <span class="payout-virtual-card__meta-label">Status</span>
+                                    <strong>{{ $payoutAccount?->reviewStatusLabel() ?? 'Pending' }}</strong>
+                                </div>
+                            </div>
+                            @if($cardPreview['reference'] !== '')
+                                <div class="payout-virtual-card__reference">Ref: {{ $cardPreview['reference'] }}</div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="payout-preview-empty">
+                            No saved card payout card to display.
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     @endif
 
@@ -387,6 +664,55 @@
 
 @section('scripts')
     <script>
+        var payoutPreviewModal = document.getElementById('payoutPreviewModal');
+        var openPayoutPreviewModal = document.getElementById('openPayoutPreviewModal');
+        var closePayoutPreviewModal = document.getElementById('closePayoutPreviewModal');
+        var payoutPreviewTabs = Array.from(document.querySelectorAll('.payout-preview-tab'));
+        var payoutPreviewPanels = Array.from(document.querySelectorAll('.payout-preview-panel'));
+
+        function setActivePayoutPreviewTab(targetId) {
+            payoutPreviewTabs.forEach(function (tab) {
+                var isActive = tab.getAttribute('data-preview-target') === targetId;
+                tab.classList.toggle('is-active', isActive);
+                tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            });
+
+            payoutPreviewPanels.forEach(function (panel) {
+                panel.hidden = panel.id !== targetId;
+            });
+        }
+
+        function closePayoutPreviewModalFunc() {
+            if (payoutPreviewModal) {
+                payoutPreviewModal.style.display = 'none';
+            }
+        }
+
+        payoutPreviewTabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                setActivePayoutPreviewTab(tab.getAttribute('data-preview-target'));
+            });
+        });
+
+        if (openPayoutPreviewModal && payoutPreviewModal) {
+            openPayoutPreviewModal.addEventListener('click', function () {
+                payoutPreviewModal.style.display = 'flex';
+                setActivePayoutPreviewTab('payoutPreviewGcash');
+            });
+        }
+
+        if (closePayoutPreviewModal) {
+            closePayoutPreviewModal.addEventListener('click', closePayoutPreviewModalFunc);
+        }
+
+        if (payoutPreviewModal) {
+            payoutPreviewModal.addEventListener('click', function (e) {
+                if (e.target === payoutPreviewModal) {
+                    closePayoutPreviewModalFunc();
+                }
+            });
+        }
+
         // Password Modal
         var passwordModal = document.getElementById('passwordModal');
         var openPasswordModal = document.getElementById('openPasswordModal');

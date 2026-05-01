@@ -9,12 +9,6 @@
 @section('content')
     <div class="top-header">
         <h1>Manage Tenants</h1>
-        <div class="header-right">
-            <div class="notification-bell">
-                <i class="fas fa-bell"></i>
-                <span class="badge">3</span>
-            </div>
-        </div>
     </div>
 
     <div class="actions" style="display: flex; justify-content: space-between; align-items: center;">

@@ -24,6 +24,59 @@
     $usageLeads = (int) data_get($analyticsSummary, 'usage.leads.used', 0);
     $availableCoupons = (int) (($activeCouponCount ?? 0) + ($platformCouponCount ?? 0));
     $conversionTone = $conversionRate >= 20 ? 'positive' : ($conversionRate >= 10 ? 'warning' : 'danger');
+    $subscriptionDeadlineAt = null;
+    $subscriptionDeadlineTag = null;
+    $subscriptionBannerTitle = 'Current Subscription';
+    $subscriptionBannerSummary = 'Your workspace access is active.';
+    $subscriptionCtaLabel = null;
+    $subscriptionCtaRoute = null;
+    $subscriptionTitleMain = $subscriptionBannerTitle;
+    $subscriptionTitleState = null;
+
+    if ($trialActive && $trialEndsAt) {
+        $subscriptionDeadlineAt = $trialEndsAt;
+        $subscriptionDeadlineTag = 'Trial Deadline';
+        $subscriptionBannerTitle = '7-Day Free Trial Active';
+        $subscriptionBannerSummary = $trialDaysRemaining . ' day' . ($trialDaysRemaining === 1 ? '' : 's') . ' remaining. Your trial ends on ' . optional($trialEndsAt)->format('F j, Y g:i A') . '.';
+        $subscriptionCtaLabel = 'Upgrade with PayMongo';
+        $subscriptionCtaRoute = route('trial.billing.show');
+    } elseif ($tenant?->status === 'active' && $tenant?->billing_status === 'current' && $tenant?->subscription_renews_at) {
+        $subscriptionDeadlineAt = $tenant->subscription_renews_at;
+        $subscriptionDeadlineTag = 'Monthly Renewal';
+        $renewalDaysRemaining = $tenant->subscriptionRenewalDaysRemaining();
+        $subscriptionBannerTitle = 'Monthly Subscription Active';
+        $subscriptionBannerSummary = $renewalDaysRemaining . ' day' . ($renewalDaysRemaining === 1 ? '' : 's') . ' remaining before your next billing deadline on ' . $tenant->subscription_renews_at->format('F j, Y g:i A') . '.';
+        $subscriptionCtaLabel = 'Manage Billing';
+        $subscriptionCtaRoute = route('payments.index');
+    } elseif ($tenant?->isOverdue() && $tenant?->billing_grace_ends_at) {
+        $subscriptionDeadlineAt = $tenant->billing_grace_ends_at;
+        $subscriptionDeadlineTag = 'Grace Deadline';
+        $subscriptionBannerTitle = 'Payment Grace Period';
+        $subscriptionBannerSummary = 'Complete payment before ' . optional($tenant->billing_grace_ends_at)->format('F j, Y g:i A') . ' to avoid service interruption for your workspace and team.';
+        $subscriptionCtaLabel = 'Complete Payment';
+        $subscriptionCtaRoute = route('payments.index');
+    } elseif ($tenant?->subscription_plan) {
+        $subscriptionBannerSummary = 'Your workspace is active under the ' . $tenant->subscription_plan . ' plan.';
+        if ($tenant?->subscription_activated_at) {
+            $subscriptionBannerSummary .= ' Activated on ' . $tenant->subscription_activated_at->format('F j, Y g:i A') . '.';
+        }
+    }
+
+    if (str_ends_with($subscriptionBannerTitle, ' Active')) {
+        $subscriptionTitleMain = preg_replace('/\s+Active$/', '', $subscriptionBannerTitle) ?: $subscriptionBannerTitle;
+        $subscriptionTitleState = 'Active';
+    } else {
+        $subscriptionTitleMain = $subscriptionBannerTitle;
+    }
+
+    $payoutStatus = $payoutAccount?->reviewStatus() ?? 'setup_required';
+    $payoutPillText = $payoutAccount ? $payoutAccount->reviewStatusLabel() : 'Setup Required';
+    $payoutPillTone = match ($payoutStatus) {
+        \App\Models\TenantPayoutAccount::STATUS_APPROVED => ['bg' => '#DCFCE7', 'text' => '#166534'],
+        \App\Models\TenantPayoutAccount::STATUS_REJECTED => ['bg' => '#FEE2E2', 'text' => '#B91C1C'],
+        \App\Models\TenantPayoutAccount::STATUS_PENDING_PLATFORM_REVIEW => ['bg' => '#FFEDD5', 'text' => '#C2410C'],
+        default => ['bg' => '#E2E8F0', 'text' => '#334155'],
+    };
 @endphp
 
 @section('content')
@@ -44,45 +97,73 @@
         </div>
     </div>
 
-    @if($trialActive)
-        <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--theme-accent, #6B4A7A);">
-            <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
-                <div>
-                    <div
-                        style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:0 0 12px;"
-                    >
-                        <h3 style="margin:0;">7-Day Free Trial Active</h3>
+    @if($tenant)
+        <div class="card subscription-status-card">
+            <div class="subscription-status-shell">
+                <div class="subscription-status-main">
+                    <div class="subscription-status-header">
+                        <h3>
+                            <span>{{ $subscriptionTitleMain }}</span>
+                            @if($subscriptionTitleState)
+                                <span class="subscription-status-title__state">{{ $subscriptionTitleState }}</span>
+                            @endif
+                        </h3>
+                        @if($subscriptionDeadlineTag)
+                            <span class="subscription-status-tag">
+                                {{ $subscriptionDeadlineTag }}
+                            </span>
+                            <span class="chart-help-wrap subscription-status-tag__help" tabindex="0">
+                                <span class="chart-help-dot" aria-label="Show billing deadline details">?</span>
+                                <span class="chart-help-tip">{{ $subscriptionBannerSummary }}</span>
+                            </span>
+                        @endif
+                    </div>
+
+                    @if($subscriptionDeadlineAt)
                         <div
-                            data-trial-countdown
-                            data-trial-ends-at="{{ optional($trialEndsAt)?->toIso8601String() }}"
-                            style="display:flex;flex-wrap:wrap;gap:8px;"
+                            data-subscription-countdown
+                            data-subscription-ends-at="{{ optional($subscriptionDeadlineAt)->toIso8601String() }}"
+                            class="subscription-status-countdown"
                         >
-                            <div style="min-width:74px;padding:10px 10px;border-radius:14px;background:#f4f3f8;text-align:center;">
-                                <strong data-trial-days style="display:block;font-size:20px;line-height:1;color:var(--theme-primary, #240E35);">0</strong>
-                                <span style="display:block;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--theme-muted, #6B7280);">Days</span>
+                            <div class="subscription-status-countdown__item">
+                                <strong data-subscription-days>0</strong>
+                                <span>Days</span>
                             </div>
-                            <div style="min-width:74px;padding:10px 10px;border-radius:14px;background:#f4f3f8;text-align:center;">
-                                <strong data-trial-hours style="display:block;font-size:20px;line-height:1;color:var(--theme-primary, #240E35);">00</strong>
-                                <span style="display:block;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--theme-muted, #6B7280);">Hours</span>
+                            <div class="subscription-status-countdown__item">
+                                <strong data-subscription-hours>00</strong>
+                                <span>Hours</span>
                             </div>
-                            <div style="min-width:74px;padding:10px 10px;border-radius:14px;background:#f4f3f8;text-align:center;">
-                                <strong data-trial-minutes style="display:block;font-size:20px;line-height:1;color:var(--theme-primary, #240E35);">00</strong>
-                                <span style="display:block;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--theme-muted, #6B7280);">Minutes</span>
+                            <div class="subscription-status-countdown__item">
+                                <strong data-subscription-minutes>00</strong>
+                                <span>Minutes</span>
                             </div>
-                            <div style="min-width:74px;padding:10px 10px;border-radius:14px;background:#f4f3f8;text-align:center;">
-                                <strong data-trial-seconds style="display:block;font-size:20px;line-height:1;color:var(--theme-primary, #240E35);">00</strong>
-                                <span style="display:block;margin-top:6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--theme-muted, #6B7280);">Seconds</span>
+                            <div class="subscription-status-countdown__item">
+                                <strong data-subscription-seconds>00</strong>
+                                <span>Seconds</span>
                             </div>
                         </div>
-                    </div>
-                    <p style="margin:0;color:var(--theme-muted, #6B7280);line-height:1.7;">
-                        {{ $trialDaysRemaining }} day{{ $trialDaysRemaining === 1 ? '' : 's' }} remaining.
-                        Your trial ends on {{ optional($trialEndsAt)->format('F j, Y g:i A') }}.
-                    </p>
+                    @endif
+
                 </div>
-                <a href="{{ route('trial.billing.show') }}" style="display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;border-radius:12px;background:var(--theme-primary, #240E35);color:#fff;font-weight:700;text-decoration:none;">
-                    Upgrade with PayMongo
-                </a>
+
+                <div class="subscription-status-side">
+                    <div
+                        class="subscription-status-payout"
+                        style="background:{{ $payoutPillTone['bg'] }};color:#111111;">
+                        <span>Payout Account Status</span>
+                        <span class="subscription-status-payout__state">{{ $payoutPillText }}</span>
+                    </div>
+                    <div class="subscription-status-side__actions">
+                        @if($subscriptionCtaLabel && $subscriptionCtaRoute)
+                            <a href="{{ $subscriptionCtaRoute }}" class="subscription-status-side__action">
+                                {{ $subscriptionCtaLabel }}
+                            </a>
+                        @endif
+                        <a href="{{ route('profile.show') }}" class="subscription-status-side__action">
+                            Manage Payout Account
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     @endif
@@ -237,6 +318,7 @@
         </div>
         <div class="chart">
             <h3>Usage Snapshot</h3>
+            <div class="app-table-scroll app-table-scroll--wide">
             <table>
                 <thead>
                     <tr>
@@ -261,11 +343,13 @@
                     @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 
     <div class="card" style="margin-bottom: 20px;">
         <h3>Funnel Revenue and Payment Status</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
         <table>
             <thead>
                 <tr>
@@ -282,6 +366,7 @@
                 @endforeach
             </tbody>
         </table>
+        </div>
     </div>
 
     <div class="card" id="team-activity">
@@ -294,6 +379,7 @@
             </button>
         </div>
         <div id="teamActivityContent" style="display:{{ $teamActivityOpen ? 'block' : 'none' }};">
+            <div class="app-table-scroll app-table-scroll--wide">
             <table>
                 <thead>
                     <tr>
@@ -318,6 +404,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
             <div style="margin-top: 16px;">
                 {{ $teamActivity->fragment('team-activity')->links('pagination::bootstrap-4') }}
             </div>
@@ -443,7 +530,7 @@
             }
         });
 
-        const trialCountdown = document.querySelector('[data-trial-countdown]');
+        const subscriptionCountdown = document.querySelector('[data-subscription-countdown]');
         const toggleTeamActivityBtn = document.getElementById('toggleTeamActivityBtn');
         const teamActivityContent = document.getElementById('teamActivityContent');
 
@@ -456,12 +543,12 @@
             });
         }
 
-        if (trialCountdown) {
-            const endsAt = trialCountdown.getAttribute('data-trial-ends-at');
-            const dayNode = trialCountdown.querySelector('[data-trial-days]');
-            const hourNode = trialCountdown.querySelector('[data-trial-hours]');
-            const minuteNode = trialCountdown.querySelector('[data-trial-minutes]');
-            const secondNode = trialCountdown.querySelector('[data-trial-seconds]');
+        if (subscriptionCountdown) {
+            const endsAt = subscriptionCountdown.getAttribute('data-subscription-ends-at');
+            const dayNode = subscriptionCountdown.querySelector('[data-subscription-days]');
+            const hourNode = subscriptionCountdown.querySelector('[data-subscription-hours]');
+            const minuteNode = subscriptionCountdown.querySelector('[data-subscription-minutes]');
+            const secondNode = subscriptionCountdown.querySelector('[data-subscription-seconds]');
             const endTime = endsAt ? new Date(endsAt).getTime() : NaN;
 
             const pad = value => String(value).padStart(2, '0');

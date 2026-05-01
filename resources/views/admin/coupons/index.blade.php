@@ -82,7 +82,7 @@
             <form method="POST" action="{{ route('admin.coupons.store') }}" id="adminCouponWizardForm">
                 @csrf
                 <div style="padding:18px 24px 0;">
-                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">
+                    <div class="app-grid app-grid--3" style="gap:10px;">
                         <div data-admin-step-indicator="1" style="padding:12px 14px;border-radius:14px;background:#240E35;color:#fff;font-weight:700;">1. Identity</div>
                         <div data-admin-step-indicator="2" style="padding:12px 14px;border-radius:14px;background:#f8fafc;color:#64748b;font-weight:700;">2. Rules</div>
                         <div data-admin-step-indicator="3" style="padding:12px 14px;border-radius:14px;background:#f8fafc;color:#64748b;font-weight:700;">3. Assign Tenants</div>
@@ -95,7 +95,7 @@
                         <h3 style="margin:6px 0 4px;color:#240E35;">Create the coupon identity</h3>
                         <p style="margin:0;color:#475569;">Choose manual or auto-generated code, then give the coupon a clear title.</p>
                     </div>
-                    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;">
+                    <div class="app-form-grid app-form-grid--2" style="gap:16px;">
                         <div>
                             <label for="admin_coupon_code" style="display:block;margin-bottom:8px;font-weight:bold;">Coupon Code</label>
                             <div style="padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc;margin-bottom:12px;">
@@ -136,7 +136,7 @@
                         <h3 style="margin:6px 0 4px;color:#240E35;">Set the discount rules</h3>
                         <p style="margin:0;color:#475569;">Choose the discount style, usage limits, and active dates.</p>
                     </div>
-                    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;">
+                    <div class="app-form-grid app-form-grid--3" style="gap:16px;">
                         <div>
                             <label for="admin_discount_type" style="display:block;margin-bottom:8px;font-weight:bold;">Discount Type</label>
                             <select name="discount_type" id="admin_discount_type" required style="width:100%;padding:12px 14px;border:1px solid #dbe2ea;border-radius:10px;">
@@ -163,7 +163,7 @@
                             @error('usage_mode')<div style="margin-top:6px;color:#b91c1c;font-size:12px;">{{ $message }}</div>@enderror
                         </div>
                     </div>
-                    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px;">
+                    <div class="app-form-grid app-form-grid--2" style="gap:16px;margin-top:16px;">
                         <div>
                             <label for="admin_max_total_uses" style="display:block;margin-bottom:8px;font-weight:bold;">Total redemptions (all customers)</label>
                             <input type="number" min="1" name="max_total_uses" id="admin_max_total_uses" value="{{ old('max_total_uses') }}"
@@ -199,7 +199,7 @@
                         <h3 style="margin:6px 0 4px;color:#240E35;">Assign the tenants</h3>
                         <p style="margin:0;color:#475569;">Select which tenants should see this platform coupon inside their workspace.</p>
                     </div>
-                    <div style="padding:14px;border:1px solid #e2e8f0;border-radius:14px;max-height:320px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+                    <div class="app-grid app-grid--2" style="padding:14px;border:1px solid #e2e8f0;border-radius:14px;max-height:320px;overflow:auto;gap:10px;">
                         @foreach(\App\Models\Tenant::query()->orderBy('company_name')->get(['id','company_name']) as $tenant)
                             <label style="display:flex;align-items:center;gap:8px;padding:10px;border-radius:10px;background:#f8fafc;">
                                 <input type="checkbox" name="tenant_ids[]" value="{{ $tenant->id }}" {{ in_array($tenant->id, old('tenant_ids', [])) ? 'checked' : '' }}>

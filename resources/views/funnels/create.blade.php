@@ -11,6 +11,18 @@
         <form method="POST" action="{{ route('funnels.store') }}">
             @csrf
 
+            @if(!empty($templateAccessSummary))
+                <div style="margin-bottom: 18px; padding: 14px 16px; border-radius: 12px; background: #fbf9fd; border: 1px solid #ece2f5; color: #475569; line-height: 1.55;">
+                    <strong style="display:block; margin-bottom:6px; color:#240E35;">Shared template access</strong>
+                    @if(!empty($templateAccessSummary['is_unlimited']))
+                        Your {{ $templateAccessSummary['plan_name'] }} plan can use the full Super Admin template library.
+                    @else
+                        Your {{ $templateAccessSummary['plan_name'] }} plan can use up to {{ $templateAccessSummary['limit'] }} Super Admin shared template{{ (int) ($templateAccessSummary['limit'] ?? 0) === 1 ? '' : 's' }}.
+                    @endif
+                    Templates shown below already reflect what your current subscription can access.
+                </div>
+            @endif
+
             <div style="margin-bottom: 16px;">
                 <label for="name" style="display:block; margin-bottom:8px; font-weight:700;">Funnel Name</label>
                 <input id="name" name="name" type="text" required value="{{ old('name') }}"
@@ -80,6 +92,12 @@
                             </span>
                         </label>
                     @endforeach
+
+                    @if(empty($availableTemplates))
+                        <div style="padding:14px; border:1px dashed var(--theme-border, #E6E1EF); border-radius:8px; background:#fff; color:#64748b; font-size:13px; line-height:1.55;">
+                            No Super Admin shared templates are available on your current plan right now. You can still start with a manual funnel build.
+                        </div>
+                    @endif
                 </div>
                 @error('template_id')
                     <span style="color:red; font-size:12px;">{{ $message }}</span>
@@ -90,7 +108,7 @@
                 Build setup:
                 <br><strong>Funnel Style</strong>: Step-by-Step Page.
                 <br><strong>Funnel Purpose</strong>: Services or Physical Product.
-                <br><br>Template availability follows your subscribed plan.
+                <br><br>Only the Super Admin templates allowed by your current plan are shown here.
             </div>
 
             <div style="display:flex; gap:10px; margin-top:18px;">

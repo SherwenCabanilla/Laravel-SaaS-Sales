@@ -76,6 +76,7 @@
 
     <div class="card">
         <h3>Recent Payments / Invoices</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
         <table>
             <thead>
                 <tr>
@@ -98,6 +99,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div style="margin-top: 16px;">
             {{ $recentPayments->links('pagination::bootstrap-4') }}
         </div>

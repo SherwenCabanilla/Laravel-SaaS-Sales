@@ -103,6 +103,7 @@
 
     <div class="card">
         <h3>Needs Action Now (Pending Invoices)</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
         <table>
             <thead>
                 <tr>
@@ -125,8 +126,29 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         <div style="margin-top: 16px;">
             {{ $pendingInvoices->links('pagination::bootstrap-4') }}
+        </div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
+        <h3>Finance Queue Snapshot</h3>
+        <div class="app-table-scroll app-table-scroll--wide">
+        <table>
+            <thead>
+                <tr>
+                    <th>Receipt Review Queue</th>
+                    <th>Payable Commissions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ number_format((int) ($receiptReviewCount ?? 0)) }}</td>
+                    <td>PHP {{ number_format((float) ($payableCommissionTotal ?? 0), 2) }}</td>
+                </tr>
+            </tbody>
+        </table>
         </div>
     </div>
 @endsection

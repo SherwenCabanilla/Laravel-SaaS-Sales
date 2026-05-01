@@ -36,7 +36,8 @@ class SignupOnboardingService
      *   max_funnels: int|null,
      *   max_templates: int|null,
      *   max_workflows: int|null,
-     *   max_monthly_messages: int|null
+     *   max_monthly_messages: int|null,
+     *   automation_enabled: bool
      * }>
      */
     public function plans(bool $includeFreeTrial = false): array
@@ -79,7 +80,8 @@ class SignupOnboardingService
      *   max_funnels: int|null,
      *   max_templates: int|null,
      *   max_workflows: int|null,
-     *   max_monthly_messages: int|null
+     *   max_monthly_messages: int|null,
+     *   automation_enabled: bool
      * }
      */
     public function findPlan(string $code): array
@@ -107,7 +109,8 @@ class SignupOnboardingService
      *   max_funnels: int|null,
      *   max_templates: int|null,
      *   max_workflows: int|null,
-     *   max_monthly_messages: int|null
+     *   max_monthly_messages: int|null,
+     *   automation_enabled: bool
      * }
      */
     private function serializePlan(Plan $plan): array
@@ -126,6 +129,7 @@ class SignupOnboardingService
             'max_templates' => $plan->max_templates,
             'max_workflows' => $plan->max_workflows,
             'max_monthly_messages' => $plan->max_monthly_messages,
+            'automation_enabled' => (bool) $plan->automation_enabled,
         ];
     }
 
@@ -143,7 +147,8 @@ class SignupOnboardingService
      *   max_funnels: int|null,
      *   max_templates: int|null,
      *   max_workflows: int|null,
-     *   max_monthly_messages: int|null
+     *   max_monthly_messages: int|null,
+     *   automation_enabled: bool
      * }>
      */
     private function defaultPlans(bool $includeFreeTrial = false): array
@@ -154,30 +159,31 @@ class SignupOnboardingService
                 'name' => 'Starter',
                 'price' => 1499.00,
                 'period' => 'per month',
-                'summary' => 'For teams launching their first lead capture and conversion funnels.',
+                'summary' => 'For teams launching their first lead capture and conversion funnels with simple built-in operations.',
                 'features' => [
                     '1 workspace with Account Owner dashboard access',
                     'Lead capture funnels and conversion tracking',
                     'Basic funnel analytics and payment monitoring',
-                    'Email and landing-page-ready funnel journeys',
+                    'Basic funnel operations with built-in tracking and status updates',
                 ],
                 'spotlight' => 'Best for New Teams',
                 'max_users' => 5,
                 'max_leads' => 1000,
                 'max_funnels' => 3,
                 'max_templates' => 2,
-                'max_workflows' => 1,
+                'max_workflows' => null,
                 'max_monthly_messages' => 2000,
+                'automation_enabled' => false,
             ],
             [
                 'code' => 'growth',
                 'name' => 'Growth',
                 'price' => 3499.00,
                 'period' => 'per month',
-                'summary' => 'For growing businesses managing campaigns, leads, and sales handoff in one place.',
+                'summary' => 'For growing businesses ready to unlock shared automation across lead, funnel, and billing workflows.',
                 'features' => [
                     'Unlimited active funnels for one brand workspace',
-                    'Marketing, sales, and finance collaboration tools',
+                    'Shared n8n automation included for lead, funnel, billing, and reminder flows',
                     'Role-based dashboards and pipeline visibility',
                     'PayMongo-ready checkout journeys for your offers',
                 ],
@@ -188,16 +194,17 @@ class SignupOnboardingService
                 'max_templates' => null,
                 'max_workflows' => 10,
                 'max_monthly_messages' => 30000,
+                'automation_enabled' => true,
             ],
             [
                 'code' => 'scale',
                 'name' => 'Scale',
                 'price' => 6999.00,
                 'period' => 'per month',
-                'summary' => 'For teams that want advanced funnel execution with higher-volume operations.',
+                'summary' => 'For teams that want advanced automation coverage and higher-volume operations on the shared engine.',
                 'features' => [
-                    'Everything in Growth plus enterprise-ready onboarding',
-                    'Priority support for launch and billing workflows',
+                    'Everything in Growth plus advanced shared automation coverage',
+                    'Priority support for launch, billing, and operational workflows',
                     'Multi-team operational visibility for leaders',
                     'Built for aggressive campaign and revenue targets',
                 ],
@@ -208,6 +215,7 @@ class SignupOnboardingService
                 'max_templates' => null,
                 'max_workflows' => null,
                 'max_monthly_messages' => null,
+                'automation_enabled' => true,
             ],
         ];
 
@@ -222,15 +230,16 @@ class SignupOnboardingService
                     'Account Owner dashboard access during trial period',
                     'Limited team, leads, and funnel usage',
                     'Upgrade to Starter, Growth, or Scale anytime',
-                    'No onboarding email dispatch required for trial signup',
+                    'No advanced shared automation during the trial period',
                 ],
                 'spotlight' => 'Trial',
                 'max_users' => 3,
                 'max_leads' => 300,
                 'max_funnels' => 1,
                 'max_templates' => 1,
-                'max_workflows' => 1,
+                'max_workflows' => null,
                 'max_monthly_messages' => 500,
+                'automation_enabled' => false,
             ]);
         }
 
@@ -473,7 +482,8 @@ class SignupOnboardingService
             'billing_status' => 'current',
             'billing_grace_ends_at' => null,
             'last_payment_failed_at' => null,
-            'subscription_activated_at' => $tenant->subscription_activated_at ?? now(),
+            'subscription_activated_at' => now(),
+            'subscription_renews_at' => now()->addMonthNoOverflow(),
             'trial_ends_at' => null,
         ]);
 
@@ -692,16 +702,14 @@ class SignupOnboardingService
             'email' => $user->email,
         ]);
 
-        $sent = app(N8nEmailOrchestrator::class)->dispatch($eventName, [
-            'user_id' => $user->id,
+        $subject = $this->setupEmailSubject($eventName);
+        $body = $this->setupEmailBody($user, $setupUrl, $expiresAt, $eventName);
+        $delivery = app(TransactionalEmailService::class)->sendPlainText($user->email, $subject, $body, [
+            'event_name' => $eventName,
             'tenant_id' => $user->tenant_id,
-            'email' => $user->email,
-            'name' => $user->name,
-            'role' => $user->role,
-            'setup_url' => $setupUrl,
-            'expires_at' => $expiresAt?->toIso8601String(),
-            'login_url' => route('login'),
+            'user_id' => $user->id,
         ]);
+        $sent = (bool) $delivery['sent'];
 
         if ($sent) {
             $user->update(['activation_state' => 'email_sent']);
@@ -725,10 +733,13 @@ class SignupOnboardingService
             app(OnboardingAuditService::class)->record(
                 'onboarding_email_sent',
                 'success',
-                'Onboarding email dispatched to n8n successfully.',
+                'Onboarding email delivered through the transactional email service.',
                 $user,
                 $intent,
-                ['event_name' => $eventName]
+                [
+                    'event_name' => $eventName,
+                    'provider' => $delivery['provider'],
+                ]
             );
         } else {
             $intent = SignupIntent::query()
@@ -741,7 +752,7 @@ class SignupOnboardingService
                     'email_delivery_status' => 'failed',
                     'email_delivery_attempts' => (int) $intent->email_delivery_attempts + 1,
                     'email_last_attempt_at' => now(),
-                    'email_last_error' => 'n8n dispatch failed',
+                    'email_last_error' => 'transactional email send failed',
                 ]);
             }
             Log::warning('Setup email dispatch skipped/failed.', [
@@ -751,7 +762,7 @@ class SignupOnboardingService
             app(OnboardingAuditService::class)->record(
                 'onboarding_email_failed',
                 'failed',
-                'Onboarding email dispatch to n8n failed.',
+                'Onboarding email delivery failed.',
                 $user,
                 $intent,
                 ['event_name' => $eventName]
@@ -780,5 +791,39 @@ class SignupOnboardingService
             'customer_portal_invited' => 'customer_portal_invite',
             default => 'account_owner_onboarding',
         };
+    }
+
+    private function setupEmailSubject(string $eventName): string
+    {
+        return match ($eventName) {
+            'team_member_invited' => 'You were invited to join Sales & Marketing Funnel System',
+            'customer_portal_invited' => 'Your customer portal account is ready',
+            default => 'Complete your Sales & Marketing Funnel System setup',
+        };
+    }
+
+    private function setupEmailBody(User $user, string $setupUrl, mixed $expiresAt, string $eventName): string
+    {
+        $intro = match ($eventName) {
+            'team_member_invited' => 'You were invited to join your team workspace.',
+            'customer_portal_invited' => 'Your customer portal account is ready.',
+            default => 'Your account has been created successfully.',
+        };
+
+        $expiresText = method_exists($expiresAt, 'format')
+            ? $expiresAt->format('M j, Y g:i A')
+            : 'soon';
+
+        return implode("\n", [
+            'Hi ' . $user->name . ',',
+            '',
+            $intro,
+            'Role: ' . $user->role,
+            'Complete your setup here: ' . $setupUrl,
+            'Login: ' . route('login'),
+            'This link expires on: ' . $expiresText,
+            '',
+            'If you did not expect this message, you can ignore it.',
+        ]);
     }
 }

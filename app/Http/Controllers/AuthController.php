@@ -124,6 +124,10 @@ class AuthController extends Controller
             $destination = '/admin/dashboard';
         }
 
+        if (! $destination && $user->hasRole('payout-admin')) {
+            $destination = route('platform.payouts.index');
+        }
+
         if (! $destination && ($response = $this->tenantAccessRedirect($user))) {
             return $response;
         }
@@ -218,6 +222,10 @@ class AuthController extends Controller
             return route('dashboard.owner');
         }
 
+        if ($user->hasRole('payout-admin')) {
+            return route('platform.payouts.index');
+        }
+
         if ($user->hasRole('marketing-manager')) {
             return route('dashboard.marketing');
         }
@@ -241,6 +249,10 @@ class AuthController extends Controller
     {
         if ($user->hasRole('super-admin')) {
             return 'super_admin';
+        }
+
+        if ($user->hasRole('payout-admin')) {
+            return 'payout_admin';
         }
 
         if ($user->hasRole('account-owner')) {

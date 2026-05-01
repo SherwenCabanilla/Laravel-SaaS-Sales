@@ -1,6 +1,33 @@
 ﻿        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; padding: 20px; }
         .modal-box { background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
         .password-modal-box { width: 100%; max-width: 480px; }
+        .payout-preview-modal-box { width: 100%; max-width: 560px; }
         .modal-close-btn { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--theme-muted, #6B7280); line-height: 1; padding: 0 4px; }
         .modal-close-btn:hover { color: #1E293B; }
+        .payout-preview-tabs { display: flex; gap: 10px; margin-bottom: 18px; }
+        .payout-preview-tab { border: 1px solid var(--theme-border, #E6E1EF); background: #fff; color: var(--theme-muted, #6B7280); border-radius: 999px; padding: 10px 16px; font-weight: 700; cursor: pointer; transition: all .2s ease; }
+        .payout-preview-tab.is-active { background: var(--theme-primary, #240E35); border-color: var(--theme-primary, #240E35); color: #fff; box-shadow: 0 10px 24px rgba(36,14,53,.18); }
+        .payout-preview-empty { border: 1px dashed var(--theme-border, #E6E1EF); border-radius: 18px; padding: 32px 20px; text-align: center; color: var(--theme-muted, #6B7280); font-weight: 700; background: linear-gradient(180deg, #FAFAFC 0%, #F4F2F8 100%); }
+        .payout-virtual-card { position: relative; overflow: hidden; border-radius: 22px; padding: 24px; min-height: 228px; color: #fff; display: grid; gap: 18px; box-shadow: 0 18px 38px rgba(15,23,42,.18); }
+        .payout-virtual-card::before { content: ""; position: absolute; inset: auto -55px -80px auto; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,.12); }
+        .payout-virtual-card::after { content: ""; position: absolute; inset: 24px auto auto 58%; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.08); filter: blur(2px); }
+        .payout-virtual-card--gcash { background: linear-gradient(145deg, #0057FF 0%, #00A8FF 58%, #5FD2FF 100%); }
+        .payout-virtual-card--card { background: linear-gradient(145deg, #240E35 0%, #5B2A86 54%, #9B6FD6 100%); }
+        .payout-virtual-card__topline { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .payout-virtual-card__chip { width: 42px; height: 30px; border-radius: 8px; background: linear-gradient(145deg, rgba(255,255,255,.85), rgba(255,255,255,.45)); box-shadow: inset 0 1px 1px rgba(255,255,255,.35); }
+        .payout-virtual-card__brand { font-size: 18px; font-weight: 800; letter-spacing: .03em; }
+        .payout-virtual-card__title { position: relative; z-index: 1; font-size: 12px; text-transform: uppercase; letter-spacing: .18em; opacity: .78; }
+        .payout-virtual-card__number { position: relative; z-index: 1; font-size: clamp(24px, 4vw, 32px); font-weight: 800; letter-spacing: .08em; line-height: 1.1; word-break: break-word; }
+        .payout-virtual-card__footer { position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+        .payout-virtual-card__footer strong { display: block; font-size: 15px; line-height: 1.35; }
+        .payout-virtual-card__meta-label { display: block; margin-bottom: 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; opacity: .72; }
+        .payout-virtual-card__reference { position: relative; z-index: 1; font-size: 12px; font-weight: 700; opacity: .82; }
+
+        @media (max-width: 640px) {
+            .payout-preview-tabs { flex-wrap: wrap; }
+            .payout-preview-tab { flex: 1 1 140px; }
+            .payout-virtual-card { padding: 20px; min-height: 210px; }
+            .payout-virtual-card__number { font-size: 24px; }
+            .payout-virtual-card__footer { flex-direction: column; align-items: flex-start; }
+        }
     

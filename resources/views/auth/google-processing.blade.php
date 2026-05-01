@@ -34,6 +34,7 @@
             const label = document.getElementById('loginSplashRoleLabel');
             const roleIcons = {
                 super_admin: 'fa-user-shield',
+                payout_admin: 'fa-scale-balanced',
                 account_owner: 'fa-building-user',
                 marketing_manager: 'fa-chart-line',
                 sales_agent: 'fa-handshake',
@@ -42,6 +43,7 @@
             };
             const roleLabels = {
                 super_admin: 'Super Admin',
+                payout_admin: 'Platform Finance Admin',
                 account_owner: 'Account Owner',
                 marketing_manager: 'Marketing Manager',
                 sales_agent: 'Sales Agent',

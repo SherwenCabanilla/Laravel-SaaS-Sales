@@ -1,6 +1,9 @@
 ﻿@extends('layouts.admin')
 
 @section('title', 'Trial Billing')
+@php
+    $emptyDash = $emptyDash ?? '—';
+@endphp
 
 @section('content')
     <div class="top-header">
@@ -23,6 +26,45 @@
         @if($paymentCancelled)
             <p style="margin: 14px 0 0; color: #B45309; font-weight: 600;">Payment was cancelled. You can restart checkout anytime.</p>
         @endif
+    </div>
+
+    <div class="payment-summary-grid" style="margin-bottom: 20px;">
+        <div class="card payment-summary-card">
+            <h3>Billing State</h3>
+            <p class="payment-summary-card__value">{{ $billingStateLabel }}</p>
+        </div>
+        <div class="card payment-summary-card">
+            <h3>Trial Days Remaining</h3>
+            <p class="payment-summary-card__value">{{ number_format((int) ($tenant?->trialDaysRemaining() ?? 0)) }}</p>
+        </div>
+        <div class="card payment-summary-card">
+            <h3>Grace Days Remaining</h3>
+            <p class="payment-summary-card__value">{{ number_format((int) ($tenant?->billingGraceDaysRemaining() ?? 0)) }}</p>
+        </div>
+        <div class="card payment-summary-card">
+            <h3>Active Since</h3>
+            <p class="payment-summary-card__value payment-summary-card__value--compact">{{ optional($tenant?->subscription_activated_at)->format('Y-m-d H:i') ?? $emptyDash }}</p>
+        </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">Current Usage and Limits</h3>
+        <div class="app-grid app-grid--4" style="gap:12px;">
+            @foreach(['users' => 'Users', 'funnels' => 'Funnels', 'leads' => 'Leads', 'messages' => 'Messages'] as $key => $label)
+                <div style="padding:14px;border:1px solid var(--theme-border, #E6E1EF);border-radius:12px;background:var(--theme-surface-softer, #F7F7FB);">
+                    <div style="font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--theme-muted, #6B7280);">{{ $label }}</div>
+                    <div style="margin-top:8px;font-size:22px;font-weight:800;color:var(--theme-primary, #240E35);">
+                        {{ number_format((int) data_get($planUsage, $key . '.used', 0)) }}
+                        /
+                        {{ data_get($planUsage, $key . '.is_unlimited') ? 'Unlimited' : number_format((int) data_get($planUsage, $key . '.limit', 0)) }}
+                    </div>
+                    <div style="margin-top:6px;color:var(--theme-muted, #6B7280);font-size:12px;font-weight:600;">
+                        Remaining:
+                        {{ data_get($planUsage, $key . '.is_unlimited') ? 'Unlimited' : number_format((int) data_get($planUsage, $key . '.remaining', 0)) }}
+                    </div>
+                </div>
+            @endforeach
+        </div>
     </div>
 
     <div class="trial-plan-grid">
